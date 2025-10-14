@@ -748,20 +748,32 @@
       t.subject = t.subject || {};
       t.subject[lang] = e.target.value;
       saveDraft();
+      // Rerender variables list so detection follows current language content
+      if (typeof renderVars === 'function') renderVars();
     };
 
     $('#tpl-body').oninput = (e) => {
       t.body = t.body || {};
       t.body[lang] = e.target.value;
       saveDraft();
+      // Rerender variables list so detection follows current language content
+      if (typeof renderVars === 'function') renderVars();
     };
 
     // If preview was active before rerender, rebuild preview contents
     if (window._eaPreviewActive) buildPreview();
 
+    // Detect placeholders only from the current language body text
+    function extractPlaceholdersFromCurrentBody() {
+      const txt = (t.body && typeof t.body[lang] === 'string') ? t.body[lang] : '';
+      const set = new Set([...String(txt).matchAll(/<<([^>]+)>>/g)].map(m => m[1]));
+      return Array.from(set).sort();
+    }
+
     const renderVars = () => {
       const auto = getAutoDetect();
-      const detected = extractPlaceholdersFromTemplate(t);
+      // Only consider placeholders present in the current language body
+      const detected = extractPlaceholdersFromCurrentBody();
       if (auto) {
         t.variables = detected.slice();
         saveDraft();
@@ -816,7 +828,8 @@
         }
       }
       const term = ($('#vars-filter')?.value || '').trim().toLowerCase();
-      const source = auto ? detected : allVars;
+      // Always show only placeholders present in the current body text
+      const source = detected;
       const list = source.filter(v => v.toLowerCase().includes(term));
       const cells = (name) => name ? `
         <td style=\"vertical-align:top;width:50%;padding:4px 6px;\">
@@ -826,7 +839,7 @@
           </label>
         </td>` : `<td style=\"width:50%\"></td>`;
       if (!list.length) {
-        const baseEmpty = source.length ? 'Aucune variable ne correspond au filtre.' : (auto ? 'Aucun placeholder <<NomVariable>> trouvé dans Objet/Corps.' : 'Aucune variable définie pour l’instant (onglet Variables).');
+        const baseEmpty = source.length ? 'Aucune variable ne correspond au filtre.' : 'Aucun placeholder <<NomVariable>> trouvé dans le corps.';
         $('#vars-box').innerHTML = `<div class=\"hint\">${baseEmpty}</div>`;
       } else {
         const rows = [];
@@ -854,7 +867,7 @@
     renderVars();
     const getFilteredList = () => {
       const term = ($('#vars-filter')?.value || '').trim().toLowerCase();
-      return allVars.filter(v => v.toLowerCase().includes(term));
+      return extractPlaceholdersFromCurrentBody().filter(v => v.toLowerCase().includes(term));
     };
     const btnAll = $('#btn-vars-all');
     const btnNone = $('#btn-vars-none');
@@ -889,7 +902,7 @@
     };
     const btnDetect = $('#btn-vars-detect');
     if (btnDetect) btnDetect.onclick = () => {
-      const detected = extractPlaceholdersFromTemplate(t);
+      const detected = extractPlaceholdersFromCurrentBody();
       if (getAutoDetect()) {
         t.variables = detected.slice();
       } else {
