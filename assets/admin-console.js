@@ -1490,7 +1490,7 @@
       const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
 
       const bodyHtml = `
-  <div class="hint" style="margin-bottom:8px;">Cette action créera un commit dans <strong>${repo}</strong> sur la branche <strong>main</strong> pour mettre à jour <code>${rootPath}</code> et <code>${publicPath}</code>.</div>
+  <div class="hint" style="margin-bottom:8px;">Cette action va créer une <strong>branche</strong> depuis <code>main</code>, y mettre à jour <code>${rootPath}</code> et <code>${publicPath}</code>, puis ouvrir une <strong>Pull Request</strong> vers <code>main</code>.</div>
         <div style="display:grid; gap:8px;">
           <label>GitHub Token (PAT – minimum repo:contents write):<br>
             <input id="gh-token" type="password" placeholder="ghp_..." style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;">
@@ -1498,17 +1498,61 @@
           <label>Message de commit:<br>
             <input id="gh-message" type="text" value="chore(admin): update complete_email_templates.json" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;">
           </label>
+          <label>Titre de la PR:<br>
+            <input id="gh-pr-title" type="text" value="feat(templates): update complete_email_templates.json" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;">
+          </label>
         </div>`;
       showModal({ title: 'Publier sur GitHub', bodyHtml, confirmText: 'Publier', onConfirm: async () => {
         const token = (document.getElementById('gh-token')||{}).value || '';
         const message = (document.getElementById('gh-message')||{}).value || 'update templates';
+        const prTitle = (document.getElementById('gh-pr-title')||{}).value || 'Update templates';
         if (!token) { notify('Token requis.', 'warn'); return; }
         try {
           const headers = { 'Accept':'application/vnd.github+json', 'Authorization': `Bearer ${token}` };
+          const baseBranch = 'main';
+          const now = new Date();
+          const pad = (n) => String(n).padStart(2, '0');
+          const branchName = `chore/templates-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 
+          async function getJson(url) {
+            const res = await fetch(url, { headers });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          }
+
+          // 1) Get base branch SHA
+          const refInfo = await getJson(`https://api.github.com/repos/${owner}/${repoName}/git/refs/heads/${encodeURIComponent(baseBranch)}`);
+          const baseSha = refInfo?.object?.sha;
+          if (!baseSha) throw new Error('Base branch SHA introuvable');
+
+          // 2) Create new branch from base
+          let createdBranch = branchName;
+          async function tryCreateBranch(name) {
+            const res = await fetch(`https://api.github.com/repos/${owner}/${repoName}/git/refs`, {
+              method: 'POST',
+              headers: { ...headers, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ref: `refs/heads/${name}`, sha: baseSha })
+            });
+            if (res.ok) return name;
+            const err = await res.json().catch(()=>({}));
+            if (res.status === 422 && /already exists/i.test(err?.message||'')) {
+              // fallback suffix
+              return null;
+            }
+            throw new Error(err?.message || 'Échec création de branche');
+          }
+          let attempt = 0;
+          while (attempt < 3) {
+            const name = attempt === 0 ? branchName : `${branchName}-${attempt}`;
+            const okName = await tryCreateBranch(name);
+            if (okName) { createdBranch = okName; break; }
+            attempt++;
+          }
+
+          // helper: get current sha for path on the new branch
           async function getSha(path) {
             try {
-              const res = await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}`, { headers });
+              const res = await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(createdBranch)}`, { headers });
               if (res.ok) {
                 const j = await res.json();
                 return j.sha;
@@ -1521,19 +1565,35 @@
             const res = await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}`, {
               method: 'PUT',
               headers: { ...headers, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message, content, branch: 'main', sha })
+              body: JSON.stringify({ message, content, branch: createdBranch, sha })
             });
             if (!res.ok) {
               const err = await res.json().catch(()=>({message:'Erreur inconnue'}));
               throw new Error(`${path}: ${err.message || 'Échec GitHub'}`);
             }
+            return res.json().catch(()=>({}));
           }
 
-          // Fetch SHAs and update both files
+          // 3) Update both files on the branch
           const [rootSha, publicSha] = await Promise.all([getSha(rootPath), getSha(publicPath)]);
-          await putFile(rootPath, rootSha);
-          await putFile(publicPath, publicSha);
-          notify('Commit GitHub créé (root + public).');
+          const [rootRes, pubRes] = await Promise.all([
+            putFile(rootPath, rootSha),
+            putFile(publicPath, publicSha)
+          ]);
+
+          // 4) Open Pull Request
+          const prBody = `This PR updates the templates JSON files.\n\n- Templates: ${Array.isArray(data.templates)?data.templates.length:0}\n- Variables: ${data.variables?Object.keys(data.variables).length:0}\n- Categories: ${Array.isArray(data.metadata?.categories)?data.metadata.categories.length:0}`;
+          const prRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}/pulls`, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: prTitle || message, head: createdBranch, base: baseBranch, body: prBody })
+          });
+          if (!prRes.ok) {
+            const err = await prRes.json().catch(()=>({message:'Erreur inconnue'}));
+            throw new Error(`PR: ${err.message || 'Échec création PR'}`);
+          }
+          const pr = await prRes.json();
+          notify(`PR créée: ${pr.html_url}`);
         } catch (e) {
           console.error('GitHub publish failed', e);
           notify('Échec de la publication GitHub: ' + (e?.message || e), 'warn');

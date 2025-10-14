@@ -1,5 +1,9 @@
 # Email Assistant v8 (imported from v6)
 
+[![Deploy to GitHub Pages](https://github.com/snarky1980/email-assistant-v8-/actions/workflows/pages.yml/badge.svg)](https://github.com/snarky1980/email-assistant-v8-/actions/workflows/pages.yml)
+
+Live demo: https://snarky1980.github.io/email-assistant-v8-/
+
 This repository starts from the email-assistant v6 codebase and is ready for you to continue work toward v8.
 
 Two ways to run locally:
