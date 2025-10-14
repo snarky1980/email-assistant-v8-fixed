@@ -1482,14 +1482,15 @@
   async function githubPublishFlow() {
     try {
       if (!data) { notify('Aucune donnée à publier.', 'warn'); return; }
-  const repo = 'snarky1980/email-assistant-v8-'; // adjust if forked
-      const pathInRepo = 'complete_email_templates.json';
+      const repo = 'snarky1980/email-assistant-v8-'; // adjust if forked
+      const rootPath = 'complete_email_templates.json';
+      const publicPath = 'public/complete_email_templates.json';
       const owner = repo.split('/')[0];
       const repoName = repo.split('/')[1];
       const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
 
       const bodyHtml = `
-        <div class="hint" style="margin-bottom:8px;">Cette action créera un commit dans <strong>${repo}</strong> sur la branche <strong>main</strong> pour mettre à jour <code>${pathInRepo}</code>.</div>
+  <div class="hint" style="margin-bottom:8px;">Cette action créera un commit dans <strong>${repo}</strong> sur la branche <strong>main</strong> pour mettre à jour <code>${rootPath}</code> et <code>${publicPath}</code>.</div>
         <div style="display:grid; gap:8px;">
           <label>GitHub Token (PAT – minimum repo:contents write):<br>
             <input id="gh-token" type="password" placeholder="ghp_..." style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;">
@@ -1503,24 +1504,36 @@
         const message = (document.getElementById('gh-message')||{}).value || 'update templates';
         if (!token) { notify('Token requis.', 'warn'); return; }
         try {
-          // Step 1: Get current file SHA if exists
           const headers = { 'Accept':'application/vnd.github+json', 'Authorization': `Bearer ${token}` };
-          let sha = undefined;
-          try {
-            const resGet = await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(pathInRepo)}`, { headers });
-            if (resGet.ok) { const j = await resGet.json(); sha = j.sha; }
-          } catch {}
-          // Step 2: PUT new content
-          const putRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(pathInRepo)}`, {
-            method: 'PUT',
-            headers: { ...headers, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, content, branch: 'main', sha })
-          });
-          if (!putRes.ok) {
-            const err = await putRes.json().catch(()=>({message:'Erreur inconnue'}));
-            throw new Error(err.message || 'Échec GitHub');
+
+          async function getSha(path) {
+            try {
+              const res = await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}`, { headers });
+              if (res.ok) {
+                const j = await res.json();
+                return j.sha;
+              }
+            } catch {}
+            return undefined;
           }
-          notify('Commit GitHub créé.');
+
+          async function putFile(path, sha) {
+            const res = await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}`, {
+              method: 'PUT',
+              headers: { ...headers, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message, content, branch: 'main', sha })
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(()=>({message:'Erreur inconnue'}));
+              throw new Error(`${path}: ${err.message || 'Échec GitHub'}`);
+            }
+          }
+
+          // Fetch SHAs and update both files
+          const [rootSha, publicSha] = await Promise.all([getSha(rootPath), getSha(publicPath)]);
+          await putFile(rootPath, rootSha);
+          await putFile(publicPath, publicSha);
+          notify('Commit GitHub créé (root + public).');
         } catch (e) {
           console.error('GitHub publish failed', e);
           notify('Échec de la publication GitHub: ' + (e?.message || e), 'warn');
