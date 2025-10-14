@@ -183,6 +183,15 @@ function App() {
   const [favoritesOnly, setFavoritesOnly] = useState(savedState.favoritesOnly || false)
   const [copySuccess, setCopySuccess] = useState(false)
   const [showVariablePopup, setShowVariablePopup] = useState(false)
+  const [varPopupPos, setVarPopupPos] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('ea_var_popup_pos') || 'null')
+      if (saved && typeof saved.top === 'number' && typeof saved.left === 'number' && typeof saved.width === 'number' && typeof saved.height === 'number') return saved
+    } catch {}
+    return { top: 80, left: 80, width: 600, height: 500 }
+  })
+  const varPopupRef = useRef(null)
+  const dragState = useRef({ dragging: false, startX: 0, startY: 0, origTop: 0, origLeft: 0 })
   
   // References for keyboard shortcuts
   const searchRef = useRef(null) // Reference for focus on search (Ctrl+J)
@@ -199,6 +208,11 @@ function App() {
       favoritesOnly
     })
   }, [interfaceLanguage, templateLanguage, searchQuery, selectedCategory, variables, favorites, favoritesOnly])
+
+  // Persist popup position/size
+  useEffect(() => {
+    try { localStorage.setItem('ea_var_popup_pos', JSON.stringify(varPopupPos)) } catch {}
+  }, [varPopupPos])
 
   // Interface texts by language
   const interfaceTexts = {
@@ -564,6 +578,49 @@ function App() {
       console.error('Link copy error:', error)
       alert('Link copy error. Please copy the URL manually from the address bar.')
     }
+  }
+
+  // Close popup on ESC
+  useEffect(() => {
+    if (!showVariablePopup) return
+    const onKey = (e) => { if (e.key === 'Escape') setShowVariablePopup(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [showVariablePopup])
+
+  // Track resize to persist size
+  useEffect(() => {
+    if (!showVariablePopup || !varPopupRef.current) return
+    const el = varPopupRef.current
+    const ro = new ResizeObserver((entries) => {
+      const rect = entries[0].contentRect
+      setVarPopupPos(p => ({ ...p, width: Math.round(rect.width), height: Math.round(rect.height) }))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [showVariablePopup])
+
+  // Drag handlers
+  const startDrag = (e) => {
+    if (!varPopupRef.current) return
+    e.preventDefault()
+    const { clientX, clientY } = e
+    dragState.current = { dragging: true, startX: clientX, startY: clientY, origTop: varPopupPos.top, origLeft: varPopupPos.left }
+    const onMove = (ev) => {
+      if (!dragState.current.dragging) return
+      const dx = ev.clientX - dragState.current.startX
+      const dy = ev.clientY - dragState.current.startY
+      const nextTop = Math.max(0, Math.min(window.innerHeight - 80, dragState.current.origTop + dy))
+      const nextLeft = Math.max(0, Math.min(window.innerWidth - 80, dragState.current.origLeft + dx))
+      setVarPopupPos(p => ({ ...p, top: nextTop, left: nextLeft }))
+    }
+    const onUp = () => {
+      dragState.current.dragging = false
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
   }
 
   // Reset form with confirmation
@@ -997,16 +1054,26 @@ function App() {
 
       {/* Resizable Variables Popup */}
       {showVariablePopup && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 p-4" onMouseDown={() => setShowVariablePopup(false)}>
           <div 
-            className="bg-white rounded-xl shadow-2xl border border-gray-200 min-w-[500px] max-w-[800px] min-h-[400px] max-h-[80vh] overflow-hidden resizable-popup"
+            ref={varPopupRef}
+            className="bg-white rounded-xl shadow-2xl border border-gray-200 min-w-[400px] max-w-[90vw] min-h-[300px] max-h-[85vh] overflow-hidden resizable-popup"
             style={{ 
-              width: '600px',
-              height: '500px'
+              position: 'fixed',
+              top: varPopupPos.top,
+              left: varPopupPos.left,
+              width: varPopupPos.width,
+              height: varPopupPos.height,
+              cursor: dragState.current.dragging ? 'grabbing' : 'default'
             }}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             {/* Popup Header */}
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div 
+              className="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between select-none"
+              onMouseDown={startDrag}
+              style={{ cursor: 'grab' }}
+            >
               <div className="flex items-center">
                 <Edit3 className="h-6 w-6 mr-3 text-emerald-600" />
                 <h2 className="text-xl font-bold text-gray-800">{t.variables}</h2>
@@ -1017,7 +1084,7 @@ function App() {
               <div className="flex items-center space-x-2">
                 <div className="flex items-center text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
                   <Move className="h-3 w-3 mr-1" />
-                  Resizable
+                  {interfaceLanguage === 'fr' ? 'Déplaçable + redimensionnable' : 'Movable + resizable'}
                 </div>
                 <Button
                   onClick={() => setShowVariablePopup(false)}
