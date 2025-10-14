@@ -279,7 +279,7 @@ function App() {
     const loadTemplatesData = async () => {
       try {
         if (debug) console.log('[EA][Debug] Fetching templates (with prod raw GitHub fallback)...')
-        const REPO_RAW_URL = 'https://raw.githubusercontent.com/snarky1980/email-assistant-v6/main/complete_email_templates.json'
+  const REPO_RAW_URL = 'https://raw.githubusercontent.com/snarky1980/email-assistant-v8-/main/complete_email_templates.json'
         const LOCAL_URL = './complete_email_templates.json'
         const isLocal = /^(localhost|127\.|0\.0\.0\.0)/i.test(window.location.hostname)
         const ts = Date.now()
