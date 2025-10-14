@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { loadState, saveState } from './utils/storage.js';
-import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move } from 'lucide-react'
+import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send } from 'lucide-react'
 import { Button } from './components/ui/button.jsx'
 import { Input } from './components/ui/input.jsx'
 import { Textarea } from './components/ui/textarea.jsx'
@@ -230,6 +230,8 @@ function App() {
       copied: 'Copié !',
   copyLink: 'Copier le lien',
   copyLinkTitle: 'Copier le lien direct vers ce modèle',
+    openInOutlook: 'Ouvrir dans Outlook',
+    openInOutlookTitle: 'Composer un courriel avec Outlook',
       noTemplate: 'Sélectionnez un modèle pour commencer',
       resetWarningTitle: 'Confirmer la réinitialisation',
       resetWarningMessage: 'Êtes-vous sûr de vouloir réinitialiser toutes les variables ? Cette action ne peut pas être annulée.',
@@ -264,6 +266,8 @@ function App() {
       copied: 'Copied!',
   copyLink: 'Copy link',
   copyLinkTitle: 'Copy direct link to this template',
+    openInOutlook: 'Open in Outlook',
+    openInOutlookTitle: 'Compose email in Outlook',
       noTemplate: 'Select a template to get started',
       resetWarningTitle: 'Confirm Reset',
       resetWarningMessage: 'Are you sure you want to reset all variables? This action cannot be undone.',
@@ -508,6 +512,20 @@ function App() {
       console.error('Copy error:', error)
       // Error handling with user message
       alert('Copy error. Please select the text manually and use Ctrl+C.')
+    }
+  }
+
+  // Open default mail client (Outlook if default) with subject/body prefilled
+  const openInOutlook = () => {
+    const subject = finalSubject || ''
+    // Use CRLF for better compatibility with some mail clients
+    const body = (finalBody || '').replace(/\n/g, '\r\n')
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    try {
+      window.location.href = mailtoUrl
+    } catch {
+      // Fallback open (may be blocked by pop-up settings)
+      window.open(mailtoUrl, '_blank')
     }
   }
 
@@ -852,15 +870,26 @@ function App() {
                 {/* Actions with modern style */}
                 <div className="flex justify-between items-center">
                   {/* Copy link button - Discrete on left */}
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => copyTemplateLink()}
-                    className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 font-medium text-sm"
-                    title={t.copyLinkTitle}
-                  >
-                    <Link className="h-4 w-4 mr-2" />
-                    {t.copyLink}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => copyTemplateLink()}
+                      className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 font-medium text-sm"
+                      title={t.copyLinkTitle}
+                    >
+                      <Link className="h-4 w-4 mr-2" />
+                      {t.copyLink}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      onClick={openInOutlook}
+                      className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 font-medium text-sm"
+                      title={t.openInOutlookTitle}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {t.openInOutlook}
+                    </Button>
+                  </div>
                   
                   <div className="flex space-x-4">
                     <Button 
