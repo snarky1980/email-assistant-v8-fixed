@@ -1012,6 +1012,18 @@
     });
     const unusedKeys = keys.filter(k => !used.has(k));
 
+    // Compute variables used in the currently selected template only
+    const currentTpl = (data.templates || []).find(x => x.id === selectedTemplateId) || null;
+    const usedInSelected = new Set();
+    if (currentTpl) {
+      extractPlaceholdersFromTemplate(currentTpl).forEach(v => usedInSelected.add(v));
+      if (Array.isArray(currentTpl.variables)) currentTpl.variables.forEach(v => usedInSelected.add(v));
+    }
+    // Preference: show only variables from selected template (default true)
+    const getOnlySelected = () => { try { return localStorage.getItem('ea_vars_only_selected') !== 'false'; } catch { return true; } };
+    const onlySelected = getOnlySelected();
+    const displayKeys = (onlySelected && currentTpl) ? keys.filter(k => usedInSelected.has(k)) : keys;
+
     viewVariables.innerHTML = `
       <div class="row-3">
         <div class="field"><label>Clé</label><input id="var-new-key" placeholder="e.g. NuméroProjet" /></div>
@@ -1034,12 +1046,16 @@
       <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <span class="hint">Variables inutilisées: <strong>${unusedKeys.length}</strong></span>
         <button id="btn-clean-unused" ${unusedKeys.length ? '' : 'disabled'}>Supprimer les variables inutilisées</button>
+        <label style="display:inline-flex;align-items:center;gap:6px;margin-left:auto;">
+          <input type="checkbox" id="vars-only-selected" ${onlySelected ? 'checked' : ''} ${currentTpl ? '' : 'disabled'}>
+          <span>Seulement celles du modèle sélectionné</span>
+        </label>
       </div>
 
       <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;"></div>
 
       <div style="display:grid;gap:10px;">
-        ${keys.length ? keys.map(k => {
+        ${displayKeys.length ? displayKeys.map(k => {
           const v = vars[k];
           return `
             <div class="tile" data-k="${escapeAttr(k)}" style="display:grid;gap:8px;">
@@ -1070,9 +1086,18 @@
               </div>
             </div>
           `;
-        }).join('') : `<div class="hint">Aucune variable pour l’instant.</div>`}
+        }).join('') : `<div class="hint">${(onlySelected && currentTpl) ? 'Aucune variable utilisée par le modèle sélectionné.' : 'Aucune variable pour l’instant.'}</div>`}
       </div>
     `;
+
+    // Wire filter toggle
+    const onlySelToggle = document.getElementById('vars-only-selected');
+    if (onlySelToggle) {
+      onlySelToggle.onchange = () => {
+        try { localStorage.setItem('ea_vars_only_selected', onlySelToggle.checked ? 'true' : 'false'); } catch {}
+        renderVariablesEditor();
+      };
+    }
 
     $('#btn-add-var').onclick = () => {
       const key = $('#var-new-key').value.trim();
