@@ -1482,7 +1482,7 @@
   async function githubPublishFlow() {
     try {
       if (!data) { notify('Aucune donnée à publier.', 'warn'); return; }
-      const repo = 'snarky1980/email-assistant-v6'; // adjust if forked
+  const repo = 'snarky1980/email-assistant-v8-'; // adjust if forked
       const pathInRepo = 'complete_email_templates.json';
       const owner = repo.split('/')[0];
       const repoName = repo.split('/')[1];
