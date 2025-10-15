@@ -1,3 +1,4 @@
+/* DEPLOY: 2025-10-15 07:30 - Outlook button + Resizable variables popup */
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { loadState, saveState } from './utils/storage.js';
 import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send } from 'lucide-react'
