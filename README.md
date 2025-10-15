@@ -6,6 +6,27 @@ Live demo: https://snarky1980.github.io/email-assistant-v8-/
 
 This repository starts from the email-assistant v6 codebase and is ready for you to continue work toward v8.
 
+## ⚠️ UI FREEZE - DO NOT MODIFY
+
+**CRITICAL**: The current UI design (mint/sage gradients with pills pattern) is the CANONICAL design and must NOT be changed.
+
+- **Canonical commit**: `d208852` - "UX: variables popup movable/resizable + Outlook compose button (mailto) + admin filters"
+- **Protected elements**:
+  - Main banner with mint/sage/teal gradients
+  - Pills pattern design for language and category selection
+  - Color scheme: emerald, teal, sage, mint (NOT blue/indigo)
+  - Visual banner layout with images
+  - Resizable Variables popup
+  - "Ouvrir dans Outlook" / "Open in Outlook" button
+
+**Before making ANY UI changes**:
+1. Create a feature branch
+2. Test locally first
+3. Get approval before merging to main
+4. Never directly edit color classes without documenting the reason
+
+If you need to revert to the canonical UI: `git reset --hard d208852`
+
 Two ways to run locally:
 
 - Static server (simple, no build step): serves the current folder and the JSON data file.
