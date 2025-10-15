@@ -1,4 +1,4 @@
-/* DEPLOY: 2025-10-15 07:30 - Outlook button + Resizable variables popup */
+/* DEPLOY: 2025-10-15 07:40 - FIXED: Function hoisting error resolved */
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { loadState, saveState } from './utils/storage.js';
 import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send } from 'lucide-react'
@@ -638,6 +638,7 @@ function App() {
 
   // Open default mail client (Outlook if default) with subject/body prefilled
   function openInOutlook() {
+    console.log('Opening Outlook with subject:', finalSubject)
     const subject = finalSubject || ''
     const body = (finalBody || '').replace(/\n/g, '\r\n')
     const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
