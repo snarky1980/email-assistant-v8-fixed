@@ -530,20 +530,6 @@ function App() {
     }
   }
 
-  // Open default mail client (Outlook if default) with subject/body prefilled
-  const openInOutlook = () => {
-    const subject = finalSubject || ''
-    // Use CRLF for better compatibility with some mail clients
-    const body = (finalBody || '').replace(/\n/g, '\r\n')
-    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-    try {
-      window.location.href = mailtoUrl
-    } catch {
-      // Fallback open (may be blocked by pop-up settings)
-      window.open(mailtoUrl, '_blank')
-    }
-  }
-
   /**
    * DIRECT LINK COPY FUNCTION
    */
@@ -648,6 +634,18 @@ function App() {
       setFinalBody(bodyWithVars)
     }
     setShowResetWarning(false)
+  }
+
+  // Open default mail client (Outlook if default) with subject/body prefilled
+  function openInOutlook() {
+    const subject = finalSubject || ''
+    const body = (finalBody || '').replace(/\n/g, '\r\n')
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    try {
+      window.location.href = mailtoUrl
+    } catch {
+      window.open(mailtoUrl, '_blank')
+    }
   }
 
   return (
