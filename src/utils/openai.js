@@ -10,7 +10,7 @@ export const hasOpenAIKey = () => {
   return !!openAIApiKey || !!localStorage.getItem('openai_api_key');
 };
 
-export const callOpenAI = async ({ prompt, system = 'You are a helpful assistant.', signal }) => {
+export const callOpenAI = async ({ prompt, system = 'You are a helpful assistant.', signal } = {}) => {
   const key = openAIApiKey || localStorage.getItem('openai_api_key');
   if (!key) {
     throw new Error('OpenAI API key not set');

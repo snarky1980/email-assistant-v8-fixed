@@ -1031,9 +1031,10 @@ function App() {
                   
                   <div className="flex space-x-4">
                     <Button 
-                      variant="outline" 
+                      variant="destructive" 
                       onClick={handleResetClick}
-                      className="border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300 font-semibold"
+                      className="font-semibold"
+                      title={t.resetWarningTitle}
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       {t.reset}

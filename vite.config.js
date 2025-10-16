@@ -82,6 +82,9 @@ export default defineConfig(({ mode }) => {
       const assets = [
         { src: path.resolve(root, 'assets', 'admin-console.js'), dst: path.resolve(outDir, 'assets', 'admin-console.js') },
         { src: path.resolve(root, 'assets', 'admin-excel.js'), dst: path.resolve(outDir, 'assets', 'admin-excel.js') },
+        { src: path.resolve(root, 'assets', 'ai-helper.js'), dst: path.resolve(outDir, 'assets', 'ai-helper.js') },
+        { src: path.resolve(root, 'assets', 'ai-optional.js'), dst: path.resolve(outDir, 'assets', 'ai-optional.js') },
+        { src: path.resolve(root, 'assets', 'var-popup-integrated.js'), dst: path.resolve(outDir, 'assets', 'var-popup-integrated.js') },
       ];
       // ensure assets dir
       fs.mkdirSync(path.resolve(outDir, 'assets'), { recursive: true });
@@ -111,6 +114,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      sourcemap: true,
       rollupOptions: {
         input: (() => {
           const root = process.cwd();

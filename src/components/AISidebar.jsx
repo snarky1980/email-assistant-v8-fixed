@@ -48,7 +48,7 @@ const AISidebar = ({ emailText, onResult, variables }) => {
           throw new Error('Action AI inconnue')
       }
 
-      const response = await callOpenAI(prompt)
+  const response = await callOpenAI({ prompt })
       setResult(response)
     } catch (error) {
       console.error('Erreur AI:', error)
