@@ -6,6 +6,7 @@
  - User preference (open/closed, last position, size, lang, last action) stored in localStorage.
 */
 (function(){
+  try {
   const BTN_ID = 'ai-launch-btn';
   const PANEL_ID = 'ai-float-panel';
   const STORAGE_KEY = 'aiAssistantPrefsV1';
@@ -22,6 +23,18 @@
   if (document.getElementById(BTN_ID) || document.getElementById(PANEL_ID)) return;
 
   const prefs = loadPrefs();
+
+  // Declare variables early to avoid TDZ when referenced in functions executed before initialization
+  let panel = null;
+  let lang = prefs.lang || 'fr';
+  let dragging = false, dragOffset = [0,0];
+  let resizing = false, resizeMode = null, resizeStart = [0,0], startRect = null, sizeIndex = (prefs.sizeIndex || 1);
+  let externalSynced = false;
+  let externalSubjectEl = null;
+  let externalBodyEl = null;
+  let lastAssistantEdit = 0;
+  let initialSynced = false;
+  let detectionObserver = null;
 
   let btn = null; // simple single launcher
   function findFirstEditable(){
@@ -55,15 +68,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ensureLauncher); else ensureLauncher();
   console.log('[ai-optional] launcher watcher initialized');
 
-  let panel=null, lang=prefs.lang||'fr';
-  let dragging=false, dragOffset=[0,0];
-  let resizing=false, resizeMode=null, resizeStart=[0,0], startRect=null, sizeIndex=(prefs.sizeIndex||1);
-  let externalSynced = false;
-  let externalSubjectEl = null;
-  let externalBodyEl = null;
-  let lastAssistantEdit = 0;
-  let initialSynced = false;
-  let detectionObserver = null;
   const API_BASE = window.AI_API_BASE || document.querySelector('meta[name="ai-api-base"]')?.getAttribute('content') || '';
   const API_ROOT = (API_BASE.endsWith('/') ? API_BASE.slice(0,-1) : API_BASE) || '';
 
@@ -468,4 +472,7 @@
     }, 500);
   }
 
+  } catch (e) {
+    try { console.warn('[ai-optional] disabled due to init error:', e && (e.stack || e.message || e)); } catch (_){ }
+  }
 })();
