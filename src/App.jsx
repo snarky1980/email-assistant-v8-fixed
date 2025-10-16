@@ -303,12 +303,15 @@ function App() {
     if (debug) console.log('[EA][Debug] Fetching templates (with prod raw GitHub fallback)...')
   const REPO_RAW_URL = 'https://raw.githubusercontent.com/snarky1980/email-assistant-v8-fixed/main/complete_email_templates.json'
         const LOCAL_URL = './complete_email_templates.json'
+        // Absolute path based on Vite base for GitHub Pages (e.g., /email-assistant-v8-fixed/)
+        const BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) ? import.meta.env.BASE_URL : '/'
+        const ABSOLUTE_URL = (BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/') + 'complete_email_templates.json'
         const isLocal = /^(localhost|127\.|0\.0\.0\.0)/i.test(window.location.hostname)
         const ts = Date.now()
         const withBust = (u) => u + (u.includes('?') ? '&' : '?') + 'cb=' + ts
-        const candidates = isLocal
-          ? [withBust(LOCAL_URL), withBust(REPO_RAW_URL)]
-          : [withBust(REPO_RAW_URL), withBust(LOCAL_URL)]
+        // Prefer local JSON first in all environments; fall back to raw repo
+        // This avoids transient network/CORS issues on GitHub Pages
+        const candidates = [withBust(LOCAL_URL), withBust(ABSOLUTE_URL), withBust(REPO_RAW_URL)]
 
         let loaded = null
         let lastErr = null
@@ -773,6 +776,25 @@ function App() {
 
       {/* Main content with 4-column layout from original */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  {/* Data integrity banner: show when templates failed to load */}
+  {!loading && (!templatesData || !Array.isArray(templatesData.templates) || templatesData.templates.length === 0) && (
+    <div className="mb-6 p-4 rounded-lg border-2 border-amber-300 bg-amber-50 text-amber-900 shadow-sm">
+      <div className="font-semibold mb-1">{interfaceLanguage === 'fr' ? 'Aucun modèle chargé' : 'No templates loaded'}</div>
+      <div className="text-sm">
+        {interfaceLanguage === 'fr'
+          ? "Le fichier complete_email_templates.json n'a pas été trouvé ou n'a pas pu être chargé. Le bouton d'envoi s'affiche uniquement quand un modèle est sélectionné."
+          : 'The complete_email_templates.json file was not found or could not be loaded. The Send Email button only shows when a template is selected.'}
+        <div className="mt-2">
+          <a className="underline text-amber-800" href="./complete_email_templates.json" target="_blank" rel="noreferrer">complete_email_templates.json</a>
+        </div>
+        <div className="mt-1 text-xs text-amber-800/80">
+          {interfaceLanguage === 'fr'
+            ? 'Astuce: ajoutez ?debug=1 à l’URL pour voir les compteurs. Vérifiez la console réseau (F12) pour les erreurs 404/CORS.'
+            : 'Tip: add ?debug=1 to the URL to see counters. Check the Network console (F12) for 404/CORS errors.'}
+        </div>
+      </div>
+    </div>
+  )}
   <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left panel - Template list */}
           <div className="lg:col-span-1">
