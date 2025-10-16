@@ -728,8 +728,14 @@ function App() {
         </div>
       ) : (
         <>
-      {/* Dynamic header with EXACT teal/sage styling */}
-      <header className="bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 shadow-xl">
+      {/* Dynamic header with original patterned banner styling */}
+      <header className="pattern-banner bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 shadow-xl">
+        {/* decorative shapes */}
+        <div className="shape s1" aria-hidden="true"></div>
+        <div className="shape s2" aria-hidden="true"></div>
+        <div className="shape s3" aria-hidden="true"></div>
+        <div className="shape s4" aria-hidden="true"></div>
+        <div className="shape s5" aria-hidden="true"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
