@@ -150,6 +150,82 @@ const customEditorStyles = `
   }
 `
 
+// Interface texts by language - moved outside component to avoid TDZ issues
+const interfaceTexts = {
+  fr: {
+    title: 'Assistant pour rédaction de courriels aux clients',
+    subtitle: 'Bureau de la traduction',
+    selectTemplate: 'Sélectionnez un modèle',
+    templatesCount: `modèles disponibles`,
+    searchPlaceholder: '🔍 Rechercher un modèle...',
+    allCategories: 'Toutes les catégories',
+    categories: {
+      'Devis et estimations': 'Devis et estimations',
+      'Gestion de projets': 'Gestion de projets', 
+      'Problèmes techniques': 'Problèmes techniques',
+      'Communications générales': 'Communications générales',
+      'Services spécialisés': 'Services spécialisés'
+    },
+    templateLanguage: 'Langue du modèle:',
+    interfaceLanguage: 'Langue de l\'interface:',
+    variables: 'Variables',
+    editEmail: 'Éditez votre courriel',
+    subject: 'Objet',
+    body: 'Corps du message',
+    reset: 'Réinitialiser',
+    copy: 'Copier',
+    copySubject: 'Copier Objet',
+    copyBody: 'Copier Corps', 
+    copyAll: 'Copier Tout',
+    copied: 'Copié !',
+    copyLink: 'Copier le lien',
+    copyLinkTitle: 'Copier le lien direct vers ce modèle',
+    openInOutlook: 'Ouvrir dans Outlook',
+    openInOutlookTitle: 'Composer un courriel avec Outlook',
+    noTemplate: 'Sélectionnez un modèle pour commencer',
+    resetWarningTitle: 'Confirmer la réinitialisation',
+    resetWarningMessage: 'Êtes-vous sûr de vouloir réinitialiser toutes les variables ? Cette action ne peut pas être annulée.',
+    cancel: 'Annuler',
+    confirm: 'Confirmer'
+  },
+  en: {
+    title: 'Email Writing Assistant for Clients',
+    subtitle: 'Translation Bureau',
+    selectTemplate: 'Select a template',
+    templatesCount: `templates available`,
+    searchPlaceholder: '🔍 Search for a template...',
+    allCategories: 'All categories',
+    categories: {
+      'Devis et estimations': 'Quotes and estimates',
+      'Gestion de projets': 'Project management', 
+      'Problèmes techniques': 'Technical issues',
+      'Communications générales': 'General communications',
+      'Services spécialisés': 'Specialized services'
+    },
+    templateLanguage: 'Template language:',
+    interfaceLanguage: 'Interface language:',
+    variables: 'Variables',
+    editEmail: 'Edit your email',
+    subject: 'Subject',
+    body: 'Message body',
+    reset: 'Reset',
+    copy: 'Copy',
+    copySubject: 'Copy Subject',
+    copyBody: 'Copy Body',
+    copyAll: 'Copy All',
+    copied: 'Copied!',
+    copyLink: 'Copy link',
+    copyLinkTitle: 'Copy direct link to this template',
+    openInOutlook: 'Open in Outlook',
+    openInOutlookTitle: 'Compose email in Outlook',
+    noTemplate: 'Select a template to get started',
+    resetWarningTitle: 'Confirm Reset',
+    resetWarningMessage: 'Are you sure you want to reset all variables? This action cannot be undone.',
+    cancel: 'Cancel',
+    confirm: 'Confirm'
+  }
+}
+
 function App() {
   // Inject custom styles for variable highlighting
   useEffect(() => {
@@ -214,82 +290,6 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem('ea_var_popup_pos', JSON.stringify(varPopupPos)) } catch {}
   }, [varPopupPos])
-
-  // Interface texts by language
-  const interfaceTexts = {
-    fr: {
-      title: 'Assistant pour rédaction de courriels aux clients',
-      subtitle: 'Bureau de la traduction',
-      selectTemplate: 'Sélectionnez un modèle',
-      templatesCount: `modèles disponibles`,
-      searchPlaceholder: '🔍 Rechercher un modèle...',
-      allCategories: 'Toutes les catégories',
-      categories: {
-        'Devis et estimations': 'Devis et estimations',
-        'Gestion de projets': 'Gestion de projets', 
-        'Problèmes techniques': 'Problèmes techniques',
-        'Communications générales': 'Communications générales',
-        'Services spécialisés': 'Services spécialisés'
-      },
-      templateLanguage: 'Langue du modèle:',
-      interfaceLanguage: 'Langue de l\'interface:',
-      variables: 'Variables',
-      editEmail: 'Éditez votre courriel',
-      subject: 'Objet',
-      body: 'Corps du message',
-      reset: 'Réinitialiser',
-      copy: 'Copier',
-      copySubject: 'Copier Objet',
-      copyBody: 'Copier Corps', 
-      copyAll: 'Copier Tout',
-      copied: 'Copié !',
-  copyLink: 'Copier le lien',
-  copyLinkTitle: 'Copier le lien direct vers ce modèle',
-    openInOutlook: 'Ouvrir dans Outlook',
-    openInOutlookTitle: 'Composer un courriel avec Outlook',
-      noTemplate: 'Sélectionnez un modèle pour commencer',
-      resetWarningTitle: 'Confirmer la réinitialisation',
-      resetWarningMessage: 'Êtes-vous sûr de vouloir réinitialiser toutes les variables ? Cette action ne peut pas être annulée.',
-      cancel: 'Annuler',
-      confirm: 'Confirmer'
-    },
-    en: {
-      title: 'Email Writing Assistant for Clients',
-      subtitle: 'Translation Bureau',
-      selectTemplate: 'Select a template',
-      templatesCount: `templates available`,
-      searchPlaceholder: '🔍 Search for a template...',
-      allCategories: 'All categories',
-      categories: {
-        'Devis et estimations': 'Quotes and estimates',
-        'Gestion de projets': 'Project management', 
-        'Problèmes techniques': 'Technical issues',
-        'Communications générales': 'General communications',
-        'Services spécialisés': 'Specialized services'
-      },
-      templateLanguage: 'Template language:',
-      interfaceLanguage: 'Interface language:',
-      variables: 'Variables',
-      editEmail: 'Edit your email',
-      subject: 'Subject',
-      body: 'Message body',
-      reset: 'Reset',
-      copy: 'Copy',
-      copySubject: 'Copy Subject',
-      copyBody: 'Copy Body',
-      copyAll: 'Copy All',
-      copied: 'Copied!',
-  copyLink: 'Copy link',
-  copyLinkTitle: 'Copy direct link to this template',
-    openInOutlook: 'Open in Outlook',
-    openInOutlookTitle: 'Compose email in Outlook',
-      noTemplate: 'Select a template to get started',
-      resetWarningTitle: 'Confirm Reset',
-      resetWarningMessage: 'Are you sure you want to reset all variables? This action cannot be undone.',
-      cancel: 'Cancel',
-      confirm: 'Confirm'
-    }
-  }
 
   const t = interfaceTexts[interfaceLanguage]
 
