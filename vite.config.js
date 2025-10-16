@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export default defineConfig(({ mode }) => {
-  // Use GitHub Pages base only in production build; use root in dev to avoid nested path issues.
+  // For gh-pages deployment, use repository name as base path in production
   const base = mode === 'production' ? '/email-assistant-v8-fixed/' : '/';
   const writeTemplatesPlugin = {
     name: 'write-templates-plugin',
