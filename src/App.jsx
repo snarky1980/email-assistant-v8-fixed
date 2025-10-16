@@ -183,6 +183,7 @@ const interfaceTexts = {
     copyLinkTitle: 'Copier le lien direct vers ce modèle',
     openInOutlook: 'Ouvrir dans Outlook',
     openInOutlookTitle: 'Composer un courriel avec Outlook',
+    sendEmail: 'Envoyer courriel',
     noTemplate: 'Sélectionnez un modèle pour commencer',
     resetWarningTitle: 'Confirmer la réinitialisation',
     resetWarningMessage: 'Êtes-vous sûr de vouloir réinitialiser toutes les variables ? Cette action ne peut pas être annulée.',
@@ -219,6 +220,7 @@ const interfaceTexts = {
     copyLinkTitle: 'Copy direct link to this template',
     openInOutlook: 'Open in Outlook',
     openInOutlookTitle: 'Compose email in Outlook',
+    sendEmail: 'Send Email',
     noTemplate: 'Select a template to get started',
     resetWarningTitle: 'Confirm Reset',
     resetWarningMessage: 'Are you sure you want to reset all variables? This action cannot be undone.',
@@ -391,8 +393,24 @@ function App() {
         }
       }
       
-      // Ctrl/Cmd + J: Focus on search (Jump to search)
+      // Ctrl/Cmd + J: Copy subject only (subJect)
       if ((e.ctrlKey || e.metaKey) && e.key === 'j') {
+        e.preventDefault()
+        if (selectedTemplate) {
+          copyToClipboard('subject')
+        }
+      }
+      
+      // Ctrl/Cmd + Shift + Enter: Send email (Enhanced send action)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Enter') {
+        e.preventDefault()
+        if (selectedTemplate) {
+          openInOutlook()
+        }
+      }
+      
+      // Ctrl/Cmd + /: Focus on search (search shortcut)
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
         e.preventDefault()
         if (searchRef.current) {
           searchRef.current.focus()
@@ -639,14 +657,51 @@ function App() {
 
   // Open default mail client (Outlook if default) with subject/body prefilled
   function openInOutlook() {
-    console.log('Opening Outlook with subject:', finalSubject)
+    console.log('Opening email client with subject:', finalSubject)
+    
+    if (!finalSubject && !finalBody) {
+      alert(templateLanguage === 'fr' ? 'Veuillez d\'abord sélectionner un modèle et remplir le contenu.' : 'Please first select a template and fill in the content.')
+      return
+    }
+    
     const subject = finalSubject || ''
     const body = (finalBody || '').replace(/\n/g, '\r\n')
     const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    
     try {
+      // Try to open using window.location.href first (preferred method)
       window.location.href = mailtoUrl
-    } catch {
-      window.open(mailtoUrl, '_blank')
+      
+      // Provide visual feedback
+      const originalText = document.activeElement?.textContent
+      if (document.activeElement) {
+        const button = document.activeElement
+        const originalText = button.textContent
+        button.textContent = templateLanguage === 'fr' ? 'Ouverture...' : 'Opening...'
+        setTimeout(() => {
+          if (button.textContent === (templateLanguage === 'fr' ? 'Ouverture...' : 'Opening...')) {
+            button.textContent = originalText
+          }
+        }, 2000)
+      }
+    } catch (error) {
+      console.error('Error opening email client:', error)
+      // Fallback method
+      try {
+        window.open(mailtoUrl, '_blank')
+      } catch (fallbackError) {
+        console.error('Fallback method failed:', fallbackError)
+        // Final fallback - copy to clipboard and show instructions
+        navigator.clipboard.writeText(`${subject}\n\n${finalBody}`).then(() => {
+          alert(templateLanguage === 'fr' 
+            ? 'Impossible d\'ouvrir votre client de messagerie. Le contenu a été copié dans le presse-papiers.' 
+            : 'Unable to open your email client. The content has been copied to your clipboard.')
+        }).catch(() => {
+          alert(templateLanguage === 'fr' 
+            ? 'Impossible d\'ouvrir votre client de messagerie. Veuillez copier manuellement le contenu.' 
+            : 'Unable to open your email client. Please copy the content manually.')
+        })
+      }
     }
   }
 
@@ -1000,6 +1055,16 @@ function App() {
                     >
                       <Copy className="h-5 w-5 mr-2" />
                       {copySuccess ? t.copied : (t.copyAll || 'All')}
+                    </Button>
+
+                    {/* Send Email Button - Prominent action */}
+                    <Button 
+                      onClick={openInOutlook}
+                      className="font-bold px-6 py-3 transition-all duration-300 shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-105 text-white"
+                      title="Open in your default email client (Ctrl+Shift+Enter)"
+                    >
+                      <Send className="h-5 w-5 mr-2" />
+                      {t.sendEmail || t.openInOutlook}
                     </Button>
                   </div>
                   </div>

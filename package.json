@@ -4,10 +4,10 @@
   "version": "8.0.0",
   "type": "module",
   "description": "Modern React app for professional email generation with AI assistance",
-  "homepage": "https://snarky1980.github.io/email-assistant-v8-",
+  "homepage": "https://snarky1980.github.io/email-assistant-v8-fixed/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/snarky1980/email-assistant-v8-.git"
+    "url": "https://github.com/snarky1980/email-assistant-v8-fixed.git"
   },
   "scripts": {
     "dev": "vite",

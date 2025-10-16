@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename)
 
 export default defineConfig(({ mode }) => {
   // Use GitHub Pages base only in production build; use root in dev to avoid nested path issues.
-  const base = '/';
+  const base = mode === 'production' ? '/email-assistant-v8-fixed/' : '/';
   const writeTemplatesPlugin = {
     name: 'write-templates-plugin',
     apply: 'serve', // dev only
