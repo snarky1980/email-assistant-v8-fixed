@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename)
 
 export default defineConfig(({ mode }) => {
   // Use GitHub Pages base only in production build; use root in dev to avoid nested path issues.
-  const base = mode === 'production' ? '/email-assistant-v8-/' : '/';
+  const base = '/';
   const writeTemplatesPlugin = {
     name: 'write-templates-plugin',
     apply: 'serve', // dev only
@@ -130,7 +130,7 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 5173,
       strictPort: true,
-      allowedHosts: ['all'],
+      allowedHosts: ['all', '5173-i6u7xjnqdqouv9pcz9o9c-4b52926d.manus.computer'],
     },
     preview: {
       port: 5175,

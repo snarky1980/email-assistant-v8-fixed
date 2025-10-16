@@ -874,18 +874,29 @@ function App() {
                     <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-between">
                       <div className="flex items-center">
                         <Mail className="h-7 w-7 mr-3 text-emerald-600" />
-                        {t.editEmail}
-                      </div>
-                      {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-                        <Button
-                          onClick={() => setShowVariablePopup(true)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
-                          size="sm"
-                        >
-                          <Settings className="h-4 w-4 mr-2" />
-                          {t.variables}
-                        </Button>
-                      )}
+	                      {t.editEmail}
+	                    </div>
+	                    <div className="flex items-center space-x-3">
+	                      {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
+	                        <Button
+	                          onClick={() => setShowVariablePopup(true)}
+	                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+	                          size="sm"
+	                        >
+	                          <Settings className="h-4 w-4 mr-2" />
+	                          {t.variables}
+	                        </Button>
+	                      )}
+	                      {/* Prominent Outlook Button */}
+	                      <Button
+	                        onClick={openInOutlook}
+	                        className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+	                        size="sm"
+	                      >
+	                        <Send className="h-4 w-4 mr-2" />
+	                        {t.openInOutlook}
+	                      </Button>
+	                    </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 space-y-6">
@@ -938,15 +949,7 @@ function App() {
                       <Link className="h-4 w-4 mr-2" />
                       {t.copyLink}
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      onClick={openInOutlook}
-                      className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 font-medium text-sm"
-                      title={t.openInOutlookTitle}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      {t.openInOutlook}
-                    </Button>
+
                   </div>
                   
                   <div className="flex space-x-4">
