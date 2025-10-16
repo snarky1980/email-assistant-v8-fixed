@@ -67,6 +67,12 @@ export default defineConfig(({ mode }) => {
     writeBundle(options) {
       const outDir = options.dir || 'dist';
       const root = process.cwd();
+      // Write a .nojekyll file to disable Jekyll processing on GitHub Pages
+      try {
+        fs.writeFileSync(path.resolve(outDir, '.nojekyll'), '');
+      } catch (e) {
+        console.warn('[copy-admin-static] failed to write .nojekyll:', e?.message || e);
+      }
       const files = [
         { src: path.resolve(root, 'admin.html'), dst: path.resolve(outDir, 'admin.html') },
         { src: path.resolve(root, 'admin-excel.html'), dst: path.resolve(outDir, 'admin-excel.html') },
@@ -113,8 +119,9 @@ export default defineConfig(({ mode }) => {
           };
         })(),
         output: {
-          entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
-          chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+          // Use stable hashed filenames; avoid Date.now to prevent index/asset mismatches on CDN
+          entryFileNames: `assets/[name]-[hash].js`,
+          chunkFileNames: `assets/[name]-[hash].js`,
           assetFileNames: `assets/[name]-[hash].[ext]`
         }
       },
