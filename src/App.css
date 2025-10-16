@@ -1,5 +1,33 @@
 /* App.css - Styles spécifiques à l'application */
 
+/* Global theme tokens to match original emerald/teal/sage palette */
+:root {
+  --background: #f0fdf4;            /* mint-50 */
+  --foreground: #0f172a;            /* slate-900 */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #059669;               /* emerald-600 */
+  --primary-foreground: #ffffff;
+  --secondary: #ecfdf5;             /* emerald-50 */
+  --secondary-foreground: #064e3b;  /* emerald-900 */
+  --muted: #e2f5ed;                 /* soft mint */
+  --muted-foreground: #1f2937;      /* gray-800 */
+  --accent: #d1fae5;                /* emerald-100 */
+  --accent-foreground: #065f46;     /* emerald-800 */
+  --destructive: #dc2626;           /* red-600 */
+  --destructive-foreground: #ffffff;
+  --border: #d1d5db;                /* gray-300 */
+  --input: #d1d5db;
+  --ring: #10b981;                  /* emerald-500 */
+  --radius: 14px;                   /* pill-like rounding */
+}
+
+html, body { background: var(--background); color: var(--foreground); }
+.bg-card { background: var(--card); }
+.text-card-foreground { color: var(--card-foreground); }
+
 /* Patterned banner (original look) */
 .pattern-banner {
   position: relative;
