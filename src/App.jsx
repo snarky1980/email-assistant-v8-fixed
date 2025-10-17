@@ -112,18 +112,19 @@ const customEditorStyles = `
   }
   
   .editor-overlay .variable {
-    padding: 2px 10px;
-    border-radius: 9999px; /* capsule */
+    display: inline;
+    padding: 0; /* no layout shift */
+    border-radius: 6px;
     font-weight: 700;
     font-size: 14px;
     letter-spacing: 0.005em;
-    border: 1px solid #f59e0b;
-    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.12);
-    background-image: linear-gradient(180deg, #fff7ed, #fffbeb);
-    color: #b45309;
+    outline: 2px solid #f59e0b; /* visible but no layout impact */
+    outline-offset: 2px;
+    background: rgba(254, 243, 199, 0.65);
+    color: #92400e;
   }
-  .editor-overlay .variable.filled { border-color: #f59e0b; background-image: linear-gradient(180deg, #fef3c7, #fde68a); color: #92400e; }
-  .editor-overlay .variable.empty { border-color: #fde68a; background-image: linear-gradient(180deg, #fffbeb, #fff7ed); color: #b45309; opacity: 0.9; }
+  .editor-overlay .variable.filled { background: rgba(254, 243, 199, 0.75); }
+  .editor-overlay .variable.empty { background: rgba(254, 252, 232, 0.7); outline-color: #fde68a; color: #b45309; }
   
   .editor-textarea {
     position: relative;
@@ -1094,6 +1095,7 @@ function App() {
                         variables={variables}
                         placeholder={t.subject}
                         minHeight="60px"
+                        templateOriginal={selectedTemplate?.subject?.[templateLanguage] || ''}
                       />
 
                     </div>
@@ -1110,6 +1112,7 @@ function App() {
                         variables={variables}
                         placeholder={t.body}
                         minHeight="250px"
+                        templateOriginal={selectedTemplate?.body?.[templateLanguage] || ''}
                       />
 
                     </div>

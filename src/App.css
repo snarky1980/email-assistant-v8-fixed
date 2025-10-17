@@ -130,18 +130,19 @@ html, body { background: var(--background); color: var(--foreground); }
 }
 
 .editor-overlay .variable {
-  background-color: #fef3c7;
-  color: #d97706;
-  padding: 3px 6px;
+  display: inline;
+  padding: 0; /* must not alter flow */
   border-radius: 6px;
-  font-weight: 600;
-  font-size: 15px;
-  border: 1px solid #f59e0b;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-weight: 700;
+  font-size: 14px;
   letter-spacing: 0.005em;
+  outline: 2px solid #f59e0b; /* visual only, no layout shift */
+  outline-offset: 2px;
+  background: rgba(254, 243, 199, 0.65);
+  color: #92400e;
 }
-.editor-overlay .variable.filled { background-image: linear-gradient(180deg, #fef3c7, #fde68a); color: #92400e; border-color: #f59e0b; box-shadow: 0 2px 6px rgba(217,119,6,0.12); }
-.editor-overlay .variable.empty { background-image: linear-gradient(180deg, #fffbeb, #fff7ed); color: #b45309; border-color: #fde68a; opacity: .95; }
+.editor-overlay .variable.filled { background: rgba(254, 243, 199, 0.75); }
+.editor-overlay .variable.empty { background: rgba(254, 252, 232, 0.7); outline-color: #fde68a; color: #b45309; }
 
 .editor-textarea {
   position: relative;
