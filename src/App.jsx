@@ -112,16 +112,18 @@ const customEditorStyles = `
   }
   
   .editor-overlay .variable {
-    background-color: #fef3c7;
-    color: #d97706;
-    padding: 3px 6px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 15px;
-    border: 1px solid #f59e0b;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    padding: 2px 10px;
+    border-radius: 9999px; /* capsule */
+    font-weight: 700;
+    font-size: 14px;
     letter-spacing: 0.005em;
+    border: 1px solid #f59e0b;
+    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.12);
+    background-image: linear-gradient(180deg, #fff7ed, #fffbeb);
+    color: #b45309;
   }
+  .editor-overlay .variable.filled { border-color: #f59e0b; background-image: linear-gradient(180deg, #fef3c7, #fde68a); color: #92400e; }
+  .editor-overlay .variable.empty { border-color: #fde68a; background-image: linear-gradient(180deg, #fffbeb, #fff7ed); color: #b45309; opacity: 0.9; }
   
   .editor-textarea {
     position: relative;
@@ -729,14 +731,14 @@ function App() {
       ) : (
         <>
       {/* Dynamic header with original patterned banner styling */}
-      <header className="pattern-banner bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 shadow-xl">
+  <header className="pattern-banner bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 shadow-soft">
         {/* decorative shapes */}
         <div className="shape s1" aria-hidden="true"></div>
         <div className="shape s2" aria-hidden="true"></div>
         <div className="shape s3" aria-hidden="true"></div>
         <div className="shape s4" aria-hidden="true"></div>
         <div className="shape s5" aria-hidden="true"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -750,13 +752,13 @@ function App() {
             </div>
             
             {/* Interface language with modern style */}
-            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
+            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
               <Globe className="h-5 w-5 text-white" />
               <span className="text-white font-medium">{t.interfaceLanguage}:</span>
-              <div className="flex bg-white/20 rounded-lg p-1">
+              <div className="flex bg-white/20 rounded-full p-1">
                 <button
                   onClick={() => setInterfaceLanguage('fr')}
-                  className={`px-4 py-2 text-sm font-bold rounded-md transition-all duration-300 ${
+                  className={`px-4 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
                     interfaceLanguage === 'fr'
                       ? 'bg-white text-emerald-600 shadow-lg transform scale-105'
                       : 'text-white hover:bg-white/20'
@@ -766,7 +768,7 @@ function App() {
                 </button>
                 <button
                   onClick={() => setInterfaceLanguage('en')}
-                  className={`px-4 py-2 text-sm font-bold rounded-md transition-all duration-300 ${
+                  className={`px-4 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
                     interfaceLanguage === 'en'
                       ? 'bg-white text-emerald-600 shadow-lg transform scale-105'
                       : 'text-white hover:bg-white/20'
@@ -804,7 +806,7 @@ function App() {
   <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left panel - Template list */}
           <div className="lg:col-span-1">
-            <Card className="h-fit shadow-xl border-0 bg-gradient-to-br from-white to-emerald-50 overflow-hidden">
+            <Card className="h-fit card-soft border-0 bg-gradient-to-br from-white to-emerald-50 overflow-hidden">
               <CardHeader className="pb-4 bg-gradient-to-r from-emerald-50 to-teal-50">
                 <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
                   <FileText className="h-6 w-6 mr-2 text-emerald-600" />
@@ -814,14 +816,14 @@ function App() {
                   <p className="text-sm text-gray-600">{filteredTemplates.length} {t.templatesCount}</p>
                   <button
                     onClick={() => setFavoritesOnly(v => !v)}
-                    className={`text-xs px-2 py-1 rounded border ${favoritesOnly ? 'bg-yellow-100 border-yellow-300 text-yellow-800' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    className={`chip chip-toggle ${favoritesOnly ? '' : 'chip-outline'}`}
                     title="Show only favorites"
                   >★ Favorites</button>
                 </div>
                 
                 {/* Category filter with style */}
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="border-2 border-emerald-200 focus:border-emerald-400 transition-all duration-300">
+                  <SelectTrigger className="border-2 border-emerald-200 focus:border-emerald-400 transition-all duration-300 capsule-select">
                     <Filter className="h-4 w-4 mr-2 text-emerald-500" />
                     <SelectValue placeholder={t.allCategories} />
                   </SelectTrigger>
@@ -844,7 +846,7 @@ function App() {
                       placeholder={t.searchPlaceholder}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 pr-10 border-2 border-teal-200 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 transition-all duration-300"
+                      className="pl-10 pr-10 border-2 border-teal-200 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 transition-all duration-300 input-rounded"
                     />
                     {/* Clear search button */}
                     {searchQuery && (
@@ -861,13 +863,13 @@ function App() {
                 </div>
 
                 {/* Template language with modern style */}
-                <div className="flex items-center space-x-3 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-lg p-3">
+                <div className="flex items-center space-x-3 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-full p-3">
                   <Languages className="h-5 w-5 text-teal-600" />
                   <span className="text-sm font-semibold text-gray-700">{t.templateLanguage}:</span>
-                  <div className="flex bg-white rounded-lg p-1 shadow-sm">
+                  <div className="flex bg-white rounded-full p-1 shadow-sm">
                     <button
                       onClick={() => setTemplateLanguage('fr')}
-                      className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 ${
+                      className={`px-3 py-1 text-sm font-bold rounded-full transition-all duration-300 ${
                         templateLanguage === 'fr'
                           ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg transform scale-105'
                           : 'text-gray-600 hover:bg-gray-100'
@@ -877,7 +879,7 @@ function App() {
                     </button>
                     <button
                       onClick={() => setTemplateLanguage('en')}
-                      className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 ${
+                      className={`px-3 py-1 text-sm font-bold rounded-full transition-all duration-300 ${
                         templateLanguage === 'en'
                           ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg transform scale-105'
                           : 'text-gray-600 hover:bg-gray-100'
@@ -952,7 +954,7 @@ function App() {
             {selectedTemplate ? (
               <>
                 {/* Editable version - MAIN AREA */}
-                <Card className="shadow-2xl border-0 bg-gradient-to-br from-white to-emerald-50 overflow-hidden">
+                <Card className="card-soft border-0 bg-gradient-to-br from-white to-emerald-50 overflow-hidden">
                   <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50">
                     <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-between">
                       <div className="flex items-center">
@@ -961,9 +963,9 @@ function App() {
 	                    </div>
 	                    <div className="flex items-center space-x-3">
 	                      {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-	                        <Button
+                          <Button
 	                          onClick={() => setShowVariablePopup(true)}
-	                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft btn-pill"
 	                          size="sm"
 	                        >
 	                          <Settings className="h-4 w-4 mr-2" />
@@ -971,9 +973,9 @@ function App() {
 	                        </Button>
 	                      )}
 	                      {/* Prominent Outlook Button */}
-	                      <Button
+                        <Button
 	                        onClick={openInOutlook}
-	                        className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft btn-pill"
 	                        size="sm"
 	                      >
 	                        <Send className="h-4 w-4 mr-2" />
@@ -1020,13 +1022,13 @@ function App() {
                 </Card>
 
                 {/* Actions with modern style */}
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center actions-row">
                   {/* Copy link button - Discrete on left */}
                   <div className="flex items-center gap-2">
                     <Button 
                       variant="ghost" 
                       onClick={() => copyTemplateLink()}
-                      className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 font-medium text-sm"
+                      className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 font-medium text-sm rounded-full"
                       title={t.copyLinkTitle}
                     >
                       <Link className="h-4 w-4 mr-2" />
@@ -1039,7 +1041,7 @@ function App() {
                     <Button 
                       variant="destructive" 
                       onClick={handleResetClick}
-                      className="font-semibold"
+                      className="font-semibold btn-pill shadow-soft"
                       title={t.resetWarningTitle}
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -1054,7 +1056,7 @@ function App() {
                     <Button 
                       onClick={() => copyToClipboard('subject')} 
                       variant="outline"
-                      className="font-medium px-4 py-2 border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group"
+                      className="font-medium px-4 py-2 border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group btn-pill shadow-soft"
                       title="Copy subject only (Ctrl+J)"
                     >
                       <Mail className="h-4 w-4 mr-2 group-hover:text-blue-600" />
@@ -1065,7 +1067,7 @@ function App() {
                     <Button 
                       onClick={() => copyToClipboard('body')} 
                       variant="outline"
-                      className="font-medium px-4 py-2 border-2 border-green-300 hover:border-green-500 hover:bg-green-50 transition-all duration-300 group"
+                      className="font-medium px-4 py-2 border-2 border-green-300 hover:border-green-500 hover:bg-green-50 transition-all duration-300 group btn-pill shadow-soft"
                       title="Copy body only (Ctrl+B)"
                     >
                       <Edit3 className="h-4 w-4 mr-2 group-hover:text-green-600" />
@@ -1075,7 +1077,7 @@ function App() {
                     {/* Complete Copy Button - Gradient (main action) */}
                     <Button 
                       onClick={() => copyToClipboard('all')} 
-                      className={`font-bold px-6 py-3 transition-all duration-300 shadow-lg ${
+                      className={`font-bold px-6 py-3 transition-all duration-300 shadow-soft btn-pill ${
                         copySuccess 
                           ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 transform scale-105' 
                           : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 hover:scale-105'
@@ -1089,7 +1091,7 @@ function App() {
                     {/* Send Email Button - Prominent action */}
                     <Button 
                       onClick={openInOutlook}
-                      className="font-bold px-6 py-3 transition-all duration-300 shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-105 text-white"
+                      className="font-bold px-6 py-3 transition-all duration-300 shadow-soft btn-pill bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-105 text-white"
                       title="Open in your default email client (Ctrl+Shift+Enter)"
                     >
                       <Send className="h-5 w-5 mr-2" />
@@ -1100,7 +1102,7 @@ function App() {
                 </div>
               </>
             ) : (
-              <Card className="shadow-xl border-0 bg-gradient-to-br from-white to-emerald-50">
+              <Card className="card-soft border-0 bg-gradient-to-br from-white to-emerald-50">
                 <CardContent className="flex items-center justify-center h-80">
                   <div className="text-center">
                     <div className="relative mb-6">
@@ -1250,7 +1252,7 @@ function App() {
                           [varName]: e.target.value
                         }))}
                         placeholder={varInfo.example}
-                        className={`h-10 border-2 transition-all duration-200 ${getTypeColor()}`}
+                        className={`h-11 border-2 transition-all duration-200 input-rounded ${getTypeColor()}`}
                       />
                       
                       {/* Example and counter */}

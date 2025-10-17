@@ -65,7 +65,7 @@ const HighlightingEditor = ({
         onChange={onChange}
         onScroll={handleScroll}
         placeholder={placeholder}
-        className="editor-textarea border-2 border-gray-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all duration-300"
+        className="editor-textarea border-2 border-gray-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all duration-300 rounded-2xl"
         style={{ minHeight }}
       />
     </div>
