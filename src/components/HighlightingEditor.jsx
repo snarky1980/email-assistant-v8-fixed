@@ -1,5 +1,4 @@
-import React, { useRef } from 'react'
-import { Textarea } from '@/components/ui/textarea.jsx'
+import React, { useRef, useEffect } from 'react'
 
 const HighlightingEditor = ({
   value,
@@ -9,33 +8,20 @@ const HighlightingEditor = ({
   minHeight = '150px',
   templateOriginal = ''
 }) => {
-  const textareaRef = useRef(null)
-  const overlayRef = useRef(null)
+  const editableRef = useRef(null)
+  const lastValueRef = useRef(value)
 
-  // Synchroniser le scroll entre textarea et overlay
-  const handleScroll = () => {
-    if (textareaRef.current && overlayRef.current) {
-      const textarea = textareaRef.current
-      overlayRef.current.scrollTop = textarea.scrollTop
-      overlayRef.current.scrollLeft = textarea.scrollLeft
-    }
-  }
-
-  // Helpers
   const escapeHtml = (s = '') =>
-    s
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
+    s.replace(/&/g, '&amp;')
+     .replace(/</g, '&lt;')
+     .replace(/>/g, '&gt;')
+     .replace(/"/g, '&quot;')
+     .replace(/'/g, '&#x27;')
 
-  const escapeRegExp = (s = '') => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
-  // Create overlay markup using template anchors, so highlighted segments align with current text
-  const createHighlightedText = (text) => {
+  // Build HTML with highlighted variable spans
+  const buildHighlightedHTML = (text) => {
     if (!text) return ''
-    // If an original template is provided, use anchor-based highlighting
+    
     if (templateOriginal && templateOriginal.includes('<<')) {
       const parts = []
       const tokenNames = []
@@ -49,7 +35,6 @@ const HighlightingEditor = ({
       }
       parts.push(templateOriginal.slice(lastIdx))
 
-      // Walk through current value using template anchors
       let cursor = 0
       let html = ''
       for (let i = 0; i < parts.length; i++) {
@@ -57,63 +42,84 @@ const HighlightingEditor = ({
         if (lit) {
           const idx = text.indexOf(lit, cursor)
           if (idx === -1) {
-            // Diverged: fallback to safe escape of the rest
-            html += escapeHtml(text.slice(cursor))
-            return html.replace(/\n/g, '<br>')
+            html += escapeHtml(text.slice(cursor)).replace(/\n/g, '<br>')
+            return html
           }
-          // append the literal segment as-is
-          html += escapeHtml(text.slice(cursor, idx + lit.length))
+          html += escapeHtml(text.slice(cursor, idx + lit.length)).replace(/\n/g, '<br>')
           cursor = idx + lit.length
         }
-        // Between this literal and the next literal is the variable value (if any)
         if (i < tokenNames.length) {
           const nextLit = parts[i + 1] || ''
-          let nextIdx
-          if (nextLit) {
-            nextIdx = text.indexOf(nextLit, cursor)
-            if (nextIdx === -1) nextIdx = text.length
-          } else {
-            nextIdx = text.length
-          }
+          let nextIdx = nextLit ? text.indexOf(nextLit, cursor) : text.length
+          if (nextIdx === -1) nextIdx = text.length
+          
           const seg = text.slice(cursor, nextIdx)
           const varName = tokenNames[i]
-          const filled = (seg || '').trim().length > 0 || ((variables[varName] || '').trim().length > 0)
-          html += `<span class=\"variable ${filled ? 'filled' : 'empty'}\">${escapeHtml(seg)}</span>`
+          const filled = (seg || '').trim().length > 0
+          html += `<mark class="var-highlight ${filled ? 'filled' : 'empty'}" data-var="${escapeHtml(varName)}">${escapeHtml(seg) || '&nbsp;'}</mark>`
           cursor = nextIdx
         }
       }
-      // any trailing remainder
-      if (cursor < text.length) html += escapeHtml(text.slice(cursor))
-      return html.replace(/\n/g, '<br>')
+      if (cursor < text.length) html += escapeHtml(text.slice(cursor)).replace(/\n/g, '<br>')
+      return html
     }
 
-    // Fallback: highlight raw <<var>> tokens only
-    let escaped = escapeHtml(text)
-    escaped = escaped.replace(/&lt;&lt;([^&]+?)&gt;&gt;/g, (_match, _varName) => `<span class=\"variable empty\">&lt;&lt;${_varName}&gt;&gt;</span>`)
-    return escaped.replace(/\n/g, '<br>')
+    return escapeHtml(text).replace(/\n/g, '<br>')
   }
 
+  // Extract plain text from contentEditable div
+  const extractText = (el) => {
+    if (!el) return ''
+    let text = ''
+    for (const node of el.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        text += node.textContent
+      } else if (node.nodeName === 'BR') {
+        text += '\n'
+      } else if (node.nodeName === 'MARK') {
+        text += node.textContent || ''
+      } else if (node.nodeName === 'DIV') {
+        if (text && !text.endsWith('\n')) text += '\n'
+        text += extractText(node)
+      } else {
+        text += node.textContent || ''
+      }
+    }
+    return text
+  }
+
+  // Handle input changes
+  const handleInput = () => {
+    if (!editableRef.current) return
+    const newText = extractText(editableRef.current)
+    if (newText !== lastValueRef.current) {
+      lastValueRef.current = newText
+      onChange({ target: { value: newText } })
+    }
+  }
+
+  // Update content when value changes externally
+  useEffect(() => {
+    if (!editableRef.current) return
+    const currentText = extractText(editableRef.current)
+    if (value !== currentText && value !== lastValueRef.current) {
+      lastValueRef.current = value
+      const html = buildHighlightedHTML(value)
+      editableRef.current.innerHTML = html
+    }
+  }, [value, variables, templateOriginal])
+
   return (
-    <div className="editor-container" aria-live="polite">
-      {/* Couche de surlignage */}
-      <div
-        ref={overlayRef}
-        className="editor-overlay"
-        style={{ minHeight }}
-        dangerouslySetInnerHTML={{ __html: createHighlightedText(value) }}
-      />
-      
-      {/* Textarea */}
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        onChange={onChange}
-        onScroll={handleScroll}
-        placeholder={placeholder}
-        className="editor-textarea border-2 border-gray-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all duration-300 rounded-2xl"
-        style={{ minHeight }}
-      />
-    </div>
+    <div
+      ref={editableRef}
+      contentEditable
+      onInput={handleInput}
+      suppressContentEditableWarning
+      className="border-2 border-gray-200 focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all duration-300 rounded-2xl px-4 py-4 text-[16px] leading-[1.7] font-[Inter] tracking-[0.01em] bg-white resize-none overflow-auto"
+      style={{ minHeight }}
+      data-placeholder={placeholder}
+      dangerouslySetInnerHTML={{ __html: buildHighlightedHTML(value) }}
+    />
   )
 }
 

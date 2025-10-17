@@ -111,20 +111,28 @@ const customEditorStyles = `
     z-index: 1;
   }
   
-  .editor-overlay .variable {
+  /* Variable highlighting using <mark> tags in contentEditable */
+  mark.var-highlight {
     display: inline;
-    padding: 0; /* no layout shift */
+    padding: 2px 6px;
     border-radius: 6px;
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 0.005em;
-    outline: 2px solid #f59e0b; /* visible but no layout impact */
-    outline-offset: 2px;
-    background: rgba(254, 243, 199, 0.65);
+    font-weight: 600;
+    background: rgba(254, 243, 199, 0.8);
     color: #92400e;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    font-style: normal;
   }
-  .editor-overlay .variable.filled { background: rgba(254, 243, 199, 0.75); }
-  .editor-overlay .variable.empty { background: rgba(254, 252, 232, 0.7); outline-color: #fde68a; color: #b45309; }
+  mark.var-highlight.filled {
+    background: rgba(254, 243, 199, 0.9);
+    border-color: rgba(245, 158, 11, 0.6);
+    font-weight: 700;
+  }
+  mark.var-highlight.empty {
+    background: rgba(254, 252, 232, 0.6);
+    border-color: rgba(253, 230, 138, 0.5);
+    color: #b45309;
+    font-style: italic;
+  }
   
   .editor-textarea {
     position: relative;
