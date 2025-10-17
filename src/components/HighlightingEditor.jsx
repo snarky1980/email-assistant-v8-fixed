@@ -68,7 +68,7 @@ const HighlightingEditor = ({
   }
 
   return (
-    <div className="editor-container">
+    <div className="editor-container" aria-live="polite">
       {/* Couche de surlignage */}
       <div
         ref={overlayRef}

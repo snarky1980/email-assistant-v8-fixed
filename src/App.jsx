@@ -270,10 +270,6 @@ function App() {
     const saved = Number(localStorage.getItem('ea_left_width'))
     return Number.isFinite(saved) && saved >= 240 && saved <= 600 ? saved : 360
   })
-  const [mainWidth, setMainWidth] = useState(() => {
-    const saved = Number(localStorage.getItem('ea_main_width'))
-    return Number.isFinite(saved) && saved >= 480 ? saved : 860
-  })
   const isDragging = useRef(false)
   const [varPopupPos, setVarPopupPos] = useState(() => {
     try {
@@ -305,9 +301,8 @@ function App() {
   useEffect(() => {
     try {
       localStorage.setItem('ea_left_width', String(leftWidth))
-      localStorage.setItem('ea_main_width', String(mainWidth))
     } catch {}
-  }, [leftWidth, mainWidth])
+  }, [leftWidth])
 
   // Persist popup position/size
   useEffect(() => {
@@ -853,8 +848,8 @@ function App() {
         </div>
       </header>
 
-  {/* Main content with resizable panes */}
-  <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  {/* Main content with resizable panes - full width */}
+  <main className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-5">
   {/* Data integrity banner: show when templates failed to load */}
   {!loading && (!templatesData || !Array.isArray(templatesData.templates) || templatesData.templates.length === 0) && (
     <div className="mb-6 p-4 rounded-lg border-2 border-amber-300 bg-amber-50 text-amber-900 shadow-sm">
@@ -874,7 +869,7 @@ function App() {
       </div>
     </div>
   )}
-  <div className="flex gap-6 items-stretch">
+  <div className="flex gap-4 items-stretch w-full">
     {/* Left panel - Template list (resizable) */}
     <div style={{ width: leftWidth }} className="shrink-0">
             <Card className="h-fit card-soft border-0 bg-gradient-to-br from-white to-emerald-50 overflow-hidden">
@@ -1027,14 +1022,12 @@ function App() {
             className="w-2 cursor-col-resize select-none rounded bg-gradient-to-b from-emerald-100 to-teal-100 hover:from-emerald-200 hover:to-teal-200 border border-emerald-200"
             onMouseDown={(e) => {
               isDragging.current = 'left';
-              const startX = e.clientX; const startLeft = leftWidth; const startMain = mainWidth;
+              const startX = e.clientX; const startLeft = leftWidth;
               const onMove = (ev) => {
                 if (isDragging.current !== 'left') return
                 const dx = ev.clientX - startX
                 const nextLeft = Math.max(260, Math.min(560, startLeft + dx))
-                const nextMain = Math.max(600, startMain - dx)
                 setLeftWidth(nextLeft)
-                setMainWidth(nextMain)
               }
               const onUp = () => { isDragging.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
               document.addEventListener('mousemove', onMove)
@@ -1042,8 +1035,8 @@ function App() {
             }}
           />
 
-          {/* Main editing panel (resizable) */}
-          <div style={{ width: mainWidth }} className="shrink min-w-[600px] space-y-6">
+          {/* Main editing panel (flexible) */}
+          <div className="flex-1 min-w-[600px] space-y-6">
             {selectedTemplate ? (
               <>
                 {/* Editable version - MAIN AREA */}
@@ -1253,7 +1246,7 @@ function App() {
 
       {/* Resizable Variables Popup */}
       {showVariablePopup && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 p-4" onMouseDown={() => setShowVariablePopup(false)}>
+  <div className="fixed inset-0 bg-black/30 z-50 p-4" onMouseDown={() => setShowVariablePopup(false)}>
           <div 
             ref={varPopupRef}
             className="bg-white rounded-xl shadow-2xl border border-gray-200 min-w-[400px] max-w-[90vw] min-h-[300px] max-h-[85vh] overflow-hidden resizable-popup"
