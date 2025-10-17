@@ -738,6 +738,59 @@ function App() {
         <div className="shape s3" aria-hidden="true"></div>
         <div className="shape s4" aria-hidden="true"></div>
         <div className="shape s5" aria-hidden="true"></div>
+        {/* v6 decorative pills/lines/dots for pixel-parity */}
+        <div
+          className="banner-pill"
+          aria-hidden="true"
+          style={{
+            width: 280,
+            height: 54,
+            left: 160,
+            top: 14,
+            background:
+              'linear-gradient(90deg, rgba(219,234,254,0.95), rgba(191,231,227,0.92))',
+          }}
+        />
+        <div
+          className="banner-pill"
+          aria-hidden="true"
+          style={{
+            width: 160,
+            height: 38,
+            right: 220,
+            top: 58,
+            background:
+              'linear-gradient(90deg, rgba(191,231,227,0.92), rgba(147,197,253,0.90))',
+          }}
+        />
+        <div
+          className="banner-pill"
+          aria-hidden="true"
+          style={{
+            width: 220,
+            height: 44,
+            right: 40,
+            top: 18,
+            background:
+              'linear-gradient(90deg, rgba(147,197,253,0.92), rgba(31,138,153,0.90))',
+          }}
+        />
+        {/* vertical accent line with dot */}
+        <span
+          className="banner-line"
+          aria-hidden="true"
+          style={{ height: 120, right: 74, top: -10, opacity: 0.18 }}
+        />
+        <span
+          className="banner-dot"
+          aria-hidden="true"
+          style={{ top: 32, right: 64, background: '#bfe7e3', boxShadow: '0 0 0 6px rgba(255,255,255,0.65)' }}
+        />
+        <span
+          className="banner-dot"
+          aria-hidden="true"
+          style={{ top: 86, right: 84, background: '#93c5fd', boxShadow: '0 0 0 6px rgba(255,255,255,0.6)' }}
+        />
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">

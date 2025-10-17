@@ -1,27 +1,29 @@
 /* App.css - Styles spécifiques à l'application */
 
-/* Global theme tokens to match original emerald/teal/sage palette */
+/* Global theme tokens to match v6 teal/sage/light-blue palette */
 :root {
-  --background: #f0fdf4;            /* mint-50 */
-  --foreground: #0f172a;            /* slate-900 */
+  --background: #dbeafe;            /* tb-light-blue */
+  --foreground: #1a365d;            /* tb-navy */
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #1a365d;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #059669;               /* emerald-600 */
+  --popover-foreground: #1a365d;
+  --primary: #1f8a99;               /* tb-teal */
   --primary-foreground: #ffffff;
-  --secondary: #ecfdf5;             /* emerald-50 */
-  --secondary-foreground: #064e3b;  /* emerald-900 */
-  --muted: #e2f5ed;                 /* soft mint */
-  --muted-foreground: #1f2937;      /* gray-800 */
-  --accent: #d1fae5;                /* emerald-100 */
-  --accent-foreground: #065f46;     /* emerald-800 */
+  --secondary: #bfe7e3;             /* tb-mint */
+  --secondary-foreground: #1a365d;
+  --muted: #e0f2fe;                 /* blue-100 */
+  --muted-foreground: #1a365d;
+  --accent: #a3b354;                /* tb-sage-muted */
+  --accent-foreground: #1a365d;
   --destructive: #dc2626;           /* red-600 */
   --destructive-foreground: #ffffff;
-  --border: #d1d5db;                /* gray-300 */
-  --input: #d1d5db;
-  --ring: #10b981;                  /* emerald-500 */
+  --border: #bfe7e3;                /* tb-mint */
+  --input: #e0f2fe;                 /* blue-100 */
+  --ring: #1f8a99;                  /* tb-teal */
   --radius: 14px;                   /* pill-like rounding */
+  /* v6 custom tokens for convenience */
+  --tb-navy:#1e3a5f; --tb-teal:#1f8a99; --tb-mint:#bfe7e3; --tb-sage-muted:#a3b354; --tb-light-blue:#dbeafe; --tb-gray:#6b7280;
 }
 
 html, body { background: var(--background); color: var(--foreground); }
@@ -55,7 +57,7 @@ html, body { background: var(--background); color: var(--foreground); }
 /* Action row spacing */
 .actions-row { gap: 12px; }
 
-/* Patterned banner (original look) */
+/* Patterned banner (v6-inspired) */
 .pattern-banner {
   position: relative;
   overflow: hidden;
@@ -68,11 +70,28 @@ html, body { background: var(--background); color: var(--foreground); }
   pointer-events: none;
   z-index: 0;
 }
-.pattern-banner .shape.s1 { width: 210px; height: 210px; left: -60px; top: -60px; background: radial-gradient(circle at 30% 30%, #0ea5e9, #0d9488); }
-.pattern-banner .shape.s2 { width: 240px; height: 240px; right: -70px; top: -20px; background: radial-gradient(circle at 70% 30%, #14b8a6, #0ea5e9); }
-.pattern-banner .shape.s3 { width: 160px; height: 160px; right: 280px; top: -40px; background: radial-gradient(circle at 50% 50%, #10b981, #0ea5e9); }
-.pattern-banner .shape.s4 { width: 140px; height: 140px; left: 220px; bottom: -50px; background: radial-gradient(circle at 50% 50%, #22c55e, #14b8a6); }
-.pattern-banner .shape.s5 { width: 240px; height: 240px; right: 100px; bottom: -100px; background: radial-gradient(circle at 50% 50%, #0ea5e9, #0d9488); }
+.pattern-banner .banner-pill,
+.pattern-banner .banner-line,
+.pattern-banner .banner-dot,
+.pattern-banner .banner-glide { pointer-events: none; z-index: 0; }
+.pattern-banner > .max-w-7xl { position: relative; z-index: 10; }
+.pattern-banner .shape.s1 { width: 210px; height: 210px; left: -60px; top: -60px; background: radial-gradient(circle at 30% 30%, #93c5fd, #1f8a99); }
+.pattern-banner .shape.s2 { width: 240px; height: 240px; right: -70px; top: -20px; background: radial-gradient(circle at 70% 30%, #bfe7e3, #93c5fd); }
+.pattern-banner .shape.s3 { width: 160px; height: 160px; right: 280px; top: -40px; background: radial-gradient(circle at 50% 50%, #1f8a99, #93c5fd); }
+.pattern-banner .shape.s4 { width: 140px; height: 140px; left: 220px; bottom: -50px; background: radial-gradient(circle at 50% 50%, #a3b354, #bfe7e3); }
+.pattern-banner .shape.s5 { width: 240px; height: 240px; right: 100px; bottom: -100px; background: radial-gradient(circle at 50% 50%, #93c5fd, #1f8a99); }
+
+/* v6 banner decorative elements */
+.banner-pill { mix-blend-mode: normal; border-radius: 120px; position: absolute; box-shadow: inset 0 0 0 1px #1a3a5f0d, 0 0 0 1px #1a3a5f0a; }
+.banner-line { background: #1a3a5fe6; width: 2px; display: block; position: absolute; }
+.banner-line .banner-dot { border-radius: 9999px; width: 22px; height: 22px; display: inline-block; position: absolute; left: 50%; transform: translate(-50%); box-shadow: 0 0 0 4px #ffffffa6; }
+.banner-dot { border-radius: 9999px; width: 20px; height: 20px; position: absolute; left: 50%; transform: translate(-50%, -50%); }
+.banner-glide { filter: blur(.3px); border-radius: 9999px; height: 4px; position: absolute; }
+
+/* Ripple effect for primary CTAs */
+.button-ripple { position: relative; overflow: hidden; }
+.button-ripple::after { content: ""; opacity: 0; background: #1f8a9940; border-radius: 9999px; width: 0; height: 0; transition: width .35s, height .35s, opacity .5s; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.button-ripple:active::after { opacity: 1; width: 240px; height: 240px; transition: all; }
 
 /* Styles pour la popup redimensionnable */
 .resizable-popup {
