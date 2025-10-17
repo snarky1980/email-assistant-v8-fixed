@@ -98,14 +98,62 @@ const HighlightingEditor = ({
     }
   }
 
+  // Save and restore cursor position
+  const saveCursorPosition = () => {
+    const sel = window.getSelection()
+    if (!sel.rangeCount || !editableRef.current) return null
+    const range = sel.getRangeAt(0)
+    const preCaretRange = range.cloneRange()
+    preCaretRange.selectNodeContents(editableRef.current)
+    preCaretRange.setEnd(range.endContainer, range.endOffset)
+    const caretOffset = preCaretRange.toString().length
+    return caretOffset
+  }
+
+  const restoreCursorPosition = (offset) => {
+    if (!editableRef.current || offset === null || offset === undefined) return
+    const sel = window.getSelection()
+    const range = document.createRange()
+    let currentOffset = 0
+    let found = false
+
+    const findOffset = (node) => {
+      if (found) return
+      if (node.nodeType === Node.TEXT_NODE) {
+        const nextOffset = currentOffset + node.textContent.length
+        if (nextOffset >= offset) {
+          range.setStart(node, Math.min(offset - currentOffset, node.textContent.length))
+          range.collapse(true)
+          found = true
+          return
+        }
+        currentOffset = nextOffset
+      } else {
+        for (const child of node.childNodes) {
+          findOffset(child)
+          if (found) return
+        }
+      }
+    }
+
+    findOffset(editableRef.current)
+    if (found) {
+      sel.removeAllRanges()
+      sel.addRange(range)
+    }
+  }
+
   // Update content when value changes externally
   useEffect(() => {
     if (!editableRef.current) return
     const currentText = extractText(editableRef.current)
     if (value !== currentText && value !== lastValueRef.current) {
+      const cursorPos = saveCursorPosition()
       lastValueRef.current = value
       const html = buildHighlightedHTML(value)
       editableRef.current.innerHTML = html
+      // Restore cursor after a microtask to let DOM settle
+      setTimeout(() => restoreCursorPosition(cursorPos), 0)
     }
   }, [value, variables, templateOriginal])
 
