@@ -265,6 +265,16 @@ function App() {
   const [favoritesOnly, setFavoritesOnly] = useState(savedState.favoritesOnly || false)
   const [copySuccess, setCopySuccess] = useState(false)
   const [showVariablePopup, setShowVariablePopup] = useState(false)
+  const [showAIPanel, setShowAIPanel] = useState(false)
+  const [leftWidth, setLeftWidth] = useState(() => {
+    const saved = Number(localStorage.getItem('ea_left_width'))
+    return Number.isFinite(saved) && saved >= 240 && saved <= 600 ? saved : 360
+  })
+  const [mainWidth, setMainWidth] = useState(() => {
+    const saved = Number(localStorage.getItem('ea_main_width'))
+    return Number.isFinite(saved) && saved >= 480 ? saved : 860
+  })
+  const isDragging = useRef(false)
   const [varPopupPos, setVarPopupPos] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('ea_var_popup_pos') || 'null')
@@ -290,6 +300,14 @@ function App() {
       favoritesOnly
     })
   }, [interfaceLanguage, templateLanguage, searchQuery, selectedCategory, variables, favorites, favoritesOnly])
+
+  // Persist pane sizes
+  useEffect(() => {
+    try {
+      localStorage.setItem('ea_left_width', String(leftWidth))
+      localStorage.setItem('ea_main_width', String(mainWidth))
+    } catch {}
+  }, [leftWidth, mainWidth])
 
   // Persist popup position/size
   useEffect(() => {
@@ -835,8 +853,8 @@ function App() {
         </div>
       </header>
 
-      {/* Main content with 4-column layout from original */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  {/* Main content with resizable panes */}
+  <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
   {/* Data integrity banner: show when templates failed to load */}
   {!loading && (!templatesData || !Array.isArray(templatesData.templates) || templatesData.templates.length === 0) && (
     <div className="mb-6 p-4 rounded-lg border-2 border-amber-300 bg-amber-50 text-amber-900 shadow-sm">
@@ -856,9 +874,9 @@ function App() {
       </div>
     </div>
   )}
-  <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left panel - Template list */}
-          <div className="lg:col-span-1">
+  <div className="flex gap-6 items-stretch">
+    {/* Left panel - Template list (resizable) */}
+    <div style={{ width: leftWidth }} className="shrink-0">
             <Card className="h-fit card-soft border-0 bg-gradient-to-br from-white to-emerald-50 overflow-hidden">
               <CardHeader className="pb-4 bg-gradient-to-r from-emerald-50 to-teal-50">
                 <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
@@ -1002,8 +1020,30 @@ function App() {
             </Card>
           </div>
 
-          {/* Right panel - Editing (2 columns) */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Drag handle between left and main */}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="w-2 cursor-col-resize select-none rounded bg-gradient-to-b from-emerald-100 to-teal-100 hover:from-emerald-200 hover:to-teal-200 border border-emerald-200"
+            onMouseDown={(e) => {
+              isDragging.current = 'left';
+              const startX = e.clientX; const startLeft = leftWidth; const startMain = mainWidth;
+              const onMove = (ev) => {
+                if (isDragging.current !== 'left') return
+                const dx = ev.clientX - startX
+                const nextLeft = Math.max(260, Math.min(560, startLeft + dx))
+                const nextMain = Math.max(600, startMain - dx)
+                setLeftWidth(nextLeft)
+                setMainWidth(nextMain)
+              }
+              const onUp = () => { isDragging.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+              document.addEventListener('mousemove', onMove)
+              document.addEventListener('mouseup', onUp)
+            }}
+          />
+
+          {/* Main editing panel (resizable) */}
+          <div style={{ width: mainWidth }} className="shrink min-w-[600px] space-y-6">
             {selectedTemplate ? (
               <>
                 {/* Editable version - MAIN AREA */}
@@ -1025,7 +1065,16 @@ function App() {
 	                          {t.variables}
 	                        </Button>
 	                      )}
-	                      {/* Prominent Outlook Button */}
+                        {/* IA trigger: opens hidden AI panel */}
+                        <Button
+                          onClick={() => setShowAIPanel(true)}
+                          className="bg-sky-600 hover:bg-sky-700 text-white shadow-soft btn-pill"
+                          size="sm"
+                          title="Ouvrir les fonctions IA"
+                        >
+                          IA
+                        </Button>
+                        {/* Prominent Outlook Button */}
                         <Button
 	                        onClick={openInOutlook}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft btn-pill"
@@ -1168,10 +1217,7 @@ function App() {
               </Card>
             )}
           </div>
-          {/* AI Sidebar - always visible on the right (1 column) */}
-          <div className="lg:col-span-1">
-            <AISidebar emailText={finalBody} onResult={setFinalBody} variables={variables} />
-          </div>
+          {/* Removed permanent AI sidebar; optional slide-over below */}
         </div>
       </main>
         </>
@@ -1331,6 +1377,22 @@ function App() {
                   You can resize this window by dragging the corners.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slide-over AI panel */}
+      {showAIPanel && (
+        <div className="fixed inset-0 z-50" aria-modal="true" role="dialog">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowAIPanel(false)} />
+          <div className="absolute right-0 top-0 h-full w-[420px] bg-white shadow-2xl border-l border-gray-200 p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold text-gray-700">Assistant IA</div>
+              <button className="text-gray-500 hover:text-gray-700" onClick={() => setShowAIPanel(false)}>✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <AISidebar emailText={finalBody} onResult={setFinalBody} variables={variables} />
             </div>
           </div>
         </div>
