@@ -188,7 +188,7 @@ const HighlightingEditor = ({
       contentEditable
       onInput={handleInput}
       suppressContentEditableWarning
-      className="border-2 border-gray-200 focus:border-[#1f8a99] focus:outline-none focus:ring-4 focus:ring-[#1f8a99]/15 transition-all duration-300 rounded-[14px] px-4 py-4 text-[16px] leading-[1.7] tracking-[0.01em] bg-white resize-none overflow-auto"
+  className="border-2 border-[#bfe7e3] focus:border-[#7bd1ca] focus:outline-none focus:ring-2 focus:ring-[#7bd1ca]/30 transition-all duration-200 rounded-[12px] px-4 py-4 text-[16px] leading-[1.7] tracking-[0.01em] bg-[#f9fdfd] resize-none overflow-auto"
   style={{ minHeight, fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" }}
       data-placeholder={placeholder}
     />

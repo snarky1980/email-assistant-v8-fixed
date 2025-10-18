@@ -1137,7 +1137,7 @@ function App() {
               <>
                 {/* Editable version - MAIN AREA */}
                 <Card className="card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
-                  <CardHeader style={{ background: 'var(--primary)', paddingTop: 10, paddingBottom: 10, borderRadius: 12, boxShadow: 'none', borderBottom: 'none' }}>
+                  <CardHeader style={{ background: 'var(--primary)', paddingTop: 10, paddingBottom: 10, boxShadow: 'none', borderBottom: 'none', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
                     <CardTitle className="text-2xl font-bold text-white flex items-center justify-between">
                       <div className="flex items-center">
                         <Mail className="h-6 w-6 mr-3 text-white" />
@@ -1186,18 +1186,14 @@ function App() {
 	                    </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-5 space-y-5 mt-1">
+                  <CardContent className="p-5 space-y-5 mt-1" style={{ background: '#f6fbfb', borderRadius: 12 }}>
 
 
                     {/* Editable subject with preview highlighting */}
                     <div className="space-y-3">
-                      <div className="h-[40px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[10px]" style={{ background: 'var(--primary)' }}>
-                        <div className="col-start-2 justify-self-center min-w-0">
-                          <div className="text-sm font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
-                            <Mail className="h-4 w-4 text-white" />
-                            <span className="truncate">{t.subject}</span>
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-2 text-slate-800 font-semibold">
+                        <span className="inline-block h-2 w-2 rounded-full bg-[#1f8a99]"></span>
+                        <span>{t.subject}</span>
                       </div>
                       <HighlightingEditor
                         value={finalSubject}
@@ -1213,13 +1209,9 @@ function App() {
 
                     {/* Editable body with preview highlighting */}
                     <div className="space-y-3">
-                      <div className="h-[40px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[10px]" style={{ background: 'var(--primary)' }}>
-                        <div className="col-start-2 justify-self-center min-w-0">
-                          <div className="text-sm font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
-                            <Edit3 className="h-4 w-4 text-white" />
-                            <span className="truncate">{t.body}</span>
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-2 text-slate-800 font-semibold">
+                        <span className="inline-block h-2 w-2 rounded-full bg-[#1f8a99]"></span>
+                        <span>{t.body}</span>
                       </div>
                       <HighlightingEditor
                         value={finalBody}
