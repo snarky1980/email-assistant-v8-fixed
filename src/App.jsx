@@ -1137,7 +1137,7 @@ function App() {
               <>
                 {/* Editable version - MAIN AREA */}
                 <Card className="card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
-                  <CardHeader style={{ background: 'var(--primary)', paddingTop: 10, paddingBottom: 10, borderRadius: 12 }}>
+                  <CardHeader style={{ background: 'var(--primary)', paddingTop: 10, paddingBottom: 10, borderRadius: 12, boxShadow: 'none', borderBottom: 'none' }}>
                     <CardTitle className="text-2xl font-bold text-white flex items-center justify-between">
                       <div className="flex items-center">
                         <Mail className="h-6 w-6 mr-3 text-white" />
@@ -1186,9 +1186,7 @@ function App() {
 	                    </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-5 space-y-5">
-                    {/* Header bar behind the whole editor area: white on teal */}
-                    <div className="h-[8px] w-full bg-[#145a64] rounded-full mb-4" />
+                  <CardContent className="p-5 space-y-5 mt-1">
 
 
                     {/* Editable subject with preview highlighting */}
