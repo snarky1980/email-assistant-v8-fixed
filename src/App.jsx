@@ -876,7 +876,7 @@ function App() {
     {/* Left panel - Template list (resizable) */}
     <div style={{ width: leftWidth }} className="shrink-0">
             <Card className="h-fit card-soft border-0 overflow-hidden" style={{ background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)' }}>
-              <CardHeader className="pb-4" style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)' }}>
+              <CardHeader className="pb-3" style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)' }}>
                 <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
                   <FileText className="h-6 w-6 mr-2 text-[#1f8a99]" />
                   {t.selectTemplate}
@@ -892,7 +892,7 @@ function App() {
                 
                 {/* Category filter with style */}
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="border-2 transition-all duration-300 capsule-select" style={{ borderColor: '#bfe7e3', background: '#f0fdfa' }}>
+                  <SelectTrigger className="border-2 transition-all duration-300 capsule-select" style={{ borderColor: '#bfe7e3', background: '#eff6ff' }}>
                     <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                     <SelectValue placeholder={t.allCategories} />
                   </SelectTrigger>
@@ -915,7 +915,7 @@ function App() {
                       placeholder={t.searchPlaceholder}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 pr-10 border-2 border-teal-200 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 transition-all duration-300 input-rounded"
+                      className="pl-9 pr-9 border-2 border-[#bfe7e3] focus:border-[#1f8a99] focus:ring-4 focus:ring-[#1f8a99]/15 transition-all duration-200 input-rounded"
                     />
                     {/* Clear search button */}
                     {searchQuery && (
@@ -1008,23 +1008,13 @@ function App() {
                             <p className="text-xs text-gray-600 mb-2 leading-relaxed">
                               {template.description[templateLanguage]}
                             </p>
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs font-medium ${
-                                template.category === 'Devis et estimations' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                                template.category === 'Gestion de projets' ? 'bg-green-100 text-green-700 border-green-200' :
-                                template.category === 'Problèmes techniques' ? 'bg-red-100 text-red-700 border-red-200' :
-                                template.category === 'Communications générales' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                                template.category === 'Services spécialisés' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                                'bg-gray-100 text-gray-700 border-gray-200'
-                              }`}
-                            >
+                            <Badge variant="secondary" className="text-xs font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
                               {template.category}
                             </Badge>
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); toggleFav(template.id) }}
-                            className={`ml-3 text-lg ${isFav(template.id) ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`}
+                            className={`ml-3 text-lg ${isFav(template.id) ? 'text-[#f5c542]' : 'text-gray-300 hover:text-[#f5c542]'}`}
                             title={isFav(template.id) ? 'Unfavorite' : 'Favorite'}
                             aria-label="Toggle favorite"
                           >★</button>
@@ -1070,15 +1060,15 @@ function App() {
           />
 
           {/* Main editing panel (flexible) */}
-          <div className="flex-1 min-w-[600px] space-y-6">
+          <div className="flex-1 min-w-[600px] space-y-5">
             {selectedTemplate ? (
               <>
                 {/* Editable version - MAIN AREA */}
                 <Card className="card-soft border-0 overflow-hidden" style={{ background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)' }}>
-                  <CardHeader style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)' }}>
+                  <CardHeader style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)', paddingTop: 14, paddingBottom: 14 }}>
                     <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-between">
                       <div className="flex items-center">
-                        <Mail className="h-7 w-7 mr-3 text-[#1f8a99]" />
+                        <Mail className="h-6 w-6 mr-3 text-[#1f8a99]" />
 	                      {t.editEmail}
 	                    </div>
 	                    <div className="flex items-center space-x-3">
@@ -1096,12 +1086,14 @@ function App() {
                             <Button
                               onClick={() => setShowHighlights(v => !v)}
                               variant="ghost"
-                              className="text-gray-500 hover:text-[#1f8a99] hover:bg-[#dbeafe] transition-all duration-300 font-medium text-sm px-3"
-                              style={{ borderRadius: '12px' }}
+                              className="text-gray-500 hover:text-[#1f8a99] hover:bg-[#dbeafe] transition-all duration-200 font-medium text-sm px-2.5"
+                              style={{ borderRadius: '10px' }}
                               size="sm"
                               title={showHighlights ? 'Masquer les surlignages' : 'Afficher les surlignages'}
+                              aria-label={showHighlights ? 'Hide highlights' : 'Show highlights'}
                             >
-                              {showHighlights ? '👁️' : '👁️‍🗨️'}
+                              {showHighlights ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" stroke="currentColor" strokeWidth="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/></svg>
+                              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.5"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c2.06 0 4 .62 5.6 1.68M21.542 12c-.408 1.299-1.085 2.48-1.962 3.466" stroke="currentColor" strokeWidth="1.5"/></svg>}
                             </Button>
                           </>
 	                      )}
@@ -1115,25 +1107,17 @@ function App() {
                         >
                           IA
                         </Button>
-                        {/* Prominent Outlook Button */}
-                        <Button
-	                        onClick={openInOutlook}
-                          className="text-white shadow-soft hover:shadow-md"
-                          size="sm"
-	                      >
-	                        <Send className="h-4 w-4 mr-2" />
-	                        {t.openInOutlook}
-	                      </Button>
+                        {/* Outlook button moved below editor */}
 	                    </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 space-y-6">
+                  <CardContent className="p-5 space-y-5">
 
 
                     {/* Editable subject with preview highlighting */}
                     <div className="space-y-3">
                       <label className="text-lg font-bold text-gray-700 flex items-center">
-                        <span className="w-3 h-3 rounded-full mr-2 animate-pulse" style={{ background: '#1f8a99' }}></span>
+                        <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#1f8a99' }}></span>
                         {t.subject}
                       </label>
                       <HighlightingEditor
@@ -1151,7 +1135,7 @@ function App() {
                     {/* Editable body with preview highlighting */}
                     <div className="space-y-3">
                       <label className="text-lg font-bold text-gray-700 flex items-center">
-                        <span className="w-3 h-3 rounded-full mr-2 animate-pulse" style={{ background: '#1f8a99' }}></span>
+                        <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#1f8a99' }}></span>
                         {t.body}
                       </label>
                       <HighlightingEditor
@@ -1254,10 +1238,10 @@ function App() {
                     {/* Complete Copy Button - Gradient (main action) */}
                     <Button 
                       onClick={() => copyToClipboard('all')} 
-                      className={`font-bold transition-all duration-300 shadow-soft btn-pill text-white ${
+                      className={`font-bold transition-all duration-200 shadow-soft btn-pill text-white ${
                         copySuccess 
-                          ? 'transform scale-105' 
-                          : 'hover:scale-105'
+                          ? 'transform scale-[1.02]' 
+                          : 'hover:scale-[1.02]'
                       }`}
                       style={
                         copySuccess
@@ -1270,26 +1254,24 @@ function App() {
                       {copySuccess ? t.copied : (t.copyAll || 'All')}
                     </Button>
 
-                    {/* Send Email Button - Teal primary action */}
+                    {/* Send Email Button - Teal primary action (moved CTA) */}
                     <Button 
                       onClick={openInOutlook}
-                      className="font-bold transition-all duration-300 shadow-soft text-white hover:shadow-lg btn-pill"
+                      className="font-bold transition-all duration-200 shadow-soft text-white btn-pill"
                       style={{
-                        background: 'linear-gradient(135deg, #1f8a99 0%, #17748a 100%)',
+                        background: 'linear-gradient(135deg, #1f8a99 0%, #1f8a99 100%)',
                         borderRadius: '12px'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(31, 138, 153, 0.35)';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 4px 20px rgba(31, 138, 153, 0.15)';
                       }}
                       title="Open in your default email client (Ctrl+Shift+Enter)"
                     >
                       <Send className="h-5 w-5 mr-2" />
-                      {t.sendEmail || t.openInOutlook}
+                      {t.openInOutlook}
                     </Button>
                   </div>
                   </div>

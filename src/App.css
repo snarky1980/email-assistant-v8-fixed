@@ -14,7 +14,7 @@
   --secondary-foreground: #1a365d;
   --muted: #e0f2fe;                 /* blue-100 */
   --muted-foreground: #1a365d;
-  --accent: #a3b354;                /* tb-sage-muted */
+  --accent: #bfe7e3;                /* minty-teal accent (no green) */
   --accent-foreground: #1a365d;
   --destructive: #dc2626;           /* red-600 */
   --destructive-foreground: #ffffff;
@@ -32,16 +32,16 @@ html, body { background: var(--background); color: var(--foreground); }
 
 /* Soft elevation and card styling - More organic shadows */
 .card-soft { 
-  box-shadow: 0 8px 32px -8px rgba(31, 138, 153, 0.12), 0 4px 16px -4px rgba(31, 138, 153, 0.08); 
+  box-shadow: 0 6px 24px -10px rgba(31, 138, 153, 0.10), 0 3px 12px -6px rgba(31, 138, 153, 0.06); 
   border: 0;
   border-radius: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .card-soft:hover { 
-  box-shadow: 0 12px 40px -10px rgba(31, 138, 153, 0.15), 0 6px 20px -6px rgba(31, 138, 153, 0.1);
+  box-shadow: 0 10px 32px -12px rgba(31, 138, 153, 0.12), 0 5px 16px -8px rgba(31, 138, 153, 0.08);
 }
 .shadow-soft { 
-  box-shadow: 0 4px 20px -4px rgba(31, 138, 153, 0.15), 0 2px 10px -2px rgba(31, 138, 153, 0.1) !important; 
+  box-shadow: 0 3px 16px -6px rgba(31, 138, 153, 0.12), 0 2px 8px -4px rgba(31, 138, 153, 0.08) !important; 
 }
 
 /* Modern organic button styles */
@@ -59,7 +59,7 @@ html, body { background: var(--background); color: var(--foreground); }
 }
 .btn-pill:hover { 
   transform: translateY(-1px); 
-  box-shadow: 0 4px 12px rgba(31, 138, 153, 0.25);
+  box-shadow: 0 4px 12px rgba(31, 138, 153, 0.18);
 }
 .btn-teal { background: #1f8a99; color: #fff; }
 .btn-teal:hover { background: #17748a; }
@@ -88,7 +88,7 @@ html, body { background: var(--background); color: var(--foreground); }
 }
 .chip-toggle:hover { 
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(163, 179, 84, 0.2);
+  box-shadow: 0 4px 10px rgba(31, 138, 153, 0.12);
 }
 
 /* Organic select trigger (Radix) */
@@ -163,8 +163,8 @@ html, body { background: var(--background); color: var(--foreground); }
 }
 
 .resizable-popup::-webkit-resizer {
-  background-color: #10b981;
-  background-image: linear-gradient(45deg, transparent 50%, #059669 50%);
+  background-color: #1f8a99;
+  background-image: linear-gradient(45deg, transparent 50%, #17748a 50%);
 }
 
 /* Styles pour l'éditeur avec surlignage */
