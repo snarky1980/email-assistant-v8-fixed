@@ -15,6 +15,7 @@
   --muted: #e0f2fe;                 /* blue-100 */
   --muted-foreground: #1a365d;
   --accent: #bfe7e3;                /* minty-teal accent (no green) */
+  --sage: #7aa6a1;                  /* cool teal-sage for discrete accents */
   --accent-foreground: #1a365d;
   --destructive: #dc2626;           /* red-600 */
   --destructive-foreground: #ffffff;

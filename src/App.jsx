@@ -624,6 +624,65 @@ function App() {
     }
   }
 
+  // Export helpers for .eml, HTML, and copy HTML
+  const exportAs = async (mode) => {
+    const subject = finalSubject || ''
+    const bodyText = finalBody || ''
+    const bodyHtml = `<html><body><pre style="font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; white-space: pre-wrap; line-height: 1.6">${
+      (bodyText || '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))
+    }</pre></body></html>`
+
+    if (mode === 'eml') {
+      // Build a minimal .eml content
+      const eml = [
+        `Subject: ${subject}`,
+        'MIME-Version: 1.0',
+        'Content-Type: text/plain; charset=UTF-8',
+        '',
+        bodyText
+      ].join('\r\n')
+      const blob = new Blob([eml], { type: 'message/rfc822' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'email.eml'
+      a.click()
+      URL.revokeObjectURL(url)
+      return
+    }
+
+    if (mode === 'html') {
+      const blob = new Blob([bodyHtml], { type: 'text/html;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'email.html'
+      a.click()
+      URL.revokeObjectURL(url)
+      return
+    }
+
+    if (mode === 'copy-html') {
+      try {
+        if (navigator.clipboard && navigator.clipboard.write) {
+          const type = 'text/html'
+          const blob = new Blob([bodyHtml], { type })
+          const item = new ClipboardItem({ [type]: blob })
+          await navigator.clipboard.write([item])
+        } else {
+          // Fallback: copy as plain text
+          await navigator.clipboard.writeText(bodyHtml)
+        }
+        setCopySuccess(true)
+        setTimeout(() => setCopySuccess(false), 1500)
+      } catch (e) {
+        console.error('Copy HTML failed', e)
+        alert('Copy HTML failed. Please try again or use the HTML export option.')
+      }
+      return
+    }
+  }
+
   // Close popup on ESC
   useEffect(() => {
     if (!showVariablePopup) return
@@ -809,7 +868,7 @@ function App() {
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight" style={{ color: 'var(--tb-navy)' }}>
                 {t.title}
               </h1>
-              <p className="text-xl md:text-2xl font-semibold" style={{ color: 'var(--tb-teal)' }}>
+              <p className="text-xl md:text-2xl font-semibold" style={{ color: '#1f8a99' }}>
                 {t.subtitle}
               </p>
             </div>
@@ -876,7 +935,7 @@ function App() {
     {/* Left panel - Template list (resizable) */}
     <div style={{ width: leftWidth }} className="shrink-0">
             <Card className="h-fit card-soft border-0 overflow-hidden" style={{ background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)' }}>
-              <CardHeader className="pb-3" style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)' }}>
+              <CardHeader className="pb-3" style={{ background: '#f5fbff' }}>
                 <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
                   <FileText className="h-6 w-6 mr-2 text-[#1f8a99]" />
                   {t.selectTemplate}
@@ -890,45 +949,44 @@ function App() {
                   >★ Favorites</button>
                 </div>
                 
-                {/* Category filter with style */}
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="border-2 transition-all duration-300 capsule-select" style={{ borderColor: '#bfe7e3', background: '#eff6ff' }}>
-                    <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
-                    <SelectValue placeholder={t.allCategories} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t.allCategories}</SelectItem>
-                    {categories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {t.categories[category] || category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Category filter with style (white background wrapper) */}
+                <div className="bg-white p-2 rounded-[12px] border border-[#e6eef5]">
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="border-2 transition-all duration-200 capsule-select" style={{ borderColor: '#bfe7e3', background: '#ffffff' }}>
+                      <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
+                      <SelectValue placeholder={t.allCategories} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t.allCategories}</SelectItem>
+                      {categories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          {t.categories[category] || category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                {/* Search with clear button */}
-                <div className="relative group">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-teal-500 transition-colors" />
-                    <Input
-                      ref={searchRef}
-                      type="text"
-                      placeholder={t.searchPlaceholder}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 pr-9 border-2 border-[#bfe7e3] focus:border-[#1f8a99] focus:ring-4 focus:ring-[#1f8a99]/15 transition-all duration-200 input-rounded"
-                    />
-                    {/* Clear search button */}
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery('')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors"
-                        title="Clear search"
-                      >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
+                {/* Search with white field, single magnifier (left only) and clear button */}
+                <div className="relative group bg-white p-2 rounded-[12px] border border-[#e6eef5]">
+                  <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    ref={searchRef}
+                    type="text"
+                    placeholder={t.searchPlaceholder}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-8 border-2 border-[#bfe7e3] focus:border-[#1f8a99] focus:ring-4 focus:ring-[#1f8a99]/15 transition-all duration-200 input-rounded bg-white"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Clear search"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  )}
                 </div>
 
                 {/* Template language with modern style */}
@@ -1064,8 +1122,8 @@ function App() {
             {selectedTemplate ? (
               <>
                 {/* Editable version - MAIN AREA */}
-                <Card className="card-soft border-0 overflow-hidden" style={{ background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)' }}>
-                  <CardHeader style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)', paddingTop: 14, paddingBottom: 14 }}>
+                <Card className="card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
+                  <CardHeader style={{ background: '#ffffff', paddingTop: 10, paddingBottom: 10 }}>
                     <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-between">
                       <div className="flex items-center">
                         <Mail className="h-6 w-6 mr-3 text-[#1f8a99]" />
@@ -1112,6 +1170,8 @@ function App() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-5 space-y-5">
+                    {/* Slim dark teal headings */}
+                    <div className="h-[2px] w-full bg-[#145a64] rounded-full mb-3" />
 
 
                     {/* Editable subject with preview highlighting */}
@@ -1169,7 +1229,7 @@ function App() {
 
                   </div>
                   
-                  <div className="flex space-x-4">
+                  <div className="flex space-x-3">
                     <Button 
                       variant="destructive" 
                       onClick={handleResetClick}
@@ -1243,11 +1303,7 @@ function App() {
                           ? 'transform scale-[1.02]' 
                           : 'hover:scale-[1.02]'
                       }`}
-                      style={
-                        copySuccess
-                          ? { background: 'linear-gradient(90deg, #10b981, #059669)' }
-                          : { background: 'linear-gradient(90deg, #1f8a99, #059669)' }
-                      }
+                      style={{ background: '#1f8a99' }}
                       title="Copy entire email (Ctrl+Enter)"
                     >
                       <Copy className="h-5 w-5 mr-2" />
@@ -1258,10 +1314,7 @@ function App() {
                     <Button 
                       onClick={openInOutlook}
                       className="font-bold transition-all duration-200 shadow-soft text-white btn-pill"
-                      style={{
-                        background: 'linear-gradient(135deg, #1f8a99 0%, #1f8a99 100%)',
-                        borderRadius: '12px'
-                      }}
+                      style={{ background: '#145a64', borderRadius: '12px' }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-1px)';
                       }}
@@ -1273,6 +1326,20 @@ function App() {
                       <Send className="h-5 w-5 mr-2" />
                       {t.openInOutlook}
                     </Button>
+                    {/* Plus menu for export options */}
+                    <div className="relative inline-block">
+                      <details>
+                        <summary className="list-none">
+                          <Button size="sm" variant="outline" className="font-medium border-2" style={{ borderRadius: 12, borderColor: '#bfe7e3' }}>+
+                          </Button>
+                        </summary>
+                        <div className="absolute right-0 mt-2 w-48 bg-white border border-[#e6eef5] rounded-[12px] shadow-soft z-10 py-1">
+                          <button className="w-full text-left px-3 py-2 hover:bg-[#f5fbff] text-sm" onClick={() => exportAs('eml')}>Exporter en .eml</button>
+                          <button className="w-full text-left px-3 py-2 hover:bg-[#f5fbff] text-sm" onClick={() => exportAs('html')}>Exporter en HTML</button>
+                          <button className="w-full text-left px-3 py-2 hover:bg-[#f5fbff] text-sm" onClick={() => exportAs('copy-html')}>Copier en HTML</button>
+                        </div>
+                      </details>
+                    </div>
                   </div>
                   </div>
                 </div>
