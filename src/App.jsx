@@ -816,32 +816,32 @@ function App() {
           </div>
           
           {/* Right side: Language selector - Pure Teal */}
-          <div className="flex items-center space-x-3 px-6 py-4 shadow-xl" style={{ backgroundColor: '#1f8a99', borderRadius: 'calc(var(--radius) + 10px)' }}>
+          <div className="flex items-center space-x-3 px-4 py-3 shadow-xl" style={{ backgroundColor: 'var(--primary)', borderRadius: 'calc(var(--radius) + 8px)' }}>
             <Globe className="h-8 w-8 text-white" />
             <span className="font-bold text-base text-white">{t.interfaceLanguage}</span>
-            <div className="flex bg-white p-1.5 shadow-lg" style={{ borderRadius: '18px' }}>
+            <div className="flex bg-white p-1.5 shadow-lg" style={{ borderRadius: '14px' }}>
               <button
                 onClick={() => setInterfaceLanguage('fr')}
-                className={`px-5 py-2.5 text-sm font-bold transition-all duration-300 transform ${
+                className={`px-4 py-2 text-sm font-bold transition-all duration-300 transform ${
                   interfaceLanguage === 'fr' ? 'text-white shadow-xl scale-105' : ''
                 }`}
                 style={
                   interfaceLanguage === 'fr'
-                    ? { backgroundColor: '#1f8a99', color: 'white', borderRadius: 'calc(var(--radius) + 6px)' }
-                    : { backgroundColor: 'transparent', borderRadius: 'calc(var(--radius) + 6px)' }
+                    ? { backgroundColor: 'var(--primary)', color: 'white', borderRadius: 'calc(var(--radius) + 4px)' }
+                    : { backgroundColor: 'transparent', borderRadius: 'calc(var(--radius) + 4px)' }
                 }
               >
                 FR
               </button>
               <button
                 onClick={() => setInterfaceLanguage('en')}
-                className={`px-5 py-2.5 text-sm font-bold transition-all duration-300 transform ${
+                className={`px-4 py-2 text-sm font-bold transition-all duration-300 transform ${
                   interfaceLanguage === 'en' ? 'text-white shadow-xl scale-105' : 'hover:scale-105'
                 }`}
                 style={
                   interfaceLanguage === 'en'
-                    ? { backgroundColor: '#1f8a99', color: 'white', borderRadius: 'calc(var(--radius) + 6px)' }
-                    : { backgroundColor: 'transparent', borderRadius: 'calc(var(--radius) + 6px)' }
+                    ? { backgroundColor: 'var(--primary)', color: 'white', borderRadius: 'calc(var(--radius) + 4px)' }
+                    : { backgroundColor: 'transparent', borderRadius: 'calc(var(--radius) + 4px)' }
                 }
               >
                 EN
@@ -1086,18 +1086,9 @@ function App() {
                           <>
                             <Button
 	                          onClick={() => setShowVariablePopup(true)}
-                            className="text-white shadow-soft hover:shadow-md transition-all duration-300"
-                            style={{ background: '#1f8a99', borderRadius: '14px', paddingLeft: '20px', paddingRight: '20px' }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-1px)';
-                              e.currentTarget.style.background = '#17748a';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.background = '#1f8a99';
-                            }}
-	                          size="sm"
-	                        >
+                              size="sm"
+                              className="text-white shadow-soft hover:shadow-md"
+                            >
 	                          <Settings className="h-4 w-4 mr-2" />
 	                          {t.variables}
 	                        </Button>
@@ -1117,17 +1108,9 @@ function App() {
                         {/* IA trigger: opens hidden AI panel - Sage accent */}
                         <Button
                           onClick={() => setShowAIPanel(true)}
-                          className="text-white shadow-soft hover:shadow-md transition-all duration-300"
-                          style={{ background: '#a3b354', borderRadius: '14px', paddingLeft: '18px', paddingRight: '18px' }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.background = '#8d9c47';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.background = '#a3b354';
-                          }}
                           size="sm"
+                          variant="secondary"
+                          className="shadow-soft hover:shadow-md"
                           title="Ouvrir les fonctions IA"
                         >
                           IA
@@ -1135,17 +1118,8 @@ function App() {
                         {/* Prominent Outlook Button */}
                         <Button
 	                        onClick={openInOutlook}
-                          className="text-white shadow-soft hover:shadow-md transition-all duration-300"
-                          style={{ background: '#1f8a99', borderRadius: '14px', paddingLeft: '20px', paddingRight: '20px' }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.background = '#17748a';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.background = '#1f8a99';
-                          }}
-	                        size="sm"
+                          className="text-white shadow-soft hover:shadow-md"
+                          size="sm"
 	                      >
 	                        <Send className="h-4 w-4 mr-2" />
 	                        {t.openInOutlook}
@@ -1215,8 +1189,8 @@ function App() {
                     <Button 
                       variant="destructive" 
                       onClick={handleResetClick}
-                      className="font-semibold shadow-soft hover:shadow-md transition-all duration-300"
-                      style={{ borderRadius: '14px', paddingLeft: '20px', paddingRight: '20px' }}
+                      size="sm"
+                      className="font-semibold shadow-soft hover:shadow-md"
                       title={t.resetWarningTitle}
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -1231,10 +1205,11 @@ function App() {
                     <Button 
                       onClick={() => copyToClipboard('subject')} 
                       variant="outline"
-                      className="font-medium px-5 py-2.5 border-2 transition-all duration-300 group shadow-soft"
+                      size="sm"
+                      className="font-medium border-2 transition-all duration-300 group shadow-soft"
                       style={{ 
                         borderColor: 'rgba(31, 138, 153, 0.3)',
-                        borderRadius: '14px',
+                        borderRadius: '12px',
                         backgroundColor: 'rgba(219, 234, 254, 0.3)'
                       }}
                       onMouseEnter={(e) => {
@@ -1255,10 +1230,11 @@ function App() {
                     <Button 
                       onClick={() => copyToClipboard('body')} 
                       variant="outline"
-                      className="font-medium px-5 py-2.5 border-2 transition-all duration-300 group shadow-soft"
+                      size="sm"
+                      className="font-medium border-2 transition-all duration-300 group shadow-soft"
                       style={{ 
                         borderColor: 'rgba(163, 179, 84, 0.3)',
-                        borderRadius: '14px',
+                        borderRadius: '12px',
                         backgroundColor: 'rgba(163, 179, 84, 0.1)'
                       }}
                       onMouseEnter={(e) => {
@@ -1278,7 +1254,7 @@ function App() {
                     {/* Complete Copy Button - Gradient (main action) */}
                     <Button 
                       onClick={() => copyToClipboard('all')} 
-                      className={`font-bold px-6 py-3 transition-all duration-300 shadow-soft btn-pill text-white ${
+                      className={`font-bold transition-all duration-300 shadow-soft btn-pill text-white ${
                         copySuccess 
                           ? 'transform scale-105' 
                           : 'hover:scale-105'
@@ -1297,10 +1273,10 @@ function App() {
                     {/* Send Email Button - Teal primary action */}
                     <Button 
                       onClick={openInOutlook}
-                      className="font-bold px-7 py-3.5 transition-all duration-300 shadow-soft text-white hover:shadow-lg"
+                      className="font-bold transition-all duration-300 shadow-soft text-white hover:shadow-lg btn-pill"
                       style={{
                         background: 'linear-gradient(135deg, #1f8a99 0%, #17748a 100%)',
-                        borderRadius: '14px'
+                        borderRadius: '12px'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -1320,7 +1296,7 @@ function App() {
                 </div>
               </>
             ) : (
-              <Card className="card-soft border-0 bg-gradient-to-br from-white to-emerald-50">
+              <Card className="card-soft border-0 bg-gradient-to-br from-white to-emerald-50 rounded-[18px]">
                 <CardContent className="flex items-center justify-center h-80">
                   <div className="text-center">
                     <div className="relative mb-6">

@@ -21,7 +21,7 @@
   --border: #bfe7e3;                /* tb-mint */
   --input: #e0f2fe;                 /* blue-100 */
   --ring: #1f8a99;                  /* tb-teal */
-  --radius: 14px;                   /* pill-like rounding */
+  --radius: 12px;                   /* slightly tighter rounding */
   /* v6 custom tokens for convenience */
   --tb-navy:#1e3a5f; --tb-teal:#1f8a99; --tb-mint:#bfe7e3; --tb-sage-muted:#a3b354; --tb-light-blue:#dbeafe; --tb-gray:#6b7280;
 }
@@ -46,10 +46,10 @@ html, body { background: var(--background); color: var(--foreground); }
 
 /* Modern organic button styles */
 .btn-pill { 
-  border-radius: 16px !important; 
-  padding-left: 20px !important; 
-  padding-right: 20px !important; 
-  height: 44px; 
+  border-radius: 12px !important; 
+  padding-left: 16px !important; 
+  padding-right: 16px !important; 
+  height: 40px; 
   display: inline-flex; 
   align-items: center; 
   gap: 8px; 
@@ -68,13 +68,13 @@ html, body { background: var(--background); color: var(--foreground); }
 
 /* Chips and badges - More squared, modern */
 .chip { 
-  border-radius: 12px; 
-  padding: 8px 16px; 
+  border-radius: 10px; 
+  padding: 6px 12px; 
   background: var(--accent); 
   color: var(--accent-foreground); 
   border: 1px solid rgba(163, 179, 84, 0.3); 
   font-weight: 600; 
-  font-size: 13px;
+  font-size: 12px;
   transition: all 0.2s ease;
 }
 .chip-outline { 
@@ -93,7 +93,7 @@ html, body { background: var(--background); color: var(--foreground); }
 
 /* Organic select trigger (Radix) */
 .capsule-select { 
-  border-radius: 16px !important; 
+  border-radius: 12px !important; 
   border-width: 2px !important; 
   border-color: rgba(191, 231, 227, 0.6) !important; 
   background: rgba(219, 234, 254, 0.3) !important;
@@ -108,7 +108,7 @@ html, body { background: var(--background); color: var(--foreground); }
 
 /* Organic rounded inputs */
 .input-rounded { 
-  border-radius: 16px !important;
+  border-radius: 12px !important;
   transition: all 0.3s ease;
 }
 .input-rounded:focus {
@@ -116,7 +116,7 @@ html, body { background: var(--background); color: var(--foreground); }
 }
 
 /* Action row spacing */
-.actions-row { gap: 12px; }
+.actions-row { gap: 10px; }
 
 /* Patterned banner (matching attached design) */
 .pattern-banner {
@@ -195,8 +195,8 @@ html, body { background: var(--background); color: var(--foreground); }
 /* Variable highlighting using <mark> tags in contentEditable */
 mark.var-highlight {
   display: inline;
-  padding: 2px 6px;
-  border-radius: 6px;
+  padding: 1px 4px;
+  border-radius: 5px;
   font-weight: 600;
   background: rgba(254, 243, 199, 0.8);
   color: #92400e;
