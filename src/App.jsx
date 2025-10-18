@@ -744,7 +744,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom right, #f8fafc, #dbeafe, #e0f2fe)' }}>
       {debug && (
         <div style={{ position: 'fixed', bottom: 8, left: 8, background: '#1e293b', color: '#fff', padding: '8px 12px', borderRadius: 8, fontSize: 12, zIndex: 9999, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
           <div style={{ fontWeight: 600 }}>Debug</div>
@@ -757,14 +757,14 @@ function App() {
       {loading ? (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1f8a99] mx-auto mb-4"></div>
             <p className="text-gray-600">Chargement des modèles...</p>
           </div>
         </div>
       ) : (
         <>
-      {/* Dynamic header with original patterned banner styling */}
-  <header className="pattern-banner bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 shadow-soft">
+      {/* Dynamic header with attached design patterned banner styling */}
+  <header className="pattern-banner shadow-xl" style={{ background: 'linear-gradient(135deg, #dbeafe 0%, #bfe7e3 50%, #e0f2fe 100%)' }}>
         {/* decorative shapes */}
         <div className="shape s1" aria-hidden="true"></div>
         <div className="shape s2" aria-hidden="true"></div>
@@ -828,26 +828,26 @@ function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <Mail className="h-10 w-10 text-white animate-pulse" />
-                <Sparkles className="h-4 w-4 text-yellow-300 absolute -top-1 -right-1 animate-bounce" />
+                <Mail className="h-10 w-10 text-[#1f8a99] animate-pulse" />
+                <Sparkles className="h-4 w-4 text-[#a3b354] absolute -top-1 -right-1 animate-bounce" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white drop-shadow-lg">{t.title}</h1>
-                <p className="text-emerald-100 text-sm">{t.subtitle}</p>
+                <h1 className="text-3xl font-bold text-[#1a365d] drop-shadow-lg">{t.title}</h1>
+                <p className="text-[#1f8a99] text-sm font-medium">{t.subtitle}</p>
               </div>
             </div>
             
             {/* Interface language with modern style */}
-            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-              <Globe className="h-5 w-5 text-white" />
-              <span className="text-white font-medium">{t.interfaceLanguage}:</span>
-              <div className="flex bg-white/20 rounded-full p-1">
+            <div className="flex items-center space-x-3 bg-white/60 backdrop-blur-sm rounded-full px-4 py-2 border-2 border-white/40">
+              <Globe className="h-5 w-5 text-[#1f8a99]" />
+              <span className="text-[#1a365d] font-medium">{t.interfaceLanguage}:</span>
+              <div className="flex bg-white/40 rounded-full p-1">
                 <button
                   onClick={() => setInterfaceLanguage('fr')}
                   className={`px-4 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
                     interfaceLanguage === 'fr'
-                      ? 'bg-white text-emerald-600 shadow-lg transform scale-105'
-                      : 'text-white hover:bg-white/20'
+                      ? 'bg-[#1f8a99] text-white shadow-lg transform scale-105'
+                      : 'text-[#1a365d] hover:bg-white/40'
                   }`}
                 >
                   FR
@@ -856,8 +856,8 @@ function App() {
                   onClick={() => setInterfaceLanguage('en')}
                   className={`px-4 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
                     interfaceLanguage === 'en'
-                      ? 'bg-white text-emerald-600 shadow-lg transform scale-105'
-                      : 'text-white hover:bg-white/20'
+                      ? 'bg-[#1f8a99] text-white shadow-lg transform scale-105'
+                      : 'text-[#1a365d] hover:bg-white/40'
                   }`}
                 >
                   EN
@@ -892,10 +892,10 @@ function App() {
   <div className="flex gap-4 items-stretch w-full">
     {/* Left panel - Template list (resizable) */}
     <div style={{ width: leftWidth }} className="shrink-0">
-            <Card className="h-fit card-soft border-0 bg-gradient-to-br from-white to-emerald-50 overflow-hidden">
-              <CardHeader className="pb-4 bg-gradient-to-r from-emerald-50 to-teal-50">
+            <Card className="h-fit card-soft border-0 overflow-hidden" style={{ background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)' }}>
+              <CardHeader className="pb-4" style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)' }}>
                 <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
-                  <FileText className="h-6 w-6 mr-2 text-emerald-600" />
+                  <FileText className="h-6 w-6 mr-2 text-[#1f8a99]" />
                   {t.selectTemplate}
                 </CardTitle>
                 <div className="flex items-center justify-between">
@@ -909,8 +909,8 @@ function App() {
                 
                 {/* Category filter with style */}
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="border-2 border-emerald-200 focus:border-emerald-400 transition-all duration-300 capsule-select">
-                    <Filter className="h-4 w-4 mr-2 text-emerald-500" />
+                  <SelectTrigger className="border-2 transition-all duration-300 capsule-select" style={{ borderColor: '#bfe7e3', background: '#f0fdfa' }}>
+                    <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                     <SelectValue placeholder={t.allCategories} />
                   </SelectTrigger>
                   <SelectContent>
@@ -949,7 +949,7 @@ function App() {
                 </div>
 
                 {/* Template language with modern style */}
-                <div className="flex items-center space-x-3 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-full p-3">
+                <div className="flex items-center space-x-3 rounded-full p-3" style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)' }}>
                   <Languages className="h-5 w-5 text-teal-600" />
                   <span className="text-sm font-semibold text-gray-700">{t.templateLanguage}:</span>
                   <div className="flex bg-white rounded-full p-1 shadow-sm">
@@ -957,9 +957,14 @@ function App() {
                       onClick={() => setTemplateLanguage('fr')}
                       className={`px-3 py-1 text-sm font-bold rounded-full transition-all duration-300 ${
                         templateLanguage === 'fr'
-                          ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg transform scale-105'
+                          ? 'text-white shadow-lg transform scale-105'
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
+                      style={
+                        templateLanguage === 'fr'
+                          ? { background: 'linear-gradient(90deg, #1f8a99, #059669)' }
+                          : {}
+                      }
                     >
                       FR
                     </button>
@@ -967,9 +972,14 @@ function App() {
                       onClick={() => setTemplateLanguage('en')}
                       className={`px-3 py-1 text-sm font-bold rounded-full transition-all duration-300 ${
                         templateLanguage === 'en'
-                          ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg transform scale-105'
+                          ? 'text-white shadow-lg transform scale-105'
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
+                      style={
+                        templateLanguage === 'en'
+                          ? { background: 'linear-gradient(90deg, #1f8a99, #059669)' }
+                          : {}
+                      }
                     >
                       EN
                     </button>
@@ -994,9 +1004,17 @@ function App() {
                         onClick={() => setSelectedTemplate(template)}
                         className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-102 ${
                           selectedTemplate?.id === template.id
-                            ? 'border-emerald-400 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg transform scale-102'
-                            : 'border-gray-200 hover:border-emerald-300 bg-white'
+                            ? 'shadow-lg transform scale-102'
+                            : 'border-gray-200 hover:border-[#bfe7e3] bg-white'
                         }`}
+                        style={
+                          selectedTemplate?.id === template.id
+                            ? {
+                                borderColor: '#1f8a99',
+                                background: 'linear-gradient(to right, #dbeafe, #bfe7e3)',
+                              }
+                            : {}
+                        }
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -1039,7 +1057,19 @@ function App() {
           <div
             role="separator"
             aria-orientation="vertical"
-            className="w-2 cursor-col-resize select-none rounded bg-gradient-to-b from-emerald-100 to-teal-100 hover:from-emerald-200 hover:to-teal-200 border border-emerald-200"
+            className="w-2 cursor-col-resize select-none rounded border"
+            style={{
+              background: 'linear-gradient(to bottom, #dbeafe, #bfe7e3)',
+              borderColor: '#bfe7e3',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background =
+                'linear-gradient(to bottom, #bfe7e3, #93c5fd)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background =
+                'linear-gradient(to bottom, #dbeafe, #bfe7e3)';
+            }}
             onMouseDown={(e) => {
               isDragging.current = 'left';
               const startX = e.clientX; const startLeft = leftWidth;
@@ -1060,11 +1090,11 @@ function App() {
             {selectedTemplate ? (
               <>
                 {/* Editable version - MAIN AREA */}
-                <Card className="card-soft border-0 bg-gradient-to-br from-white to-emerald-50 overflow-hidden">
-                  <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50">
+                <Card className="card-soft border-0 overflow-hidden" style={{ background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)' }}>
+                  <CardHeader style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)' }}>
                     <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-between">
                       <div className="flex items-center">
-                        <Mail className="h-7 w-7 mr-3 text-emerald-600" />
+                        <Mail className="h-7 w-7 mr-3 text-[#1f8a99]" />
 	                      {t.editEmail}
 	                    </div>
 	                    <div className="flex items-center space-x-3">
@@ -1072,7 +1102,8 @@ function App() {
                           <>
                             <Button
 	                          onClick={() => setShowVariablePopup(true)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft btn-pill"
+                            className="text-white shadow-soft btn-pill hover:opacity-90"
+                            style={{ background: 'linear-gradient(90deg, #1f8a99, #059669)' }}
 	                          size="sm"
 	                        >
 	                          <Settings className="h-4 w-4 mr-2" />
@@ -1082,7 +1113,7 @@ function App() {
                             <Button
                               onClick={() => setShowHighlights(v => !v)}
                               variant="ghost"
-                              className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 font-medium text-sm rounded-full px-3"
+                              className="text-gray-500 hover:text-[#1f8a99] hover:bg-[#dbeafe] transition-all duration-300 font-medium text-sm rounded-full px-3"
                               size="sm"
                               title={showHighlights ? 'Masquer les surlignages' : 'Afficher les surlignages'}
                             >
@@ -1102,7 +1133,8 @@ function App() {
                         {/* Prominent Outlook Button */}
                         <Button
 	                        onClick={openInOutlook}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft btn-pill"
+                          className="text-white shadow-soft btn-pill hover:opacity-90"
+                          style={{ background: 'linear-gradient(90deg, #1f8a99, #059669)' }}
 	                        size="sm"
 	                      >
 	                        <Send className="h-4 w-4 mr-2" />
@@ -1117,7 +1149,7 @@ function App() {
                     {/* Editable subject with preview highlighting */}
                     <div className="space-y-3">
                       <label className="text-lg font-bold text-gray-700 flex items-center">
-                        <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2 animate-pulse"></span>
+                        <span className="w-3 h-3 rounded-full mr-2 animate-pulse" style={{ background: '#1f8a99' }}></span>
                         {t.subject}
                       </label>
                       <HighlightingEditor
@@ -1135,7 +1167,7 @@ function App() {
                     {/* Editable body with preview highlighting */}
                     <div className="space-y-3">
                       <label className="text-lg font-bold text-gray-700 flex items-center">
-                        <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2 animate-pulse"></span>
+                        <span className="w-3 h-3 rounded-full mr-2 animate-pulse" style={{ background: '#1f8a99' }}></span>
                         {t.body}
                       </label>
                       <HighlightingEditor
@@ -1159,7 +1191,7 @@ function App() {
                     <Button 
                       variant="ghost" 
                       onClick={() => copyTemplateLink()}
-                      className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 font-medium text-sm rounded-full"
+                      className="text-gray-500 hover:text-[#1f8a99] hover:bg-[#dbeafe] transition-all duration-300 font-medium text-sm rounded-full"
                       title={t.copyLinkTitle}
                     >
                       <Link className="h-4 w-4 mr-2" />
@@ -1208,11 +1240,16 @@ function App() {
                     {/* Complete Copy Button - Gradient (main action) */}
                     <Button 
                       onClick={() => copyToClipboard('all')} 
-                      className={`font-bold px-6 py-3 transition-all duration-300 shadow-soft btn-pill ${
+                      className={`font-bold px-6 py-3 transition-all duration-300 shadow-soft btn-pill text-white ${
                         copySuccess 
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 transform scale-105' 
-                          : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 hover:scale-105'
+                          ? 'transform scale-105' 
+                          : 'hover:scale-105'
                       }`}
+                      style={
+                        copySuccess
+                          ? { background: 'linear-gradient(90deg, #10b981, #059669)' }
+                          : { background: 'linear-gradient(90deg, #1f8a99, #059669)' }
+                      }
                       title="Copy entire email (Ctrl+Enter)"
                     >
                       <Copy className="h-5 w-5 mr-2" />
@@ -1298,12 +1335,12 @@ function App() {
           >
             {/* Popup Header */}
             <div 
-              className="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between select-none"
+              className="px-6 py-4 border-b border-gray-200 flex items-center justify-between select-none"
+              style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)', cursor: 'grab' }}
               onMouseDown={startDrag}
-              style={{ cursor: 'grab' }}
             >
               <div className="flex items-center">
-                <Edit3 className="h-6 w-6 mr-3 text-emerald-600" />
+                <Edit3 className="h-6 w-6 mr-3 text-[#1f8a99]" />
                 <h2 className="text-xl font-bold text-gray-800">{t.variables}</h2>
                 <Badge variant="outline" className="ml-3 text-xs">
                   {selectedTemplate.variables.length} variable{selectedTemplate.variables.length > 1 ? 's' : ''}
