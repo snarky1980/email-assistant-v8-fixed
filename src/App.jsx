@@ -969,7 +969,7 @@ function App() {
                   <p className="text-sm text-gray-600">{filteredTemplates.length} {t.templatesCount}</p>
                   <button
                     onClick={() => setFavoritesOnly(v => !v)}
-                    className={`chip chip-toggle ${favoritesOnly ? '' : 'chip-outline'}`}
+                    className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 button-ripple teal-focus ${favoritesOnly ? '' : ''}`}
                     title="Show only favorites"
                   >★ Favorites</button>
                 </div>
@@ -993,20 +993,20 @@ function App() {
                 </div>
 
                 {/* Search with white field, single magnifier (left only) and clear button */}
-                <div className="relative group bg-white p-2 rounded-[12px] border border-[#e6eef5]">
-                  <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <div className="relative group">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     ref={searchRef}
                     type="text"
                     placeholder={t.searchPlaceholder}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-8 border-2 border-[#bfe7e3] focus:border-[#1f8a99] focus:ring-4 focus:ring-[#1f8a99]/15 transition-all duration-200 input-rounded bg-white"
+                    className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-10 pr-10 border-2 transition-all duration-300 teal-focus"
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
                       title="Clear search"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1015,23 +1015,23 @@ function App() {
                 </div>
 
                 {/* Template language header and toggler on one teal bar */}
-                <div className="h-[48px] w-full rounded-[12px] mt-3 px-2 flex items-center justify-between" style={{ background: 'var(--primary)' }}>
-                  <div className="text-base font-bold text-white flex items-center gap-2 leading-tight whitespace-nowrap">
+                <div className="h-[48px] w-full rounded-lg mt-3 px-3 flex items-center justify-between" style={{ background: 'var(--primary)' }}>
+                  <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-tight whitespace-nowrap">
                     <Languages className="h-5 w-5 text-white" />
                     <span className="truncate">{t.templateLanguage}</span>
                   </div>
-                  <div className="flex bg-white p-1.5 shadow-sm border border-[#bfe7e3]" style={{ borderRadius: '14px' }}>
+                  <div className="flex bg-white rounded-lg p-1 shadow-sm">
                     <button
                       onClick={() => setTemplateLanguage('fr')}
-                      className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${templateLanguage === 'fr' ? 'text-white shadow-md scale-105' : 'text-gray-600 hover:bg-gray-50'}`}
-                      style={templateLanguage === 'fr' ? { background: 'var(--primary)', borderRadius: '10px' } : { borderRadius: '10px' }}
+                      className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 button-ripple teal-focus ${templateLanguage === 'fr' ? 'text-white' : 'text-gray-600'}`}
+                      style={templateLanguage === 'fr' ? { background: 'var(--primary)' } : {} }
                     >
                       FR
                     </button>
                     <button
                       onClick={() => setTemplateLanguage('en')}
-                      className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${templateLanguage === 'en' ? 'text-white shadow-md scale-105' : 'text-gray-600 hover:bg-gray-50'}`}
-                      style={templateLanguage === 'en' ? { background: 'var(--primary)', borderRadius: '10px' } : { borderRadius: '10px' }}
+                      className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 button-ripple teal-focus ${templateLanguage === 'en' ? 'text-white' : 'text-gray-600'}`}
+                      style={templateLanguage === 'en' ? { background: 'var(--primary)' } : {} }
                     >
                       EN
                     </button>
