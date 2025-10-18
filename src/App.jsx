@@ -117,20 +117,20 @@ const customEditorStyles = `
     padding: 2px 6px;
     border-radius: 6px;
     font-weight: 600;
-    background: rgba(254, 243, 199, 0.8);
-    color: #92400e;
-    border: 1px solid rgba(245, 158, 11, 0.4);
+    background: rgba(216, 226, 176, 0.7); /* sage */
+    color: #1a365d; /* navy text */
+    border: 1px solid rgba(163, 179, 84, 0.5);
     font-style: normal;
   }
   mark.var-highlight.filled {
-    background: rgba(254, 243, 199, 0.9);
-    border-color: rgba(245, 158, 11, 0.6);
+    background: rgba(216, 226, 176, 0.9);
+    border-color: rgba(163, 179, 84, 0.8);
     font-weight: 700;
   }
   mark.var-highlight.empty {
-    background: rgba(254, 252, 232, 0.6);
-    border-color: rgba(253, 230, 138, 0.5);
-    color: #b45309;
+    background: rgba(216, 226, 176, 0.45);
+    border-color: rgba(163, 179, 84, 0.45);
+    color: #1a365d;
     font-style: italic;
   }
   
@@ -281,7 +281,7 @@ function App() {
   })
   const [leftWidth, setLeftWidth] = useState(() => {
     const saved = Number(localStorage.getItem('ea_left_width'))
-    return Number.isFinite(saved) && saved >= 240 && saved <= 600 ? saved : 360
+    return Number.isFinite(saved) && saved >= 300 && saved <= 680 ? saved : 440
   })
   const isDragging = useRef(false)
   const [varPopupPos, setVarPopupPos] = useState(() => {
@@ -977,12 +977,18 @@ function App() {
                 {/* Category filter with style (white background wrapper) */}
                 <div className="bg-white p-2 rounded-[12px] border border-[#e6eef5]">
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="border-2 transition-all duration-200 capsule-select" style={{ borderColor: '#bfe7e3', background: '#ffffff' }}>
+                    <SelectTrigger
+                      className="border-2 transition-all duration-200 rounded-md"
+                      style={selectedCategory === 'all'
+                        ? { background: 'var(--tb-sage-muted)', borderColor: 'var(--tb-sage-muted)', color: '#1a365d' }
+                        : { background: '#ffffff', borderColor: '#bfe7e3' }
+                      }
+                    >
                       <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                       <SelectValue placeholder={t.allCategories} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{t.allCategories}</SelectItem>
+                      <SelectItem value="all" className="font-semibold">{t.allCategories}</SelectItem>
                       {categories.map(category => (
                         <SelectItem key={category} value={category}>
                           {t.categories[category] || category}
@@ -1041,7 +1047,7 @@ function App() {
 
               <CardContent className="p-0">
                 <ScrollArea className="h-[600px]" style={{ '--scrollbar-width': '8px' }}>
-                  <div className="space-y-3 p-4 relative">
+                  <div className="space-y-3 p-2 relative">
                     {/* Scroll indicator at bottom */}
                     {filteredTemplates.length > 6 && (
                       <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10 flex items-end justify-center pb-1">
@@ -1116,7 +1122,7 @@ function App() {
               const onMove = (ev) => {
                 if (isDragging.current !== 'left') return
                 const dx = ev.clientX - startX
-                const nextLeft = Math.max(260, Math.min(560, startLeft + dx))
+                const nextLeft = Math.max(300, Math.min(680, startLeft + dx))
                 setLeftWidth(nextLeft)
               }
               const onUp = () => { isDragging.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
