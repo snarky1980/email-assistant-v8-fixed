@@ -169,7 +169,7 @@ const interfaceTexts = {
     subtitle: 'Bureau de la traduction',
     selectTemplate: 'Sélectionnez un modèle',
     templatesCount: `modèles disponibles`,
-    searchPlaceholder: '🔍 Rechercher un modèle...',
+  searchPlaceholder: 'Rechercher un modèle...',
     allCategories: 'Toutes les catégories',
     categories: {
       'Devis et estimations': 'Devis et estimations',
@@ -206,7 +206,7 @@ const interfaceTexts = {
     subtitle: 'Translation Bureau',
     selectTemplate: 'Select a template',
     templatesCount: `templates available`,
-    searchPlaceholder: '🔍 Search for a template...',
+  searchPlaceholder: 'Search for a template...',
     allCategories: 'All categories',
     categories: {
       'Devis et estimations': 'Quotes and estimates',
@@ -855,8 +855,8 @@ function App() {
           <div className="banner-pill" style={{ top: '-30px', left: '1740px', width: '250px', height: '104px', background: 'var(--tb-navy)', opacity: 0.88, borderRadius: '140px' }}></div>
           
           {/* Bottom row of pills */}
-          <div className="banner-pill" style={{ top: '62px', left: '-180px', width: '300px', height: '86px', background: 'var(--tb-sage-muted)', opacity: 0.58, borderRadius: '120px' }}></div>
-          <div className="banner-pill" style={{ top: '98px', left: '760px', width: '620px', height: '160px', background: 'var(--tb-teal)', opacity: 0.4, borderRadius: '180px' }}></div>
+          <div className="banner-pill" style={{ top: '62px', left: '-180px', width: '300px', height: '86px', background: 'var(--tb-teal)', opacity: 0.35, borderRadius: '120px' }}></div>
+          <div className="banner-pill" style={{ top: '98px', left: '760px', width: '620px', height: '160px', background: 'var(--tb-teal)', opacity: 0.28, borderRadius: '180px' }}></div>
           <div className="banner-pill" style={{ top: '62px', left: '1320px', width: '120px', height: '68px', background: 'var(--tb-light-blue)', opacity: 0.58, borderRadius: '100px' }}></div>
           <div className="banner-pill" style={{ top: '74px', left: '1600px', width: '150px', height: '76px', background: 'var(--tb-mint)', opacity: 0.56, borderRadius: '110px' }}></div>
           <div className="banner-pill" style={{ top: '-8px', left: '130px', width: '110px', height: '70px', background: 'var(--tb-light-blue)', opacity: 0.32, borderRadius: '110px' }}></div>
@@ -868,7 +868,7 @@ function App() {
           
           {/* Vertical line with dot */}
           <div className="hpill-line" style={{ left: '1530px', top: '-44px', height: '176px', width: '2px', background: 'var(--tb-navy)', opacity: 0.5 }}>
-            <span className="hpill-dot" style={{ top: '52%', left: '50%', transform: 'translate(-50%, -50%)', width: '16px', height: '16px', background: '#ffffff', borderRadius: '9999px', boxShadow: '0 0 0 4px var(--tb-sage-muted), 0 0 0 6px #fff', position: 'absolute' }}></span>
+            <span className="hpill-dot" style={{ top: '52%', left: '50%', transform: 'translate(-50%, -50%)', width: '16px', height: '16px', background: '#ffffff', borderRadius: '9999px', boxShadow: '0 0 0 4px var(--tb-teal), 0 0 0 6px #fff', position: 'absolute' }}></span>
           </div>
         </div>
         
@@ -1014,16 +1014,12 @@ function App() {
                   )}
                 </div>
 
-                {/* Template language header (white on teal) + toggles below */}
-                <div className="h-[48px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[12px] mt-3" style={{ background: 'var(--primary)' }}>
-                  <div className="col-start-2 justify-self-center min-w-0">
-                    <div className="text-base font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
-                      <Languages className="h-5 w-5 text-white" />
-                      <span className="truncate">{t.templateLanguage}</span>
-                    </div>
+                {/* Template language header and toggler on one teal bar */}
+                <div className="h-[48px] w-full rounded-[12px] mt-3 px-2 flex items-center justify-between" style={{ background: 'var(--primary)' }}>
+                  <div className="text-base font-bold text-white flex items-center gap-2 leading-tight whitespace-nowrap">
+                    <Languages className="h-5 w-5 text-white" />
+                    <span className="truncate">{t.templateLanguage}</span>
                   </div>
-                </div>
-                <div className="mt-2 flex items-center justify-center">
                   <div className="flex bg-white p-1.5 shadow-sm border border-[#bfe7e3]" style={{ borderRadius: '14px' }}>
                     <button
                       onClick={() => setTemplateLanguage('fr')}
@@ -1058,36 +1054,36 @@ function App() {
                       <div
                         key={template.id}
                         onClick={() => setSelectedTemplate(template)}
-                        className={`p-5 border-2 cursor-pointer transition-all duration-300 ${
+                        className={`p-4 border cursor-pointer transition-all duration-200 ${
                           selectedTemplate?.id === template.id
                             ? 'shadow-lg transform scale-[1.02]'
-                            : 'border-gray-200 hover:border-[#bfe7e3] bg-white hover:shadow-md'
+                            : 'border-[#e1eaf2] hover:border-[#bfe7e3] bg-white hover:shadow-sm'
                         }`}
                         style={
                           selectedTemplate?.id === template.id
                             ? {
                                 borderColor: '#1f8a99',
                                 background: '#e6f0ff',
-                                borderRadius: '18px',
+                                borderRadius: '14px',
                               }
-                            : { borderRadius: '18px' }
+                            : { borderRadius: '14px' }
                         }
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="font-bold text-gray-900 text-sm mb-1">
+                            <h3 className="font-bold text-gray-900 text-[13px] mb-0.5">
                               {template.title[templateLanguage]}
                             </h3>
-                            <p className="text-xs text-gray-600 mb-2 leading-relaxed">
+                            <p className="text-[12px] text-gray-600 mb-1.5 leading-relaxed line-clamp-2">
                               {template.description[templateLanguage]}
                             </p>
-                            <Badge variant="secondary" className="text-xs font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
+                            <Badge variant="secondary" className="text-[11px] font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
                               {template.category}
                             </Badge>
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); toggleFav(template.id) }}
-                            className={`ml-3 text-lg ${isFav(template.id) ? 'text-[#f5c542]' : 'text-gray-300 hover:text-[#f5c542]'}`}
+                            className={`ml-3 text-base ${isFav(template.id) ? 'text-[#f5c542]' : 'text-gray-300 hover:text-[#f5c542]'}`}
                             title={isFav(template.id) ? 'Unfavorite' : 'Favorite'}
                             aria-label="Toggle favorite"
                           >★</button>
@@ -1106,13 +1102,13 @@ function App() {
             aria-orientation="vertical"
             className="w-[3px] cursor-col-resize select-none rounded"
             style={{
-              background: '#145a64',
+              background: 'rgba(20,90,100,0.15)',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#1f8a99';
+              e.currentTarget.style.background = 'rgba(31,138,153,0.25)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#145a64';
+              e.currentTarget.style.background = 'rgba(20,90,100,0.15)';
             }}
             onMouseDown={(e) => {
               isDragging.current = 'left';
@@ -1147,7 +1143,9 @@ function App() {
                             <Button
                               onClick={() => setShowVariablePopup(true)}
                               size="sm"
-                              className="bg-white text-[#145a64] hover:bg-white/90 shadow-soft"
+                              className="shadow-soft"
+                              variant="outline"
+                              style={{ background: '#fff', color: '#145a64', borderColor: 'rgba(20,90,100,0.35)' }}
                             >
 	                          <Settings className="h-4 w-4 mr-2" />
 	                          {t.variables}
@@ -1156,8 +1154,8 @@ function App() {
                             <Button
                               onClick={() => setShowHighlights(v => !v)}
                               variant="outline"
-                              className="text-white border-white/70 hover:bg-white/10 transition-all duration-200 font-medium text-sm px-2.5"
-                              style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.7)' }}
+                              className="transition-all duration-200 font-medium text-sm px-2.5"
+                              style={{ borderRadius: '10px', background: '#fff', color: '#145a64', borderColor: 'rgba(20,90,100,0.35)' }}
                               size="sm"
                               title={showHighlights ? 'Masquer les surlignages' : 'Afficher les surlignages'}
                               aria-label={showHighlights ? 'Hide highlights' : 'Show highlights'}
@@ -1171,7 +1169,9 @@ function App() {
                         <Button
                           onClick={() => setShowAIPanel(true)}
                           size="sm"
-                          className="bg-white text-[#145a64] shadow-soft hover:bg-white/90"
+                          variant="outline"
+                          className="shadow-soft"
+                          style={{ background: '#fff', color: '#145a64', borderColor: 'rgba(20,90,100,0.35)' }}
                           title="Ouvrir les fonctions IA"
                         >
                           IA
