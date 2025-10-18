@@ -87,6 +87,8 @@ html, body { background: var(--background); color: var(--foreground); }
 .banner-line .banner-dot { border-radius: 9999px; width: 22px; height: 22px; display: inline-block; position: absolute; left: 50%; transform: translate(-50%); box-shadow: 0 0 0 4px #ffffffa6; }
 .banner-dot { border-radius: 9999px; width: 20px; height: 20px; position: absolute; left: 50%; transform: translate(-50%, -50%); }
 .banner-glide { filter: blur(.3px); border-radius: 9999px; height: 4px; position: absolute; }
+.hpill-line { position: absolute; }
+.hpill-dot { display: inline-block; position: absolute; }
 
 /* Ripple effect for primary CTAs */
 .button-ripple { position: relative; overflow: hidden; }

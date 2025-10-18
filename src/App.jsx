@@ -763,106 +763,89 @@ function App() {
         </div>
       ) : (
         <>
-      {/* Dynamic header with attached design patterned banner styling */}
-  <header className="pattern-banner shadow-xl" style={{ background: 'linear-gradient(135deg, #dbeafe 0%, #bfe7e3 50%, #e0f2fe 100%)' }}>
-        {/* decorative shapes */}
-        <div className="shape s1" aria-hidden="true"></div>
-        <div className="shape s2" aria-hidden="true"></div>
-        <div className="shape s3" aria-hidden="true"></div>
-        <div className="shape s4" aria-hidden="true"></div>
-        <div className="shape s5" aria-hidden="true"></div>
-        {/* v6 decorative pills/lines/dots for pixel-parity */}
-        <div
-          className="banner-pill"
-          aria-hidden="true"
-          style={{
-            width: 280,
-            height: 54,
-            left: 160,
-            top: 14,
-            background:
-              'linear-gradient(90deg, rgba(219,234,254,0.95), rgba(191,231,227,0.92))',
-          }}
-        />
-        <div
-          className="banner-pill"
-          aria-hidden="true"
-          style={{
-            width: 160,
-            height: 38,
-            right: 220,
-            top: 58,
-            background:
-              'linear-gradient(90deg, rgba(191,231,227,0.92), rgba(147,197,253,0.90))',
-          }}
-        />
-        <div
-          className="banner-pill"
-          aria-hidden="true"
-          style={{
-            width: 220,
-            height: 44,
-            right: 40,
-            top: 18,
-            background:
-              'linear-gradient(90deg, rgba(147,197,253,0.92), rgba(31,138,153,0.90))',
-          }}
-        />
-        {/* vertical accent line with dot */}
-        <span
-          className="banner-line"
-          aria-hidden="true"
-          style={{ height: 120, right: 74, top: -10, opacity: 0.18 }}
-        />
-        <span
-          className="banner-dot"
-          aria-hidden="true"
-          style={{ top: 32, right: 64, background: '#bfe7e3', boxShadow: '0 0 0 6px rgba(255,255,255,0.65)' }}
-        />
-        <span
-          className="banner-dot"
-          aria-hidden="true"
-          style={{ top: 86, right: 84, background: '#93c5fd', boxShadow: '0 0 0 6px rgba(255,255,255,0.6)' }}
-        />
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Mail className="h-10 w-10 text-[#1f8a99] animate-pulse" />
-                <Sparkles className="h-4 w-4 text-[#a3b354] absolute -top-1 -right-1 animate-bounce" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-[#1a365d] drop-shadow-lg">{t.title}</h1>
-                <p className="text-[#1f8a99] text-sm font-medium">{t.subtitle}</p>
+      {/* Exact banner from attached design */}
+      <header className="w-full mx-auto max-w-none page-wrap py-4 relative z-50 sticky top-0 border-b" style={{ backgroundColor: '#ffffff', borderColor: 'var(--tb-mint)' }}>
+        {/* Decorative pills and lines - EXACT positions from design */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          {/* Top row of pills */}
+          <div className="banner-pill" style={{ top: '-38px', left: '-190px', width: '320px', height: '112px', background: 'var(--tb-navy)', opacity: 0.93, borderRadius: '140px' }}></div>
+          <div className="banner-pill" style={{ top: '-28px', left: '250px', width: '220px', height: '90px', background: 'var(--tb-light-blue)', opacity: 0.58, borderRadius: '130px' }}></div>
+          <div className="banner-pill" style={{ top: '-20px', left: '720px', width: '260px', height: '46px', background: 'var(--tb-gray)', opacity: 0.34, borderRadius: '120px' }}></div>
+          <div className="banner-pill" style={{ top: '-10px', left: '960px', width: '360px', height: '90px', background: 'var(--tb-mint)', opacity: 0.5, borderRadius: '140px' }}></div>
+          <div className="banner-pill" style={{ top: '-40px', left: '1180px', width: '430px', height: '96px', background: 'var(--tb-navy)', opacity: 0.85, borderRadius: '120px' }}></div>
+          <div className="banner-pill" style={{ top: '-30px', left: '1740px', width: '250px', height: '104px', background: 'var(--tb-navy)', opacity: 0.88, borderRadius: '140px' }}></div>
+          
+          {/* Bottom row of pills */}
+          <div className="banner-pill" style={{ top: '62px', left: '-180px', width: '300px', height: '86px', background: 'var(--tb-sage-muted)', opacity: 0.58, borderRadius: '120px' }}></div>
+          <div className="banner-pill" style={{ top: '98px', left: '760px', width: '620px', height: '160px', background: 'var(--tb-teal)', opacity: 0.4, borderRadius: '180px' }}></div>
+          <div className="banner-pill" style={{ top: '62px', left: '1320px', width: '120px', height: '68px', background: 'var(--tb-light-blue)', opacity: 0.58, borderRadius: '100px' }}></div>
+          <div className="banner-pill" style={{ top: '74px', left: '1600px', width: '150px', height: '76px', background: 'var(--tb-mint)', opacity: 0.56, borderRadius: '110px' }}></div>
+          <div className="banner-pill" style={{ top: '-8px', left: '130px', width: '110px', height: '70px', background: 'var(--tb-light-blue)', opacity: 0.32, borderRadius: '110px' }}></div>
+          
+          {/* Horizontal line with dot */}
+          <div className="hpill-line" style={{ left: '600px', top: '40px', height: '2px', width: '320px', background: 'var(--tb-navy)', opacity: 0.35 }}>
+            <span className="hpill-dot" style={{ top: '50%', left: '30%', transform: 'translate(-50%, -50%)', width: '18px', height: '18px', background: '#ffffff', borderRadius: '9999px', boxShadow: '0 0 0 4px var(--tb-mint), 0 0 0 6px #fff', position: 'absolute' }}></span>
+          </div>
+          
+          {/* Vertical line with dot */}
+          <div className="hpill-line" style={{ left: '1530px', top: '-44px', height: '176px', width: '2px', background: 'var(--tb-navy)', opacity: 0.5 }}>
+            <span className="hpill-dot" style={{ top: '52%', left: '50%', transform: 'translate(-50%, -50%)', width: '16px', height: '16px', background: '#ffffff', borderRadius: '9999px', boxShadow: '0 0 0 4px var(--tb-sage-muted), 0 0 0 6px #fff', position: 'absolute' }}></span>
+          </div>
+        </div>
+        
+        {/* Main content */}
+        <div className="flex items-center justify-between relative">
+          {/* Left side: Logo + Title with 2in margin */}
+          <div className="flex items-center space-x-6" style={{ marginLeft: '2in' }}>
+            {/* Large navy circle with mail icon */}
+            <div className="relative">
+              <div className="p-6" style={{ backgroundColor: 'var(--tb-navy)', borderRadius: '56px' }}>
+                <Mail className="text-white" style={{ width: '60px', height: '60px' }} />
               </div>
             </div>
             
-            {/* Interface language with modern style */}
-            <div className="flex items-center space-x-3 bg-white/60 backdrop-blur-sm rounded-full px-4 py-2 border-2 border-white/40">
-              <Globe className="h-5 w-5 text-[#1f8a99]" />
-              <span className="text-[#1a365d] font-medium">{t.interfaceLanguage}:</span>
-              <div className="flex bg-white/40 rounded-full p-1">
-                <button
-                  onClick={() => setInterfaceLanguage('fr')}
-                  className={`px-4 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
-                    interfaceLanguage === 'fr'
-                      ? 'bg-[#1f8a99] text-white shadow-lg transform scale-105'
-                      : 'text-[#1a365d] hover:bg-white/40'
-                  }`}
-                >
-                  FR
-                </button>
-                <button
-                  onClick={() => setInterfaceLanguage('en')}
-                  className={`px-4 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
-                    interfaceLanguage === 'en'
-                      ? 'bg-[#1f8a99] text-white shadow-lg transform scale-105'
-                      : 'text-[#1a365d] hover:bg-white/40'
-                  }`}
-                >
-                  EN
-                </button>
-              </div>
+            {/* Title and subtitle */}
+            <div>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight" style={{ color: 'var(--tb-navy)' }}>
+                {t.title}
+              </h1>
+              <p className="text-xl md:text-2xl font-semibold" style={{ color: 'var(--tb-teal)' }}>
+                {t.subtitle}
+              </p>
+            </div>
+          </div>
+          
+          {/* Right side: Language selector */}
+          <div className="flex items-center space-x-3 px-6 py-4 shadow-xl" style={{ backgroundColor: 'var(--tb-teal)', borderRadius: 'calc(var(--radius) + 10px)' }}>
+            <Globe className="h-8 w-8 text-white" />
+            <span className="font-bold text-base text-white">{t.interfaceLanguage}</span>
+            <div className="flex bg-white p-1.5 shadow-lg" style={{ borderRadius: '18px' }}>
+              <button
+                onClick={() => setInterfaceLanguage('fr')}
+                className={`px-5 py-2.5 text-sm font-bold transition-all duration-200 transform button-ripple teal-focus ${
+                  interfaceLanguage === 'fr' ? 'text-white shadow-xl scale-105' : ''
+                }`}
+                style={
+                  interfaceLanguage === 'fr'
+                    ? { backgroundColor: 'var(--tb-teal)', color: 'white', borderRadius: 'calc(var(--radius) + 6px)' }
+                    : { backgroundColor: 'transparent', borderRadius: 'calc(var(--radius) + 6px)' }
+                }
+              >
+                FR
+              </button>
+              <button
+                onClick={() => setInterfaceLanguage('en')}
+                className={`px-5 py-2.5 text-sm font-bold transition-all duration-200 transform button-ripple teal-focus ${
+                  interfaceLanguage === 'en' ? 'text-white shadow-xl scale-105' : 'hover:scale-105'
+                }`}
+                style={
+                  interfaceLanguage === 'en'
+                    ? { backgroundColor: 'var(--tb-teal)', color: 'white', borderRadius: 'calc(var(--radius) + 6px)' }
+                    : { backgroundColor: 'transparent', borderRadius: 'calc(var(--radius) + 6px)' }
+                }
+              >
+                EN
+              </button>
             </div>
           </div>
         </div>
