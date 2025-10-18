@@ -10,6 +10,7 @@ const HighlightingEditor = ({
 }) => {
   const editableRef = useRef(null)
   const lastValueRef = useRef(value)
+  const isInternalUpdateRef = useRef(false)
 
   const escapeHtml = (s = '') =>
     s.replace(/&/g, '&amp;')
@@ -91,11 +92,13 @@ const HighlightingEditor = ({
   // Handle input changes
   const handleInput = () => {
     if (!editableRef.current) return
+    isInternalUpdateRef.current = true
     const newText = extractText(editableRef.current)
     if (newText !== lastValueRef.current) {
       lastValueRef.current = newText
       onChange({ target: { value: newText } })
     }
+    isInternalUpdateRef.current = false
   }
 
   // Save and restore cursor position
@@ -145,7 +148,7 @@ const HighlightingEditor = ({
 
   // Update content when value changes externally
   useEffect(() => {
-    if (!editableRef.current) return
+    if (!editableRef.current || isInternalUpdateRef.current) return
     const currentText = extractText(editableRef.current)
     if (value !== currentText && value !== lastValueRef.current) {
       const cursorPos = saveCursorPosition()
@@ -157,6 +160,13 @@ const HighlightingEditor = ({
     }
   }, [value, variables, templateOriginal])
 
+  // Initial render only
+  useEffect(() => {
+    if (!editableRef.current || editableRef.current.innerHTML) return
+    const html = buildHighlightedHTML(value)
+    editableRef.current.innerHTML = html
+  }, [])
+
   return (
     <div
       ref={editableRef}
@@ -166,7 +176,6 @@ const HighlightingEditor = ({
       className="border-2 border-gray-200 focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all duration-300 rounded-2xl px-4 py-4 text-[16px] leading-[1.7] font-[Inter] tracking-[0.01em] bg-white resize-none overflow-auto"
       style={{ minHeight }}
       data-placeholder={placeholder}
-      dangerouslySetInnerHTML={{ __html: buildHighlightedHTML(value) }}
     />
   )
 }
