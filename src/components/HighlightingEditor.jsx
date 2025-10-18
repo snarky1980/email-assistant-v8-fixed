@@ -164,7 +164,16 @@ const HighlightingEditor = ({
       // Restore cursor after a microtask to let DOM settle
       setTimeout(() => restoreCursorPosition(cursorPos), 0)
     }
-  }, [value, variables, templateOriginal, showHighlights])
+  }, [value, variables, templateOriginal])
+
+  // Update highlights when showHighlights toggles
+  useEffect(() => {
+    if (!editableRef.current) return
+    const cursorPos = saveCursorPosition()
+    const html = buildHighlightedHTML(value)
+    editableRef.current.innerHTML = html
+    setTimeout(() => restoreCursorPosition(cursorPos), 0)
+  }, [showHighlights])
 
   // Initial render only
   useEffect(() => {
