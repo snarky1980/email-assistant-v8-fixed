@@ -6,7 +6,8 @@ const HighlightingEditor = ({
   variables = {},
   placeholder = '',
   minHeight = '150px',
-  templateOriginal = ''
+  templateOriginal = '',
+  showHighlights = true
 }) => {
   const editableRef = useRef(null)
   const lastValueRef = useRef(value)
@@ -22,6 +23,11 @@ const HighlightingEditor = ({
   // Build HTML with highlighted variable spans
   const buildHighlightedHTML = (text) => {
     if (!text) return ''
+    
+    // If highlights are disabled, just return escaped text
+    if (!showHighlights) {
+      return escapeHtml(text).replace(/\n/g, '<br>')
+    }
     
     if (templateOriginal && templateOriginal.includes('<<')) {
       const parts = []
@@ -158,7 +164,7 @@ const HighlightingEditor = ({
       // Restore cursor after a microtask to let DOM settle
       setTimeout(() => restoreCursorPosition(cursorPos), 0)
     }
-  }, [value, variables, templateOriginal])
+  }, [value, variables, templateOriginal, showHighlights])
 
   // Initial render only
   useEffect(() => {

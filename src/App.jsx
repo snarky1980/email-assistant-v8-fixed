@@ -275,6 +275,10 @@ function App() {
   const [copySuccess, setCopySuccess] = useState(false)
   const [showVariablePopup, setShowVariablePopup] = useState(false)
   const [showAIPanel, setShowAIPanel] = useState(false)
+  const [showHighlights, setShowHighlights] = useState(() => {
+    const saved = localStorage.getItem('ea_show_highlights')
+    return saved === null ? true : saved === 'true'
+  })
   const [leftWidth, setLeftWidth] = useState(() => {
     const saved = Number(localStorage.getItem('ea_left_width'))
     return Number.isFinite(saved) && saved >= 240 && saved <= 600 ? saved : 360
@@ -312,6 +316,13 @@ function App() {
       localStorage.setItem('ea_left_width', String(leftWidth))
     } catch {}
   }, [leftWidth])
+
+  // Persist highlight visibility
+  useEffect(() => {
+    try {
+      localStorage.setItem('ea_show_highlights', String(showHighlights))
+    } catch {}
+  }, [showHighlights])
 
   // Persist popup position/size
   useEffect(() => {
@@ -1058,7 +1069,8 @@ function App() {
 	                    </div>
 	                    <div className="flex items-center space-x-3">
 	                      {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-                          <Button
+                          <>
+                            <Button
 	                          onClick={() => setShowVariablePopup(true)}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft btn-pill"
 	                          size="sm"
@@ -1066,6 +1078,17 @@ function App() {
 	                          <Settings className="h-4 w-4 mr-2" />
 	                          {t.variables}
 	                        </Button>
+                            {/* Toggle highlight visibility */}
+                            <Button
+                              onClick={() => setShowHighlights(v => !v)}
+                              variant="ghost"
+                              className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 font-medium text-sm rounded-full px-3"
+                              size="sm"
+                              title={showHighlights ? 'Masquer les surlignages' : 'Afficher les surlignages'}
+                            >
+                              {showHighlights ? '👁️' : '👁️‍🗨️'}
+                            </Button>
+                          </>
 	                      )}
                         {/* IA trigger: opens hidden AI panel */}
                         <Button
@@ -1104,6 +1127,7 @@ function App() {
                         placeholder={t.subject}
                         minHeight="60px"
                         templateOriginal={selectedTemplate?.subject?.[templateLanguage] || ''}
+                        showHighlights={showHighlights}
                       />
 
                     </div>
@@ -1121,6 +1145,7 @@ function App() {
                         placeholder={t.body}
                         minHeight="250px"
                         templateOriginal={selectedTemplate?.body?.[templateLanguage] || ''}
+                        showHighlights={showHighlights}
                       />
 
                     </div>
