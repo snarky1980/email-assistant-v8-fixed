@@ -815,19 +815,19 @@ function App() {
             </div>
           </div>
           
-          {/* Right side: Language selector */}
-          <div className="flex items-center space-x-3 px-6 py-4 shadow-xl" style={{ backgroundColor: 'var(--tb-teal)', borderRadius: 'calc(var(--radius) + 10px)' }}>
+          {/* Right side: Language selector - Pure Teal */}
+          <div className="flex items-center space-x-3 px-6 py-4 shadow-xl" style={{ backgroundColor: '#1f8a99', borderRadius: 'calc(var(--radius) + 10px)' }}>
             <Globe className="h-8 w-8 text-white" />
             <span className="font-bold text-base text-white">{t.interfaceLanguage}</span>
             <div className="flex bg-white p-1.5 shadow-lg" style={{ borderRadius: '18px' }}>
               <button
                 onClick={() => setInterfaceLanguage('fr')}
-                className={`px-5 py-2.5 text-sm font-bold transition-all duration-200 transform button-ripple teal-focus ${
+                className={`px-5 py-2.5 text-sm font-bold transition-all duration-300 transform ${
                   interfaceLanguage === 'fr' ? 'text-white shadow-xl scale-105' : ''
                 }`}
                 style={
                   interfaceLanguage === 'fr'
-                    ? { backgroundColor: 'var(--tb-teal)', color: 'white', borderRadius: 'calc(var(--radius) + 6px)' }
+                    ? { backgroundColor: '#1f8a99', color: 'white', borderRadius: 'calc(var(--radius) + 6px)' }
                     : { backgroundColor: 'transparent', borderRadius: 'calc(var(--radius) + 6px)' }
                 }
               >
@@ -835,12 +835,12 @@ function App() {
               </button>
               <button
                 onClick={() => setInterfaceLanguage('en')}
-                className={`px-5 py-2.5 text-sm font-bold transition-all duration-200 transform button-ripple teal-focus ${
+                className={`px-5 py-2.5 text-sm font-bold transition-all duration-300 transform ${
                   interfaceLanguage === 'en' ? 'text-white shadow-xl scale-105' : 'hover:scale-105'
                 }`}
                 style={
                   interfaceLanguage === 'en'
-                    ? { backgroundColor: 'var(--tb-teal)', color: 'white', borderRadius: 'calc(var(--radius) + 6px)' }
+                    ? { backgroundColor: '#1f8a99', color: 'white', borderRadius: 'calc(var(--radius) + 6px)' }
                     : { backgroundColor: 'transparent', borderRadius: 'calc(var(--radius) + 6px)' }
                 }
               >
@@ -935,33 +935,33 @@ function App() {
                 <div className="flex items-center space-x-3 rounded-full p-3" style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)' }}>
                   <Languages className="h-5 w-5 text-teal-600" />
                   <span className="text-sm font-semibold text-gray-700">{t.templateLanguage}:</span>
-                  <div className="flex bg-white rounded-full p-1 shadow-sm">
+                  <div className="flex bg-white p-1.5 shadow-sm" style={{ borderRadius: '14px' }}>
                     <button
                       onClick={() => setTemplateLanguage('fr')}
-                      className={`px-3 py-1 text-sm font-bold rounded-full transition-all duration-300 ${
+                      className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${
                         templateLanguage === 'fr'
-                          ? 'text-white shadow-lg transform scale-105'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          ? 'text-white shadow-md transform scale-105'
+                          : 'text-gray-600 hover:bg-gray-50'
                       }`}
                       style={
                         templateLanguage === 'fr'
-                          ? { background: 'linear-gradient(90deg, #1f8a99, #059669)' }
-                          : {}
+                          ? { background: '#1f8a99', borderRadius: '10px' }
+                          : { borderRadius: '10px' }
                       }
                     >
                       FR
                     </button>
                     <button
                       onClick={() => setTemplateLanguage('en')}
-                      className={`px-3 py-1 text-sm font-bold rounded-full transition-all duration-300 ${
+                      className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${
                         templateLanguage === 'en'
-                          ? 'text-white shadow-lg transform scale-105'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          ? 'text-white shadow-md transform scale-105'
+                          : 'text-gray-600 hover:bg-gray-50'
                       }`}
                       style={
                         templateLanguage === 'en'
-                          ? { background: 'linear-gradient(90deg, #1f8a99, #059669)' }
-                          : {}
+                          ? { background: '#1f8a99', borderRadius: '10px' }
+                          : { borderRadius: '10px' }
                       }
                     >
                       EN
@@ -985,18 +985,19 @@ function App() {
                       <div
                         key={template.id}
                         onClick={() => setSelectedTemplate(template)}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-102 ${
+                        className={`p-5 border-2 cursor-pointer transition-all duration-300 ${
                           selectedTemplate?.id === template.id
-                            ? 'shadow-lg transform scale-102'
-                            : 'border-gray-200 hover:border-[#bfe7e3] bg-white'
+                            ? 'shadow-lg transform scale-[1.02]'
+                            : 'border-gray-200 hover:border-[#bfe7e3] bg-white hover:shadow-md'
                         }`}
                         style={
                           selectedTemplate?.id === template.id
                             ? {
                                 borderColor: '#1f8a99',
                                 background: 'linear-gradient(to right, #dbeafe, #bfe7e3)',
+                                borderRadius: '18px',
                               }
-                            : {}
+                            : { borderRadius: '18px' }
                         }
                       >
                         <div className="flex items-start justify-between">
@@ -1085,8 +1086,16 @@ function App() {
                           <>
                             <Button
 	                          onClick={() => setShowVariablePopup(true)}
-                            className="text-white shadow-soft btn-pill hover:opacity-90"
-                            style={{ background: 'linear-gradient(90deg, #1f8a99, #059669)' }}
+                            className="text-white shadow-soft hover:shadow-md transition-all duration-300"
+                            style={{ background: '#1f8a99', borderRadius: '14px', paddingLeft: '20px', paddingRight: '20px' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.background = '#17748a';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.background = '#1f8a99';
+                            }}
 	                          size="sm"
 	                        >
 	                          <Settings className="h-4 w-4 mr-2" />
@@ -1096,7 +1105,8 @@ function App() {
                             <Button
                               onClick={() => setShowHighlights(v => !v)}
                               variant="ghost"
-                              className="text-gray-500 hover:text-[#1f8a99] hover:bg-[#dbeafe] transition-all duration-300 font-medium text-sm rounded-full px-3"
+                              className="text-gray-500 hover:text-[#1f8a99] hover:bg-[#dbeafe] transition-all duration-300 font-medium text-sm px-3"
+                              style={{ borderRadius: '12px' }}
                               size="sm"
                               title={showHighlights ? 'Masquer les surlignages' : 'Afficher les surlignages'}
                             >
@@ -1104,10 +1114,19 @@ function App() {
                             </Button>
                           </>
 	                      )}
-                        {/* IA trigger: opens hidden AI panel */}
+                        {/* IA trigger: opens hidden AI panel - Sage accent */}
                         <Button
                           onClick={() => setShowAIPanel(true)}
-                          className="bg-sky-600 hover:bg-sky-700 text-white shadow-soft btn-pill"
+                          className="text-white shadow-soft hover:shadow-md transition-all duration-300"
+                          style={{ background: '#a3b354', borderRadius: '14px', paddingLeft: '18px', paddingRight: '18px' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.background = '#8d9c47';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.background = '#a3b354';
+                          }}
                           size="sm"
                           title="Ouvrir les fonctions IA"
                         >
@@ -1116,8 +1135,16 @@ function App() {
                         {/* Prominent Outlook Button */}
                         <Button
 	                        onClick={openInOutlook}
-                          className="text-white shadow-soft btn-pill hover:opacity-90"
-                          style={{ background: 'linear-gradient(90deg, #1f8a99, #059669)' }}
+                          className="text-white shadow-soft hover:shadow-md transition-all duration-300"
+                          style={{ background: '#1f8a99', borderRadius: '14px', paddingLeft: '20px', paddingRight: '20px' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.background = '#17748a';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.background = '#1f8a99';
+                          }}
 	                        size="sm"
 	                      >
 	                        <Send className="h-4 w-4 mr-2" />
@@ -1174,7 +1201,8 @@ function App() {
                     <Button 
                       variant="ghost" 
                       onClick={() => copyTemplateLink()}
-                      className="text-gray-500 hover:text-[#1f8a99] hover:bg-[#dbeafe] transition-all duration-300 font-medium text-sm rounded-full"
+                      className="text-gray-500 hover:text-[#1f8a99] hover:bg-[#dbeafe] transition-all duration-300 font-medium text-sm"
+                      style={{ borderRadius: '12px' }}
                       title={t.copyLinkTitle}
                     >
                       <Link className="h-4 w-4 mr-2" />
@@ -1187,7 +1215,8 @@ function App() {
                     <Button 
                       variant="destructive" 
                       onClick={handleResetClick}
-                      className="font-semibold btn-pill shadow-soft"
+                      className="font-semibold shadow-soft hover:shadow-md transition-all duration-300"
+                      style={{ borderRadius: '14px', paddingLeft: '20px', paddingRight: '20px' }}
                       title={t.resetWarningTitle}
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -1198,26 +1227,52 @@ function App() {
                     GRANULAR COPY BUTTONS - ENHANCED UX
                   */}
                   <div className="flex space-x-2">
-                    {/* Subject Copy Button - Blue (email associated) */}
+                    {/* Subject Copy Button - Teal theme */}
                     <Button 
                       onClick={() => copyToClipboard('subject')} 
                       variant="outline"
-                      className="font-medium px-4 py-2 border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group btn-pill shadow-soft"
+                      className="font-medium px-5 py-2.5 border-2 transition-all duration-300 group shadow-soft"
+                      style={{ 
+                        borderColor: 'rgba(31, 138, 153, 0.3)',
+                        borderRadius: '14px',
+                        backgroundColor: 'rgba(219, 234, 254, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#1f8a99';
+                        e.currentTarget.style.backgroundColor = 'rgba(219, 234, 254, 0.6)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(31, 138, 153, 0.3)';
+                        e.currentTarget.style.backgroundColor = 'rgba(219, 234, 254, 0.3)';
+                      }}
                       title="Copy subject only (Ctrl+J)"
                     >
-                      <Mail className="h-4 w-4 mr-2 group-hover:text-blue-600" />
-                      {t.copySubject || 'Subject'}
+                      <Mail className="h-4 w-4 mr-2 text-[#1f8a99]" />
+                      <span className="text-[#1a365d]">{t.copySubject || 'Subject'}</span>
                     </Button>
                     
-                    {/* Body Copy Button - Green (content associated) */}
+                    {/* Body Copy Button - Sage accent */}
                     <Button 
                       onClick={() => copyToClipboard('body')} 
                       variant="outline"
-                      className="font-medium px-4 py-2 border-2 border-green-300 hover:border-green-500 hover:bg-green-50 transition-all duration-300 group btn-pill shadow-soft"
+                      className="font-medium px-5 py-2.5 border-2 transition-all duration-300 group shadow-soft"
+                      style={{ 
+                        borderColor: 'rgba(163, 179, 84, 0.3)',
+                        borderRadius: '14px',
+                        backgroundColor: 'rgba(163, 179, 84, 0.1)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#a3b354';
+                        e.currentTarget.style.backgroundColor = 'rgba(163, 179, 84, 0.2)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(163, 179, 84, 0.3)';
+                        e.currentTarget.style.backgroundColor = 'rgba(163, 179, 84, 0.1)';
+                      }}
                       title="Copy body only (Ctrl+B)"
                     >
-                      <Edit3 className="h-4 w-4 mr-2 group-hover:text-green-600" />
-                      {t.copyBody || 'Body'}
+                      <Edit3 className="h-4 w-4 mr-2 text-[#a3b354]" />
+                      <span className="text-[#1a365d]">{t.copyBody || 'Body'}</span>
                     </Button>
                     
                     {/* Complete Copy Button - Gradient (main action) */}
@@ -1239,10 +1294,22 @@ function App() {
                       {copySuccess ? t.copied : (t.copyAll || 'All')}
                     </Button>
 
-                    {/* Send Email Button - Prominent action */}
+                    {/* Send Email Button - Teal primary action */}
                     <Button 
                       onClick={openInOutlook}
-                      className="font-bold px-6 py-3 transition-all duration-300 shadow-soft btn-pill bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-105 text-white"
+                      className="font-bold px-7 py-3.5 transition-all duration-300 shadow-soft text-white hover:shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #1f8a99 0%, #17748a 100%)',
+                        borderRadius: '14px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(31, 138, 153, 0.35)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 20px rgba(31, 138, 153, 0.15)';
+                      }}
                       title="Open in your default email client (Ctrl+Shift+Enter)"
                     >
                       <Send className="h-5 w-5 mr-2" />
