@@ -293,6 +293,9 @@ function App() {
   })
   const varPopupRef = useRef(null)
   const dragState = useRef({ dragging: false, startX: 0, startY: 0, origTop: 0, origLeft: 0 })
+  // Export menu state (replaces <details> for reliability)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const exportMenuRef = useRef(null)
   
   // References for keyboard shortcuts
   const searchRef = useRef(null) // Reference for focus on search (Ctrl+J)
@@ -328,6 +331,23 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem('ea_var_popup_pos', JSON.stringify(varPopupPos)) } catch {}
   }, [varPopupPos])
+
+  // Close export menu on outside click or ESC
+  useEffect(() => {
+    if (!showExportMenu) return
+    const onDocClick = (e) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+        setShowExportMenu(false)
+      }
+    }
+    const onEsc = (e) => { if (e.key === 'Escape') setShowExportMenu(false) }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [showExportMenu])
 
   const t = interfaceTexts[interfaceLanguage]
 
@@ -934,12 +954,17 @@ function App() {
   <div className="flex gap-4 items-stretch w-full">
     {/* Left panel - Template list (resizable) */}
     <div style={{ width: leftWidth }} className="shrink-0">
-            <Card className="h-fit card-soft border-0 overflow-hidden" style={{ background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)' }}>
-              <CardHeader className="pb-3" style={{ background: '#f5fbff' }}>
-                <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
-                  <FileText className="h-6 w-6 mr-2 text-[#1f8a99]" />
-                  {t.selectTemplate}
-                </CardTitle>
+            <Card className="h-fit card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
+              <CardHeader className="pb-3">
+                {/* Teal header bar for "Sélectionnez un modèle" */}
+                <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[12px] mb-3" style={{ background: 'var(--primary)' }}>
+                  <div className="col-start-2 justify-self-center min-w-0">
+                    <div data-slot="card-title" className="text-lg md:text-xl font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
+                      <FileText className="h-6 w-6 text-white" aria-hidden="true" />
+                      <span className="truncate">{t.selectTemplate}</span>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-600">{filteredTemplates.length} {t.templatesCount}</p>
                   <button
@@ -989,38 +1014,28 @@ function App() {
                   )}
                 </div>
 
-                {/* Template language with modern style */}
-                <div className="flex items-center space-x-3 rounded-full p-3" style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)' }}>
-                  <Languages className="h-5 w-5 text-teal-600" />
-                  <span className="text-sm font-semibold text-gray-700">{t.templateLanguage}:</span>
-                  <div className="flex bg-white p-1.5 shadow-sm" style={{ borderRadius: '14px' }}>
+                {/* Template language header (white on teal) + toggles below */}
+                <div className="h-[48px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[12px] mt-3" style={{ background: 'var(--primary)' }}>
+                  <div className="col-start-2 justify-self-center min-w-0">
+                    <div className="text-base font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
+                      <Languages className="h-5 w-5 text-white" />
+                      <span className="truncate">{t.templateLanguage}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-center">
+                  <div className="flex bg-white p-1.5 shadow-sm border border-[#bfe7e3]" style={{ borderRadius: '14px' }}>
                     <button
                       onClick={() => setTemplateLanguage('fr')}
-                      className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${
-                        templateLanguage === 'fr'
-                          ? 'text-white shadow-md transform scale-105'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
-                      style={
-                        templateLanguage === 'fr'
-                          ? { background: '#1f8a99', borderRadius: '10px' }
-                          : { borderRadius: '10px' }
-                      }
+                      className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${templateLanguage === 'fr' ? 'text-white shadow-md scale-105' : 'text-gray-600 hover:bg-gray-50'}`}
+                      style={templateLanguage === 'fr' ? { background: 'var(--primary)', borderRadius: '10px' } : { borderRadius: '10px' }}
                     >
                       FR
                     </button>
                     <button
                       onClick={() => setTemplateLanguage('en')}
-                      className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${
-                        templateLanguage === 'en'
-                          ? 'text-white shadow-md transform scale-105'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
-                      style={
-                        templateLanguage === 'en'
-                          ? { background: '#1f8a99', borderRadius: '10px' }
-                          : { borderRadius: '10px' }
-                      }
+                      className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${templateLanguage === 'en' ? 'text-white shadow-md scale-105' : 'text-gray-600 hover:bg-gray-50'}`}
+                      style={templateLanguage === 'en' ? { background: 'var(--primary)', borderRadius: '10px' } : { borderRadius: '10px' }}
                     >
                       EN
                     </button>
@@ -1052,7 +1067,7 @@ function App() {
                           selectedTemplate?.id === template.id
                             ? {
                                 borderColor: '#1f8a99',
-                                background: 'linear-gradient(to right, #dbeafe, #bfe7e3)',
+                                background: '#e6f0ff',
                                 borderRadius: '18px',
                               }
                             : { borderRadius: '18px' }
@@ -1089,18 +1104,15 @@ function App() {
           <div
             role="separator"
             aria-orientation="vertical"
-            className="w-2 cursor-col-resize select-none rounded border"
+            className="w-[3px] cursor-col-resize select-none rounded"
             style={{
-              background: 'linear-gradient(to bottom, #dbeafe, #bfe7e3)',
-              borderColor: '#bfe7e3',
+              background: '#145a64',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background =
-                'linear-gradient(to bottom, #bfe7e3, #93c5fd)';
+              e.currentTarget.style.background = '#1f8a99';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background =
-                'linear-gradient(to bottom, #dbeafe, #bfe7e3)';
+              e.currentTarget.style.background = '#145a64';
             }}
             onMouseDown={(e) => {
               isDragging.current = 'left';
@@ -1123,19 +1135,19 @@ function App() {
               <>
                 {/* Editable version - MAIN AREA */}
                 <Card className="card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
-                  <CardHeader style={{ background: '#ffffff', paddingTop: 10, paddingBottom: 10 }}>
-                    <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-between">
+                  <CardHeader style={{ background: 'var(--primary)', paddingTop: 10, paddingBottom: 10, borderRadius: 12 }}>
+                    <CardTitle className="text-2xl font-bold text-white flex items-center justify-between">
                       <div className="flex items-center">
-                        <Mail className="h-6 w-6 mr-3 text-[#1f8a99]" />
+                        <Mail className="h-6 w-6 mr-3 text-white" />
 	                      {t.editEmail}
 	                    </div>
 	                    <div className="flex items-center space-x-3">
 	                      {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
                           <>
                             <Button
-	                          onClick={() => setShowVariablePopup(true)}
+                              onClick={() => setShowVariablePopup(true)}
                               size="sm"
-                              className="text-white shadow-soft hover:shadow-md"
+                              className="bg-white text-[#145a64] hover:bg-white/90 shadow-soft"
                             >
 	                          <Settings className="h-4 w-4 mr-2" />
 	                          {t.variables}
@@ -1143,9 +1155,9 @@ function App() {
                             {/* Toggle highlight visibility */}
                             <Button
                               onClick={() => setShowHighlights(v => !v)}
-                              variant="ghost"
-                              className="text-gray-500 hover:text-[#1f8a99] hover:bg-[#dbeafe] transition-all duration-200 font-medium text-sm px-2.5"
-                              style={{ borderRadius: '10px' }}
+                              variant="outline"
+                              className="text-white border-white/70 hover:bg-white/10 transition-all duration-200 font-medium text-sm px-2.5"
+                              style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.7)' }}
                               size="sm"
                               title={showHighlights ? 'Masquer les surlignages' : 'Afficher les surlignages'}
                               aria-label={showHighlights ? 'Hide highlights' : 'Show highlights'}
@@ -1159,8 +1171,7 @@ function App() {
                         <Button
                           onClick={() => setShowAIPanel(true)}
                           size="sm"
-                          variant="secondary"
-                          className="shadow-soft hover:shadow-md"
+                          className="bg-white text-[#145a64] shadow-soft hover:bg-white/90"
                           title="Ouvrir les fonctions IA"
                         >
                           IA
@@ -1170,16 +1181,20 @@ function App() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-5 space-y-5">
-                    {/* Slim dark teal headings */}
-                    <div className="h-[2px] w-full bg-[#145a64] rounded-full mb-3" />
+                    {/* Header bar behind the whole editor area: white on teal */}
+                    <div className="h-[8px] w-full bg-[#145a64] rounded-full mb-4" />
 
 
                     {/* Editable subject with preview highlighting */}
                     <div className="space-y-3">
-                      <label className="text-lg font-bold text-gray-700 flex items-center">
-                        <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#1f8a99' }}></span>
-                        {t.subject}
-                      </label>
+                      <div className="h-[40px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[10px]" style={{ background: 'var(--primary)' }}>
+                        <div className="col-start-2 justify-self-center min-w-0">
+                          <div className="text-sm font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
+                            <Mail className="h-4 w-4 text-white" />
+                            <span className="truncate">{t.subject}</span>
+                          </div>
+                        </div>
+                      </div>
                       <HighlightingEditor
                         value={finalSubject}
                         onChange={(e) => setFinalSubject(e.target.value)}
@@ -1194,10 +1209,14 @@ function App() {
 
                     {/* Editable body with preview highlighting */}
                     <div className="space-y-3">
-                      <label className="text-lg font-bold text-gray-700 flex items-center">
-                        <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#1f8a99' }}></span>
-                        {t.body}
-                      </label>
+                      <div className="h-[40px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[10px]" style={{ background: 'var(--primary)' }}>
+                        <div className="col-start-2 justify-self-center min-w-0">
+                          <div className="text-sm font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
+                            <Edit3 className="h-4 w-4 text-white" />
+                            <span className="truncate">{t.body}</span>
+                          </div>
+                        </div>
+                      </div>
                       <HighlightingEditor
                         value={finalBody}
                         onChange={(e) => setFinalBody(e.target.value)}
@@ -1214,8 +1233,18 @@ function App() {
 
                 {/* Actions with modern style */}
                 <div className="flex justify-between items-center actions-row">
-                  {/* Copy link button - Discrete on left */}
-                  <div className="flex items-center gap-2">
+                  {/* Left-side tools: Export (+) then Copy link */}
+                  <div className="flex items-center gap-2 relative" ref={exportMenuRef}>
+                    <Button size="sm" variant="outline" className="font-medium border-2" style={{ borderRadius: 12, borderColor: '#bfe7e3' }} onClick={() => setShowExportMenu(v => !v)} aria-expanded={showExportMenu} aria-haspopup="menu">
+                      +
+                    </Button>
+                    {showExportMenu && (
+                      <div className="absolute left-0 z-20 mt-2 w-48 bg-white border border-[#e6eef5] rounded-[12px] shadow-soft py-1" role="menu">
+                        <button className="w-full text-left px-3 py-2 hover:bg-[#f5fbff] text-sm" onClick={() => { exportAs('eml'); setShowExportMenu(false) }}>Exporter en .eml</button>
+                        <button className="w-full text-left px-3 py-2 hover:bg-[#f5fbff] text-sm" onClick={() => { exportAs('html'); setShowExportMenu(false) }}>Exporter en HTML</button>
+                        <button className="w-full text-left px-3 py-2 hover:bg-[#f5fbff] text-sm" onClick={() => { exportAs('copy-html'); setShowExportMenu(false) }}>Copier en HTML</button>
+                      </div>
+                    )}
                     <Button 
                       variant="ghost" 
                       onClick={() => copyTemplateLink()}
@@ -1231,10 +1260,11 @@ function App() {
                   
                   <div className="flex space-x-3">
                     <Button 
-                      variant="destructive" 
                       onClick={handleResetClick}
                       size="sm"
-                      className="font-semibold shadow-soft hover:shadow-md"
+                      variant="outline"
+                      className="font-semibold shadow-soft hover:shadow-md border-2 text-[#7f1d1d] hover:bg-[#fee2e2]"
+                      style={{ borderColor: '#7f1d1d', borderRadius: 12 }}
                       title={t.resetWarningTitle}
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -1326,20 +1356,6 @@ function App() {
                       <Send className="h-5 w-5 mr-2" />
                       {t.openInOutlook}
                     </Button>
-                    {/* Plus menu for export options */}
-                    <div className="relative inline-block">
-                      <details>
-                        <summary className="list-none">
-                          <Button size="sm" variant="outline" className="font-medium border-2" style={{ borderRadius: 12, borderColor: '#bfe7e3' }}>+
-                          </Button>
-                        </summary>
-                        <div className="absolute right-0 mt-2 w-48 bg-white border border-[#e6eef5] rounded-[12px] shadow-soft z-10 py-1">
-                          <button className="w-full text-left px-3 py-2 hover:bg-[#f5fbff] text-sm" onClick={() => exportAs('eml')}>Exporter en .eml</button>
-                          <button className="w-full text-left px-3 py-2 hover:bg-[#f5fbff] text-sm" onClick={() => exportAs('html')}>Exporter en HTML</button>
-                          <button className="w-full text-left px-3 py-2 hover:bg-[#f5fbff] text-sm" onClick={() => exportAs('copy-html')}>Copier en HTML</button>
-                        </div>
-                      </details>
-                    </div>
                   </div>
                   </div>
                 </div>
@@ -1383,7 +1399,9 @@ function App() {
               </Button>
               <Button
                 onClick={confirmReset}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                variant="outline"
+                className="flex-1 border-2 text-[#7f1d1d] hover:bg-[#fee2e2]"
+                style={{ borderColor: '#7f1d1d' }}
               >
                 {t.confirm}
               </Button>
