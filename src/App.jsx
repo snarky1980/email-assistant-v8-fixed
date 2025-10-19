@@ -309,6 +309,11 @@ function App() {
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const itemRefs = useRef({})
   const [favLiveMsg, setFavLiveMsg] = useState('')
+  // Virtualization and mobile
+  const viewportRef = useRef(null)
+  const [scrollTop, setScrollTop] = useState(0)
+  const [viewportH, setViewportH] = useState(600)
+  const [showMobileTemplates, setShowMobileTemplates] = useState(false)
 
   // Automatically save important preferences
   useEffect(() => {
@@ -962,131 +967,145 @@ function App() {
     </div>
   )}
   <div className="flex gap-4 items-stretch w-full">
+    {/* Mobile open button */}
+    <div className="md:hidden mb-3 w-full flex justify-start">
+      <Button
+        variant="outline"
+        className="font-semibold border-2"
+        style={{ borderColor: '#bfe7e3', borderRadius: 12 }}
+        onClick={() => { setShowMobileTemplates(true); setTimeout(() => searchRef.current?.focus(), 0) }}
+      >
+        <FileText className="h-4 w-4 mr-2 text-[#1f8a99]" />
+        Templates
+      </Button>
+    </div>
     {/* Left panel - Template list (resizable) */}
-    <div style={{ width: leftWidth }} className="shrink-0">
-            <Card className="h-fit card-soft border-0 overflow-hidden rounded-[14px]" style={{ background: '#ffffff' }}>
-              <CardHeader className="pb-3">
-                {/* Teal header bar for "Sélectionnez un modèle" */}
-                <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[14px] mb-2" style={{ background: 'var(--primary)' }}>
-                  <div className="col-start-2 justify-self-center min-w-0">
-                    <div data-slot="card-title" className="text-lg md:text-xl font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
-                      <FileText className="h-6 w-6 text-white" aria-hidden="true" />
-                      <span className="truncate">{t.selectTemplate}</span>
-                    </div>
+    <div className="hidden md:block shrink-0" style={{ width: leftWidth }}>
+      <Card className="h-fit card-soft border-0 overflow-hidden rounded-[14px]" style={{ background: '#ffffff' }}>
+        <CardContent className="p-0">
+          <ScrollArea
+            className="h-[600px]"
+            style={{ '--scrollbar-width': '8px' }}
+            viewportRef={viewportRef}
+            onViewportScroll={() => {
+              const vp = viewportRef.current
+              if (!vp) return
+              setScrollTop(vp.scrollTop)
+              setViewportH(vp.clientHeight)
+            }}
+          >
+            {/* Sticky header inside scroll area */}
+            <div className="sticky top-0 z-10 bg-white px-4 pt-3 pb-2 border-b border-[#e6eef5]">
+              {/* Teal header bar */}
+              <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[14px] mb-2" style={{ background: 'var(--primary)' }}>
+                <div className="col-start-2 justify-self-center min-w-0">
+                  <div data-slot="card-title" className="text-lg md:text-xl font-bold text-white flex items-center justify-center gap-2 leading-none whitespace-nowrap">
+                    <FileText className="h-6 w-6 text-white" aria-hidden="true" />
+                    <span className="truncate">{t.selectTemplate}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600">{filteredTemplates.length} {t.templatesCount}</p>
-                  <button
-                    onClick={() => {
-                      setFavoritesOnly(v => {
-                        const next = !v
-                        setFavLiveMsg(next ? `${t.favorites} (${favorites.length || 0})` : t.favorites)
-                        return next
-                      })
-                    }}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
-                    className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 border ${favoritesOnly ? 'bg-[#f0fbfb] text-[#145a64] border-[#bfe7e3]' : 'bg-white text-[#145a64] border-[#bfe7e3]'} flex items-center gap-2`}
-                    title={t.showFavoritesOnly}
-                    aria-pressed={favoritesOnly}
-                    aria-live="polite"
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">{filteredTemplates.length} {t.templatesCount}</p>
+                <button
+                  onClick={() => {
+                    setFavoritesOnly(v => {
+                      const next = !v
+                      setFavLiveMsg(next ? `${t.favorites} (${favorites.length || 0})` : t.favorites)
+                      return next
+                    })
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
+                  className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 border ${favoritesOnly ? 'bg-[#f0fbfb] text-[#145a64] border-[#bfe7e3]' : 'bg-white text-[#145a64] border-[#bfe7e3]'} flex items-center gap-2`}
+                  title={t.showFavoritesOnly}
+                  aria-pressed={favoritesOnly}
+                  aria-live="polite"
+                >
+                  <span className={`text-base transition-all duration-150 ${favoritesOnly ? 'text-[#f5c542] scale-110' : 'text-gray-300 scale-100'}`}>★</span>
+                  {favoritesOnly ? `${t.favorites} (${favorites.length || 0})` : t.favorites}
+                  <span style={{position:'absolute',left:'-9999px',height:0,width:0,overflow:'hidden'}} aria-live="polite">{favLiveMsg}</span>
+                </button>
+              </div>
+              {/* Category filter */}
+              <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger
+                    className="border-2 transition-all duration-200 rounded-md"
+                    style={{ background: 'rgba(163, 179, 84, 0.10)', borderColor: '#bfe7e3', color: '#1a365d' }}
                   >
-                    <span className={`text-base transition-all duration-150 ${favoritesOnly ? 'text-[#f5c542] scale-110' : 'text-gray-300 scale-100'}`}>★</span>
-                    {favoritesOnly ? `${t.favorites} (${favorites.length || 0})` : t.favorites}
-                    <span style={{position:'absolute',left:'-9999px',height:0,width:0,overflow:'hidden'}} aria-live="polite">{favLiveMsg}</span>
+                    <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
+                    <SelectValue placeholder={t.allCategories} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="font-semibold">{t.allCategories}</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>
+                        {t.categories[category] || category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Search */}
+              <div className="relative group mt-2">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  ref={searchRef}
+                  type="text"
+                  placeholder={t.searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-10 pr-10 border-2 transition-all duration-300 teal-focus"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+                    title="Clear search"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
+              </div>
+              {/* Template language */}
+              <div className="h-[48px] w-full rounded-[14px] mt-3 px-3 flex items-center justify-between" style={{ background: 'var(--primary)' }}>
+                <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-none whitespace-nowrap">
+                  <Languages className="h-5 w-5 text-white" />
+                  <span className="truncate">{t.templateLanguage}</span>
+                </div>
+                <div className="flex bg-white rounded-lg p-1 shadow-sm">
+                  <button
+                    onClick={() => setTemplateLanguage('fr')}
+                    className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 button-ripple teal-focus ${templateLanguage === 'fr' ? 'text-white' : 'text-gray-600'}`}
+                    style={templateLanguage === 'fr' ? { background: 'var(--primary)' } : {} }
+                  >
+                    FR
+                  </button>
+                  <button
+                    onClick={() => setTemplateLanguage('en')}
+                    className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 button-ripple teal-focus ${templateLanguage === 'en' ? 'text-white' : 'text-gray-600'}`}
+                    style={templateLanguage === 'en' ? { background: 'var(--primary)' } : {} }
+                  >
+                    EN
                   </button>
                 </div>
-                
-                {/* Category filter with style (white background wrapper) */}
-                <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5]">
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger
-                      className="border-2 transition-all duration-200 rounded-md"
-                      style={selectedCategory === 'all'
-                        ? { background: 'var(--tb-sage-muted)', borderColor: 'var(--tb-sage-muted)', color: '#1a365d' }
-                        : { background: '#ffffff', borderColor: '#bfe7e3' }
-                      }
-                    >
-                      <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
-                      <SelectValue placeholder={t.allCategories} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all" className="font-semibold">{t.allCategories}</SelectItem>
-                      {categories.map(category => (
-                        <SelectItem key={category} value={category}>
-                          {t.categories[category] || category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
+            </div>
 
-                {/* Search with white field, single magnifier (left only) and clear button */}
-                <div className="relative group">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    ref={searchRef}
-                    type="text"
-                    placeholder={t.searchPlaceholder}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-10 pr-10 border-2 transition-all duration-300 teal-focus"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
-                      title="Clear search"
-                    >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                  )}
-                </div>
-
-                {/* Template language header and toggler on one teal bar */}
-                <div className="h-[48px] w-full rounded-[14px] mt-3 px-3 flex items-center justify-between" style={{ background: 'var(--primary)' }}>
-                  <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-tight whitespace-nowrap">
-                    <Languages className="h-5 w-5 text-white" />
-                    <span className="truncate">{t.templateLanguage}</span>
-                  </div>
-                  <div className="flex bg-white rounded-lg p-1 shadow-sm">
-                    <button
-                      onClick={() => setTemplateLanguage('fr')}
-                      className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 button-ripple teal-focus ${templateLanguage === 'fr' ? 'text-white' : 'text-gray-600'}`}
-                      style={templateLanguage === 'fr' ? { background: 'var(--primary)' } : {} }
-                    >
-                      FR
-                    </button>
-                    <button
-                      onClick={() => setTemplateLanguage('en')}
-                      className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 button-ripple teal-focus ${templateLanguage === 'en' ? 'text-white' : 'text-gray-600'}`}
-                      style={templateLanguage === 'en' ? { background: 'var(--primary)' } : {} }
-                    >
-                      EN
-                    </button>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="p-0">
-                <ScrollArea className="h-[600px]" style={{ '--scrollbar-width': '8px' }}>
-                  <div
-                    className="space-y-3 p-2 outline-none focus-visible:ring-2 focus-visible:ring-[#bfe7e3] rounded-[14px]"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (!filteredTemplates.length) return;
-                      if (e.key === '/') { e.preventDefault(); searchRef.current?.focus(); return; }
-                      if (e.key === 'Escape') { if (searchQuery) setSearchQuery(''); return; }
-                      const max = filteredTemplates.length - 1;
-                      let idx = focusedIndex;
-                      if (idx < 0) idx = selectedTemplate ? Math.max(0, filteredTemplates.findIndex(t => t.id === selectedTemplate.id)) : 0;
-                      if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(max, idx + 1); setFocusedIndex(idx); itemRefs.current[filteredTemplates[idx].id]?.scrollIntoView({ block: 'nearest' }); return; }
-                      if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(0, idx - 1); setFocusedIndex(idx); itemRefs.current[filteredTemplates[idx].id]?.scrollIntoView({ block: 'nearest' }); return; }
-                      if (e.key.toLowerCase() === 'f') { e.preventDefault(); const id = filteredTemplates[idx]?.id; if (id) toggleFav(id); return; }
-                      if (e.key === 'Enter') { e.preventDefault(); const tSel = filteredTemplates[idx]; if (tSel) setSelectedTemplate(tSel); return; }
-                    }}
-                  >
-                    {filteredTemplates.map((template, i) => (
+            {/* Virtualized list */}
+            {(() => {
+              const ITEM_H = 104
+              const count = filteredTemplates.length
+              const start = Math.max(0, Math.floor(scrollTop / ITEM_H) - 3)
+              const visible = Math.ceil((viewportH || 600) / ITEM_H) + 6
+              const end = Math.min(count, start + visible)
+              const topPad = start * ITEM_H
+              const bottomPad = (count - end) * ITEM_H
+              return (
+                <div className="p-2" style={{ minHeight: count * ITEM_H }}>
+                  <div style={{ height: topPad }} />
+                  <div className="space-y-3">
+                    {filteredTemplates.slice(start, end).map((template) => (
                       <div
                         key={template.id}
                         ref={(el) => { if (el) itemRefs.current[template.id] = el }}
@@ -1114,7 +1133,7 @@ function App() {
                             <h3 className="font-bold text-gray-900 text-[13px] mb-1" title={template.title[templateLanguage]}>
                               {template.title[templateLanguage]}
                             </h3>
-                            <p className="text-[12px] text-gray-600 mb-2 leading-relaxed line-clamp-2">
+                            <p className="text-[12px] text-gray-600 mb-2 leading-relaxed line-clamp-2" title={template.description[templateLanguage]}>
                               {template.description[templateLanguage]}
                             </p>
                             <Badge variant="secondary" className="text-[11px] font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
@@ -1131,10 +1150,101 @@ function App() {
                       </div>
                     ))}
                   </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                  <div style={{ height: bottomPad }} />
+                </div>
+              )
+            })()}
+
+            {/* Keyboard nav capture */}
+            <div
+              className="sr-only"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (!filteredTemplates.length) return;
+                if (e.key === '/') { e.preventDefault(); searchRef.current?.focus(); return; }
+                if (e.key === 'Escape') { if (searchQuery) setSearchQuery(''); return; }
+                const max = filteredTemplates.length - 1;
+                let idx = focusedIndex;
+                if (idx < 0) idx = selectedTemplate ? Math.max(0, filteredTemplates.findIndex(t => t.id === selectedTemplate.id)) : 0;
+                if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(max, idx + 1); setFocusedIndex(idx); itemRefs.current[filteredTemplates[idx].id]?.scrollIntoView({ block: 'nearest' }); return; }
+                if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(0, idx - 1); setFocusedIndex(idx); itemRefs.current[filteredTemplates[idx].id]?.scrollIntoView({ block: 'nearest' }); return; }
+                if (e.key.toLowerCase() === 'f') { e.preventDefault(); const id = filteredTemplates[idx]?.id; if (id) toggleFav(id); return; }
+                if (e.key === 'Enter') { e.preventDefault(); const tSel = filteredTemplates[idx]; if (tSel) setSelectedTemplate(tSel); return; }
+              }}
+            />
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+
+    {/* Mobile overlay for templates */}
+    {showMobileTemplates && (
+      <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+        <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileTemplates(false)} />
+        <div className="absolute left-0 top-0 h-full w-[88vw] bg-white shadow-2xl border-r border-gray-200 p-2">
+          <div className="flex justify-between items-center mb-2 px-2">
+            <div className="font-semibold text-gray-700 flex items-center gap-2"><FileText className="h-5 w-5"/>Templates</div>
+            <button className="text-gray-500 hover:text-gray-700" onClick={() => setShowMobileTemplates(false)}>✕</button>
           </div>
+          {/* Reuse same card content in a simple scroll container */}
+          <div className="h-[80vh] overflow-y-auto pr-1">
+            {/* Simple reuse by rendering the desktop card again would duplicate logic; keep minimal: instruct to use desktop pane on mobile for now. */}
+            {/* For simplicity, render the same ScrollArea block */}
+            <div className="pr-2">
+              {/* We re-mount the desktop block content by calling setShowMobileTemplates; for brevity, we mirror the header-only quick access and basic list without virtualization */}
+              <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[14px] mb-2" style={{ background: 'var(--primary)' }}>
+                <div className="col-start-2 justify-self-center min-w-0">
+                  <div className="text-lg font-bold text-white flex items-center justify-center gap-2 leading-none whitespace-nowrap">
+                    <FileText className="h-6 w-6 text-white" aria-hidden="true" />
+                    <span className="truncate">{t.selectTemplate}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="border-2 transition-all duration-200 rounded-md" style={{ background: 'rgba(163, 179, 84, 0.10)', borderColor: '#bfe7e3', color: '#1a365d' }}>
+                    <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
+                    <SelectValue placeholder={t.allCategories} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="font-semibold">{t.allCategories}</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>
+                        {t.categories[category] || category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="relative group mt-2">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input ref={searchRef} type="text" placeholder={t.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-10 pr-10 border-2 transition-all duration-300 teal-focus" />
+              </div>
+              <div className="mt-3 space-y-3">
+                {filteredTemplates.slice(0, 80).map((template) => (
+                  <div key={template.id} onClick={() => { setSelectedTemplate(template); setShowMobileTemplates(false) }} className="w-full p-4 border border-[#e1eaf2] bg-white rounded-[14px]">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-gray-900 text-[13px] mb-1" title={template.title[templateLanguage]}>
+                          {template.title[templateLanguage]}
+                        </h3>
+                        <p className="text-[12px] text-gray-600 mb-2 leading-relaxed line-clamp-2" title={template.description[templateLanguage]}>
+                          {template.description[templateLanguage]}
+                        </p>
+                        <Badge variant="secondary" className="text-[11px] font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
+                          {template.category}
+                        </Badge>
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); toggleFav(template.id) }} className={`ml-3 text-base ${isFav(template.id) ? 'text-[#f5c542]' : 'text-gray-300 hover:text-[#f5c542]'}`} title={isFav(template.id) ? 'Unfavorite' : 'Favorite'} aria-label="Toggle favorite">★</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
 
           {/* Drag handle between left and main */}
           <div
