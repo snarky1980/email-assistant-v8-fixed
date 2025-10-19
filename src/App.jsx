@@ -285,7 +285,7 @@ function App() {
   })
   const [leftWidth, setLeftWidth] = useState(() => {
     const saved = Number(localStorage.getItem('ea_left_width'))
-    return Number.isFinite(saved) && saved >= 340 && saved <= 680 ? saved : 480
+    return Number.isFinite(saved) && saved >= 320 && saved <= 680 ? saved : 480
   })
   const isDragging = useRef(false)
   const [varPopupPos, setVarPopupPos] = useState(() => {
@@ -995,7 +995,7 @@ function App() {
             }}
           >
             {/* Sticky header inside scroll area */}
-            <div className="sticky top-0 z-10 bg-white px-0 pt-0 pb-2 border-b border-[#e6eef5]">
+            <div className="sticky top-0 z-10 px-0 pt-0 pb-2">
               {/* Teal header bar */}
               <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-t-[14px] mb-2" style={{ background: 'var(--primary)' }}>
                 <div className="col-start-2 justify-self-center min-w-0">
@@ -1048,14 +1048,14 @@ function App() {
               </div>
               {/* Search */}
               <div className="relative group mt-2 px-4">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   ref={searchRef}
                   type="text"
                   placeholder={t.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-10 pr-10 border-2 transition-all duration-300 teal-focus"
+                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-12 pr-10 border-2 transition-all duration-300 teal-focus"
                 />
                 {searchQuery && (
                   <button
@@ -1217,8 +1217,8 @@ function App() {
                 </Select>
               </div>
               <div className="relative group mt-2">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input ref={searchRef} type="text" placeholder={t.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-10 pr-10 border-2 transition-all duration-300 teal-focus" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input ref={searchRef} type="text" placeholder={t.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-12 pr-10 border-2 transition-all duration-300 teal-focus" />
               </div>
               <div className="mt-3 space-y-3">
                 {filteredTemplates.slice(0, 80).map((template) => (
@@ -1266,7 +1266,7 @@ function App() {
               const onMove = (ev) => {
                 if (isDragging.current !== 'left') return
                 const dx = ev.clientX - startX
-                const nextLeft = Math.max(340, Math.min(680, startLeft + dx))
+                const nextLeft = Math.max(320, Math.min(680, startLeft + dx))
                 setLeftWidth(nextLeft)
               }
               const onUp = () => { isDragging.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
