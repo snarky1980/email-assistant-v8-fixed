@@ -367,6 +367,7 @@ function App() {
   const varsChannelRef = useRef(null)
   const varsSenderIdRef = useRef(Math.random().toString(36).slice(2))
   const varsRemoteUpdateRef = useRef(false)
+  const pendingTemplateIdRef = useRef(null)
   const canUseBC = typeof window !== 'undefined' && 'BroadcastChannel' in window
   // Export menu state (replaces <details> for reliability)
   const [showExportMenu, setShowExportMenu] = useState(false)
@@ -436,14 +437,34 @@ function App() {
       ch.onmessage = (ev) => {
         const msg = ev?.data || {}
         if (!msg || msg.sender === varsSenderIdRef.current) return
-        if (msg.type === 'update' && msg.variables && typeof msg.variables === 'object') {
-          varsRemoteUpdateRef.current = true
-          setVariables(prev => ({ ...prev, ...msg.variables }))
+        const applyTemplateMeta = (m) => {
+          if (m?.templateLanguage && (m.templateLanguage === 'fr' || m.templateLanguage === 'en')) {
+            setTemplateLanguage(m.templateLanguage)
+            setInterfaceLanguage(m.templateLanguage)
+          }
+          if (m?.templateId) {
+            if (templatesData?.templates?.length) {
+              const found = templatesData.templates.find(t => t.id === m.templateId)
+              if (found) setSelectedTemplate(found)
+            } else {
+              pendingTemplateIdRef.current = m.templateId
+            }
+          }
+        }
+        if (msg.type === 'update' && (msg.variables || msg.templateId || msg.templateLanguage)) {
+          if (msg.variables && typeof msg.variables === 'object') {
+            varsRemoteUpdateRef.current = true
+            setVariables(prev => ({ ...prev, ...msg.variables }))
+          }
+          applyTemplateMeta(msg)
         } else if (msg.type === 'request_state') {
-          ch.postMessage({ type: 'state', variables, sender: varsSenderIdRef.current })
-        } else if (msg.type === 'state' && msg.variables) {
-          varsRemoteUpdateRef.current = true
-          setVariables(prev => ({ ...prev, ...msg.variables }))
+          ch.postMessage({ type: 'state', variables, templateId: selectedTemplate?.id || null, templateLanguage, sender: varsSenderIdRef.current })
+        } else if (msg.type === 'state') {
+          if (msg.variables) {
+            varsRemoteUpdateRef.current = true
+            setVariables(prev => ({ ...prev, ...msg.variables }))
+          }
+          applyTemplateMeta(msg)
         }
       }
       if (varsOnlyMode) {
@@ -464,6 +485,24 @@ function App() {
     if (!ch) return
     try { ch.postMessage({ type: 'update', variables, sender: varsSenderIdRef.current }) } catch {}
   }, [variables])
+
+  // Emit selected template and language so pop-out stays in sync
+  const selectedTemplateId = selectedTemplate?.id
+  useEffect(() => {
+    if (!canUseBC) return
+    const ch = varsChannelRef.current
+    if (!ch) return
+    try { ch.postMessage({ type: 'update', templateId: selectedTemplateId || null, templateLanguage, sender: varsSenderIdRef.current }) } catch {}
+  }, [selectedTemplateId, templateLanguage])
+
+  // Apply pending remote template once templates load
+  useEffect(() => {
+    const pid = pendingTemplateIdRef.current
+    if (!pid || !templatesData?.templates?.length) return
+    const found = templatesData.templates.find(t => t.id === pid)
+    if (found) setSelectedTemplate(found)
+    pendingTemplateIdRef.current = null
+  }, [templatesData])
 
   // Autofocus first empty variable when popup opens
   useEffect(() => {
@@ -1267,7 +1306,7 @@ function App() {
           </div>
         </div>
       ) : (
-        <>
+        !varsOnlyMode && <>
       {/* Exact banner from attached design */}
       <header className="w-full mx-auto max-w-none page-wrap py-4 relative z-50 sticky top-0 border-b" style={{ backgroundColor: '#ffffff', borderColor: 'var(--tb-mint)' }}>
         {/* Decorative pills and lines - EXACT positions from design */}
@@ -2057,6 +2096,8 @@ function App() {
                       onClick={() => {
                         const url = new URL(window.location.href)
                         url.searchParams.set('varsOnly', '1')
+                        if (selectedTemplate?.id) url.searchParams.set('id', selectedTemplate.id)
+                        if (templateLanguage) url.searchParams.set('lang', templateLanguage)
                         const win = window.open(url.toString(), '_blank', 'popup=yes,width=800,height=640')
                         if (win && win.focus) win.focus()
                       }}
