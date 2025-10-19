@@ -367,6 +367,7 @@ function App() {
   const varsChannelRef = useRef(null)
   const varsSenderIdRef = useRef(Math.random().toString(36).slice(2))
   const varsRemoteUpdateRef = useRef(false)
+  const canUseBC = typeof window !== 'undefined' && 'BroadcastChannel' in window
   // Export menu state (replaces <details> for reliability)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const exportMenuRef = useRef(null)
@@ -428,6 +429,7 @@ function App() {
 
   // Setup BroadcastChannel for variables syncing
   useEffect(() => {
+    if (!canUseBC) return
     try {
       const ch = new BroadcastChannel('ea_vars')
       varsChannelRef.current = ch
@@ -444,7 +446,6 @@ function App() {
           setVariables(prev => ({ ...prev, ...msg.variables }))
         }
       }
-      // In vars-only (child) window, request initial state from the main window
       if (varsOnlyMode) {
         setTimeout(() => {
           try { ch.postMessage({ type: 'request_state', sender: varsSenderIdRef.current }) } catch {}
@@ -457,6 +458,7 @@ function App() {
 
   // Emit updates when local variables change (avoid echo loops)
   useEffect(() => {
+    if (!canUseBC) return
     if (varsRemoteUpdateRef.current) { varsRemoteUpdateRef.current = false; return }
     const ch = varsChannelRef.current
     if (!ch) return
@@ -2092,10 +2094,10 @@ function App() {
                   </Button>
                   <Button
                     onClick={() => {
-                      if (!selectedTemplate) return
+                      if (!selectedTemplate || !templatesData || !templatesData.variables) return
                       const initialVars = {}
                       selectedTemplate.variables.forEach(varName => {
-                        const varInfo = templatesData.variables[varName]
+                        const varInfo = templatesData?.variables?.[varName]
                         if (varInfo) initialVars[varName] = varInfo.example || ''
                       })
                       setVariables(prev => ({ ...prev, ...initialVars }))
