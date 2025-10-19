@@ -526,6 +526,7 @@ function App() {
     try {
       const ch = new BroadcastChannel('ea_vars')
       varsChannelRef.current = ch
+
       ch.onmessage = (ev) => {
         const msg = ev?.data || {}
         if (!msg || msg.sender === varsSenderIdRef.current) return
@@ -599,11 +600,39 @@ function App() {
 
   // Emit focused variable changes immediately for real-time visual feedback
   useEffect(() => {
+    // Save to localStorage for cross-window sync
+    try {
+      localStorage.setItem('ea_focused_var', JSON.stringify({ 
+        focusedVar, 
+        timestamp: Date.now(),
+        sender: varsSenderIdRef.current 
+      }))
+    } catch {}
+    
+    // Also send via BroadcastChannel if available
     if (!canUseBC) return
     const ch = varsChannelRef.current
     if (!ch) return
     try { ch.postMessage({ type: 'update', focusedVar, sender: varsSenderIdRef.current }) } catch {}
   }, [focusedVar])
+
+  // Listen for localStorage changes (fallback for cross-window sync)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'ea_focused_var' && e.newValue) {
+        try {
+          const data = JSON.parse(e.newValue)
+          // Only update if it's from a different sender and recent
+          if (data.sender !== varsSenderIdRef.current && (Date.now() - data.timestamp) < 5000) {
+            setFocusedVar(data.focusedVar)
+          }
+        } catch {}
+      }
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
 
   // Apply pending remote template once templates load
   useEffect(() => {
