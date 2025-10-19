@@ -1,5 +1,6 @@
 /* DEPLOY: 2025-10-15 07:40 - FIXED: Function hoisting error resolved */
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
 // Deploy marker: 2025-10-16T07:31Z
@@ -1927,9 +1928,9 @@ function App() {
       )}
 
       {/* Variables minimized pill */}
-      {showVariablePopup && varsMinimized && (
+      {showVariablePopup && varsMinimized && createPortal(
         <div
-          className="fixed z-[70] select-none"
+          className="fixed z-[9999] select-none"
           style={{ right: pillPos.right, bottom: pillPos.bottom }}
         >
           <button
@@ -1958,12 +1959,13 @@ function App() {
           >
             <Edit3 className="inline h-4 w-4 mr-1" /> {t.variables}
           </button>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Resizable Variables Popup (no blocking backdrop) */}
-    {showVariablePopup && !varsMinimized && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-  <div className="fixed inset-0 z-[70] pointer-events-none">
+      {showVariablePopup && !varsMinimized && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && createPortal(
+  <div className="fixed inset-0 z-[9999] pointer-events-none">
           <div 
             ref={varPopupRef}
             className="bg-white rounded-[14px] shadow-2xl border border-[#e6eef5] min-w-[540px] max-w-[92vw] max-h-[88vh] overflow-hidden resizable-popup pointer-events-auto"
@@ -2205,7 +2207,8 @@ function App() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Slide-over AI panel */}
