@@ -543,18 +543,24 @@ function App() {
             }
           }
         }
-        if (msg.type === 'update' && (msg.variables || msg.templateId || msg.templateLanguage)) {
+        if (msg.type === 'update' && (msg.variables || msg.templateId || msg.templateLanguage || msg.hasOwnProperty('focusedVar'))) {
           if (msg.variables && typeof msg.variables === 'object') {
             varsRemoteUpdateRef.current = true
             setVariables(prev => ({ ...prev, ...msg.variables }))
           }
+          if (msg.hasOwnProperty('focusedVar')) {
+            setFocusedVar(msg.focusedVar)
+          }
           applyTemplateMeta(msg)
         } else if (msg.type === 'request_state') {
-          ch.postMessage({ type: 'state', variables, templateId: selectedTemplate?.id || null, templateLanguage, sender: varsSenderIdRef.current })
+          ch.postMessage({ type: 'state', variables, templateId: selectedTemplate?.id || null, templateLanguage, focusedVar, sender: varsSenderIdRef.current })
         } else if (msg.type === 'state') {
           if (msg.variables) {
             varsRemoteUpdateRef.current = true
             setVariables(prev => ({ ...prev, ...msg.variables }))
+          }
+          if (msg.hasOwnProperty('focusedVar')) {
+            setFocusedVar(msg.focusedVar)
           }
           applyTemplateMeta(msg)
         }
@@ -590,6 +596,14 @@ function App() {
     if (!ch) return
     try { ch.postMessage({ type: 'update', templateId: selectedTemplateId || null, templateLanguage, sender: varsSenderIdRef.current }) } catch {}
   }, [selectedTemplateId, templateLanguage])
+
+  // Emit focused variable changes immediately for real-time visual feedback
+  useEffect(() => {
+    if (!canUseBC) return
+    const ch = varsChannelRef.current
+    if (!ch) return
+    try { ch.postMessage({ type: 'update', focusedVar, sender: varsSenderIdRef.current }) } catch {}
+  }, [focusedVar])
 
   // Apply pending remote template once templates load
   useEffect(() => {
@@ -2387,7 +2401,17 @@ function App() {
                   const currentValue = variables[varName] || ''
                   
                   return (
-                    <div key={varName} className="rounded-[10px] p-3" style={{ background: 'rgba(200, 215, 150, 0.4)', border: '1px solid rgba(190, 210, 140, 0.6)' }}>
+                    <div key={varName} className="rounded-[10px] p-3 transition-all duration-200" style={{ 
+                      background: focusedVar === varName 
+                        ? 'rgba(59, 130, 246, 0.15)' // Blue background when focused
+                        : 'rgba(200, 215, 150, 0.4)', 
+                      border: focusedVar === varName 
+                        ? '2px solid rgba(59, 130, 246, 0.4)' // Blue border when focused
+                        : '1px solid rgba(190, 210, 140, 0.6)',
+                      boxShadow: focusedVar === varName 
+                        ? '0 0 0 3px rgba(59, 130, 246, 0.1)' // Subtle outer glow when focused
+                        : 'none'
+                    }}>
                       <div className="bg-white rounded-[8px] p-4 border" style={{ border: '1px solid rgba(190, 210, 140, 0.4)' }}>
                         <div className="mb-2 flex items-start justify-between gap-3">
                           <label className="text-[14px] font-semibold text-gray-900 flex-1 leading-tight">
@@ -2472,11 +2496,14 @@ function App() {
                             borderColor: currentValue.trim() 
                               ? 'rgba(34, 197, 94, 0.4)' // Green for filled
                               : (focusedVar === varName 
-                                ? 'rgba(59, 130, 246, 0.4)' // Blue for focused
+                                ? 'rgba(59, 130, 246, 0.6)' // Stronger blue for focused
                                 : 'rgba(239, 68, 68, 0.2)'), // Light red for empty
                             backgroundColor: !currentValue.trim() && focusedVar !== varName 
                               ? 'rgba(254, 242, 242, 0.5)' 
-                              : 'white'
+                              : (focusedVar === varName ? 'rgba(219, 234, 254, 0.3)' : 'white'), // Light blue background when focused
+                            boxShadow: focusedVar === varName 
+                              ? '0 0 0 3px rgba(59, 130, 246, 0.1)' // Subtle glow for focused
+                              : 'none'
                           }}
                         />
                         {/* Soft validation hint: email/URL/date/amount */}
