@@ -984,8 +984,8 @@ function App() {
       <Card className="h-fit card-soft border-0 overflow-hidden rounded-[14px]" style={{ background: '#ffffff' }}>
         <CardContent className="p-0">
           <ScrollArea
-            className="h-[600px]"
-            style={{ '--scrollbar-width': '8px' }}
+            className=""
+            style={{ '--scrollbar-width': '8px', height: 'calc(100vh - 280px)' }}
             viewportRef={viewportRef}
             onViewportScroll={() => {
               const vp = viewportRef.current
@@ -995,9 +995,9 @@ function App() {
             }}
           >
             {/* Sticky header inside scroll area */}
-            <div className="sticky top-0 z-10 bg-white px-4 pt-3 pb-2 border-b border-[#e6eef5]">
+            <div className="sticky top-0 z-10 bg-white px-0 pt-0 pb-2 border-b border-[#e6eef5]">
               {/* Teal header bar */}
-              <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[14px] mb-2" style={{ background: 'var(--primary)' }}>
+              <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-t-[14px] mb-2" style={{ background: 'var(--primary)' }}>
                 <div className="col-start-2 justify-self-center min-w-0">
                   <div data-slot="card-title" className="text-lg md:text-xl font-bold text-white flex items-center justify-center gap-2 leading-none whitespace-nowrap">
                     <FileText className="h-6 w-6 text-white" aria-hidden="true" />
@@ -1027,11 +1027,11 @@ function App() {
                 </button>
               </div>
               {/* Category filter */}
-              <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2">
+              <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2 px-4">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger
                     className="border-2 transition-all duration-200 rounded-md"
-                    style={{ background: 'rgba(163, 179, 84, 0.10)', borderColor: '#bfe7e3', color: '#1a365d' }}
+                    style={{ background: 'rgba(163, 179, 84, 0.20)', borderColor: '#bfe7e3', color: '#1a365d' }}
                   >
                     <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                     <SelectValue placeholder={t.allCategories} />
@@ -1047,7 +1047,7 @@ function App() {
                 </Select>
               </div>
               {/* Search */}
-              <div className="relative group mt-2">
+              <div className="relative group mt-2 px-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   ref={searchRef}
@@ -1068,7 +1068,7 @@ function App() {
                 )}
               </div>
               {/* Template language */}
-              <div className="h-[48px] w-full rounded-[14px] mt-3 px-3 flex items-center justify-between" style={{ background: 'var(--primary)' }}>
+              <div className="h-[48px] w-full rounded-[14px] mt-3 px-4 flex items-center justify-between" style={{ background: 'var(--primary)' }}>
                 <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-none whitespace-nowrap">
                   <Languages className="h-5 w-5 text-white" />
                   <span className="truncate">{t.templateLanguage}</span>
@@ -1202,7 +1202,7 @@ function App() {
               </div>
               <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="border-2 transition-all duration-200 rounded-md" style={{ background: 'rgba(163, 179, 84, 0.10)', borderColor: '#bfe7e3', color: '#1a365d' }}>
+                  <SelectTrigger className="border-2 transition-all duration-200 rounded-md" style={{ background: 'rgba(163, 179, 84, 0.20)', borderColor: '#bfe7e3', color: '#1a365d' }}>
                     <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                     <SelectValue placeholder={t.allCategories} />
                   </SelectTrigger>
