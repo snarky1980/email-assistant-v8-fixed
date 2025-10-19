@@ -61,6 +61,30 @@ npm run dev
 
 This runs the Vite dev server with HMR using `index.html` and the React entry in `src/main.jsx`.
 
+### One-command local dev (avoid wrong folder)
+
+If you also have an older folder like `~/email-assistant-v8-`, make sure you always run from the fixed repo `~/email-assistant-v8-fixed`.
+
+Two easy options:
+
+1) Using npm --prefix from anywhere
+
+```bash
+npm --prefix "$HOME/email-assistant-v8-fixed" run dev
+```
+
+2) Add a zsh alias (put this in ~/.zshrc)
+
+```bash
+alias eav8='cd "$HOME/email-assistant-v8-fixed" && npm run dev'
+```
+
+Then start dev with:
+
+```bash
+eav8
+```
+
 ## Production preview (optional)
 
 ```bash

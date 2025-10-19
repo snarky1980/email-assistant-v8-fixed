@@ -2320,7 +2320,7 @@ function App() {
                   const currentValue = variables[varName] || ''
                   
                   return (
-                    <div key={varName} className="rounded-[12px] p-2" style={{ background: '#e6f0ff', border: '1px solid #c7dbff' }}>
+                    <div key={varName} className="rounded-[12px] p-2" style={{ background: 'rgba(163, 179, 84, 0.18)', border: '1px solid rgba(163, 179, 84, 0.5)' }}>
                       <div className="bg-white rounded-[10px] p-3 border border-[#e6eef5]">
                         <div className="mb-2 flex items-start justify-between gap-2">
                           <label className="text-[12px] font-semibold text-gray-800">
