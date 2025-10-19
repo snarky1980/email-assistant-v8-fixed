@@ -380,6 +380,15 @@ function App() {
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportH, setViewportH] = useState(600)
   const [showMobileTemplates, setShowMobileTemplates] = useState(false)
+  // Pop-out (child window) mode: render variables only when ?varsOnly=1
+  const varsOnlyMode = useMemo(() => {
+    try { return new URLSearchParams(window.location.search).get('varsOnly') === '1' } catch { return false }
+  }, [])
+
+  // Auto-open variables popup in vars-only mode
+  useEffect(() => {
+    if (varsOnlyMode) setShowVariablePopup(true)
+  }, [varsOnlyMode])
 
   // Automatically save important preferences
   useEffect(() => {
@@ -1928,7 +1937,7 @@ function App() {
       )}
 
       {/* Variables minimized pill */}
-      {showVariablePopup && varsMinimized && createPortal(
+  {showVariablePopup && varsMinimized && !varsOnlyMode && createPortal(
         <div
           className="fixed z-[9999] select-none"
           style={{ right: pillPos.right, bottom: pillPos.bottom }}
@@ -2000,6 +2009,24 @@ function App() {
                   <h2 id="vars-title" className="text-base font-bold text-white">{t.variables}</h2>
                 </div>
                 <div className="flex items-center space-x-2">
+                  {!varsOnlyMode && (
+                    <Button
+                      onClick={() => {
+                        const url = new URL(window.location.href)
+                        url.searchParams.set('varsOnly', '1')
+                        const win = window.open(url.toString(), '_blank', 'popup=yes,width=800,height=640')
+                        if (win && win.focus) win.focus()
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="border-2 text-white"
+                      style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
+                      title={interfaceLanguage==='fr'?'Ouvrir dans une nouvelle fenêtre':'Open in new window'}
+                      onMouseDown={(e)=> e.stopPropagation()}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     onClick={() => setVarsPinned(v => !v)}
                     variant="outline"
@@ -2100,7 +2127,14 @@ function App() {
                     <Eraser className="h-4 w-4 mr-1" /> {interfaceLanguage==='fr'?'Effacer':'Clear'}
                   </Button>
                   <Button
-                    onClick={() => setShowVariablePopup(false)}
+                    onClick={() => {
+                      if (varsOnlyMode) {
+                        // close pop-out window
+                        window.close()
+                      } else {
+                        setShowVariablePopup(false)
+                      }
+                    }}
                     variant="ghost"
                     size="sm"
                     className="hover:bg-red-100 hover:text-red-600"
