@@ -158,7 +158,7 @@ const customEditorStyles = `
   }
   
   .resizable-popup::-webkit-resizer {
-    background-color: var(--tb-teal);
+    background-color: transparent; /* hide default square, we'll overlay a teal arrow */
     background-image: none;
   }
 
@@ -351,7 +351,7 @@ function App() {
       if (saved && typeof saved.top === 'number' && typeof saved.left === 'number' && typeof saved.width === 'number' && typeof saved.height === 'number') return saved
     } catch {}
     // Comfortable default size
-    return { top: 96, left: 96, width: 760, height: 540 }
+    return { top: 80, left: 80, width: 980, height: 620 }
   })
   const varPopupRef = useRef(null)
   const dragState = useRef({ dragging: false, startX: 0, startY: 0, origTop: 0, origLeft: 0 })
@@ -1877,16 +1877,16 @@ function App() {
 
       {/* Resizable Variables Popup */}
       {showVariablePopup && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-  <div className="fixed inset-0 bg-black/30 z-50 p-4" onMouseDown={() => setShowVariablePopup(false)}>
+  <div className="fixed inset-0 bg-black/30 z-50 p-2" onMouseDown={(e) => { /* click backdrop to close only if truly outside card */ if (e.target === e.currentTarget) setShowVariablePopup(false) }}>
           <div 
             ref={varPopupRef}
-            className="bg-white rounded-[14px] shadow-2xl border border-[#e6eef5] min-w-[420px] max-w-[90vw] min-h-[320px] max-h-[85vh] overflow-hidden resizable-popup"
+            className="bg-white rounded-[14px] shadow-2xl border border-[#e6eef5] min-w-[540px] max-w-[92vw] max-h-[88vh] overflow-hidden resizable-popup"
             style={{ 
               position: 'fixed',
               top: varPopupPos.top,
               left: varPopupPos.left,
               width: varPopupPos.width,
-              height: varPopupPos.height,
+              height: 'auto',
               cursor: dragState.current.dragging ? 'grabbing' : 'default'
             }}
             onMouseDown={(e) => e.stopPropagation()}
@@ -1897,20 +1897,16 @@ function App() {
           >
             {/* Popup Header: Teal background, white text */}
             <div 
-              className="px-6 py-3 flex items-center justify-between select-none"
+              className="px-4 py-2 flex items-center justify-between select-none"
               style={{ cursor: 'grab', background: 'var(--primary)', color: '#fff' }}
               onMouseDown={startDrag}
             >
               <div className="flex items-center">
-                <Edit3 className="h-5 w-5 mr-3 text-white" />
-                <h2 id="vars-title" className="text-lg font-bold text-white">{t.variables}</h2>
+                <Edit3 className="h-5 w-5 mr-2 text-white" />
+                <h2 id="vars-title" className="text-base font-bold text-white">{t.variables}</h2>
                 <Badge
-                  className="ml-3 text-[11px]"
-                  style={{
-                    background: 'rgba(101,163,13,0.16)',
-                    color: '#3f6212',
-                    borderColor: 'rgba(101,163,13,0.35)'
-                  }}
+                  className="ml-2 text-[11px]"
+                  style={{ background: 'var(--tb-sage)', color: 'white', borderColor: 'var(--tb-sage)' }}
                 >
                   {selectedTemplate.variables.length} variable{selectedTemplate.variables.length > 1 ? 's' : ''}
                 </Badge>
@@ -1946,8 +1942,8 @@ function App() {
             </div>
 
             {/* Popup Content - Scrollable */}
-            <div className="p-5 overflow-y-auto" style={{ height: 'calc(100% - 70px)' }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="p-3 overflow-y-auto" style={{ background: 'rgba(164, 185, 92, 0.10)' }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {selectedTemplate.variables.map((varName) => {
                   const varInfo = templatesData.variables[varName]
                   if (!varInfo) return null
@@ -1955,10 +1951,10 @@ function App() {
                   const currentValue = variables[varName] || ''
                   
                   return (
-                    <div key={varName} className="bg-white rounded-[14px] p-4 border border-[#e6eef5] hover:border-[#7bd1ca] hover:shadow-sm transition-all duration-150">
+                    <div key={varName} className="bg-white rounded-[12px] p-3 border border-[#e6eef5] hover:border-[#7bd1ca] transition-colors duration-150">
                       {/* Header */}
-                      <div className="flex items-start justify-between mb-2">
-                        <label className="text-[13px] font-semibold text-gray-800">
+                      <div className="flex items-start justify-between mb-1">
+                        <label className="text-[12px] font-semibold text-gray-800">
                           {varInfo.description[interfaceLanguage]}
                         </label>
                         <Badge variant="secondary" className="text-[10px] font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
@@ -1974,11 +1970,46 @@ function App() {
                           [varName]: e.target.value
                         }))}
                         placeholder=""
-                        className="h-11 border-2 transition-all duration-150 input-rounded border-[#e6eef5] focus:border-[#1f8a99] focus:ring-emerald-100"
+                        className="h-10 border-2 input-rounded border-[#e6eef5]"
                       />
                     </div>
                   )
                 })}
+              </div>
+              {/* custom resize arrow in bottom-right */}
+              <div
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  // emulate resize by dragging from bottom-right corner
+                  const startX = e.clientX
+                  const startY = e.clientY
+                  const startW = varPopupPos.width
+                  const startH = varPopupPos.height || varPopupRef.current?.getBoundingClientRect().height || 620
+                  const onMove = (ev) => {
+                    const dw = ev.clientX - startX
+                    const dh = ev.clientY - startY
+                    setVarPopupPos(p => ({ ...p, width: Math.max(540, Math.min(window.innerWidth * 0.92, startW + dw)), height: Math.max(380, Math.min(window.innerHeight * 0.88, startH + dh)) }))
+                  }
+                  const onUp = () => {
+                    document.removeEventListener('mousemove', onMove)
+                    document.removeEventListener('mouseup', onUp)
+                  }
+                  document.addEventListener('mousemove', onMove)
+                  document.addEventListener('mouseup', onUp)
+                }}
+                title="Resize"
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  bottom: 10,
+                  width: 18,
+                  height: 18,
+                  cursor: 'nwse-resize'
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 20 L12 20 L20 12" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
+                </svg>
               </div>
             </div>
           </div>
