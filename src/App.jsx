@@ -984,7 +984,7 @@ function App() {
       <Card className="h-fit card-soft border-0 overflow-hidden rounded-[14px]" style={{ background: '#ffffff' }}>
         <CardContent className="p-0">
           <ScrollArea
-            className=""
+            className="rounded-[14px] overflow-hidden"
             style={{ '--scrollbar-width': '8px', height: 'calc(100vh - 280px)' }}
             viewportRef={viewportRef}
             onViewportScroll={() => {
@@ -1030,8 +1030,8 @@ function App() {
               <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2 px-4">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger
-                    className="border-2 transition-all duration-200 rounded-md"
-                    style={{ background: 'rgba(163, 179, 84, 0.20)', borderColor: '#bfe7e3', color: '#1a365d' }}
+                    className={`border-2 transition-all duration-200 rounded-md ${selectedCategory === 'all' ? 'font-semibold' : ''}`}
+                    style={{ background: 'rgba(163, 179, 84, 0.30)', borderColor: '#bfe7e3', color: '#1a365d' }}
                   >
                     <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                     <SelectValue placeholder={t.allCategories} />
@@ -1048,7 +1048,7 @@ function App() {
               </div>
               {/* Search */}
               <div className="relative group mt-2 px-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   ref={searchRef}
                   type="text"
@@ -1202,7 +1202,7 @@ function App() {
               </div>
               <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="border-2 transition-all duration-200 rounded-md" style={{ background: 'rgba(163, 179, 84, 0.20)', borderColor: '#bfe7e3', color: '#1a365d' }}>
+                  <SelectTrigger className={`border-2 transition-all duration-200 rounded-md ${selectedCategory === 'all' ? 'font-semibold' : ''}`} style={{ background: 'rgba(163, 179, 84, 0.30)', borderColor: '#bfe7e3', color: '#1a365d' }}>
                     <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                     <SelectValue placeholder={t.allCategories} />
                   </SelectTrigger>
