@@ -363,6 +363,10 @@ function App() {
   const [varsPinned, setVarsPinned] = useState(true)
   const [varsMinimized, setVarsMinimized] = useState(false)
   const [pillPos, setPillPos] = useState({ right: 16, bottom: 16 })
+  // Cross-window sync for variables (main <-> pop-out)
+  const varsChannelRef = useRef(null)
+  const varsSenderIdRef = useRef(Math.random().toString(36).slice(2))
+  const varsRemoteUpdateRef = useRef(false)
   // Export menu state (replaces <details> for reliability)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const exportMenuRef = useRef(null)
@@ -421,6 +425,43 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem('ea_var_popup_pos', JSON.stringify(varPopupPos)) } catch {}
   }, [varPopupPos])
+
+  // Setup BroadcastChannel for variables syncing
+  useEffect(() => {
+    try {
+      const ch = new BroadcastChannel('ea_vars')
+      varsChannelRef.current = ch
+      ch.onmessage = (ev) => {
+        const msg = ev?.data || {}
+        if (!msg || msg.sender === varsSenderIdRef.current) return
+        if (msg.type === 'update' && msg.variables && typeof msg.variables === 'object') {
+          varsRemoteUpdateRef.current = true
+          setVariables(prev => ({ ...prev, ...msg.variables }))
+        } else if (msg.type === 'request_state') {
+          ch.postMessage({ type: 'state', variables, sender: varsSenderIdRef.current })
+        } else if (msg.type === 'state' && msg.variables) {
+          varsRemoteUpdateRef.current = true
+          setVariables(prev => ({ ...prev, ...msg.variables }))
+        }
+      }
+      // In vars-only (child) window, request initial state from the main window
+      if (varsOnlyMode) {
+        setTimeout(() => {
+          try { ch.postMessage({ type: 'request_state', sender: varsSenderIdRef.current }) } catch {}
+        }, 50)
+      }
+      return () => { try { ch.close() } catch {} }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Emit updates when local variables change (avoid echo loops)
+  useEffect(() => {
+    if (varsRemoteUpdateRef.current) { varsRemoteUpdateRef.current = false; return }
+    const ch = varsChannelRef.current
+    if (!ch) return
+    try { ch.postMessage({ type: 'update', variables, sender: varsSenderIdRef.current }) } catch {}
+  }, [variables])
 
   // Autofocus first empty variable when popup opens
   useEffect(() => {
