@@ -124,3 +124,4 @@ A static Admin Console helps edit templates/variables without coding.
 Validation warns about duplicate IDs, unknown categories, missing variables, and unlisted placeholders `<<Var>>`. Warnings don’t block export.
 
 Tip: Keep the main app open at `/` while editing in `/admin.html` to preview changes after updating the JSON file and reloading.
+# Deployment fix
