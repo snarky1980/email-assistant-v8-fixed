@@ -2157,7 +2157,6 @@ function App() {
                         h = Math.min(Math.max(420, h), availH)
                         const left = Math.max(0, Math.floor(((window.screen?.availWidth || window.innerWidth) - w) / 2))
                         const top = Math.max(0, Math.floor(((window.screen?.availHeight || window.innerHeight) - h) / 3))
-                        const features = `popup=yes,width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top}`
                         const features = `popup=yes,width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top},toolbar=0,location=0,menubar=0,status=0,scrollbars=1,resizable=1,noopener=1`
                         const win = window.open(url.toString(), '_blank', features)
                         if (win && win.focus) win.focus()
