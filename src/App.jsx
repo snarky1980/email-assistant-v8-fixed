@@ -567,7 +567,7 @@ function App() {
   }, [selectedTemplate]) // Re-bind when template changes
 
   // Filter templates based on search and category
-  // Advanced search with fuzzy, bilingual fields, synonyms, AND/OR, quoted phrases and match highlighting
+  // Advanced search with exact-first + conservative fuzzy, bilingual fields, synonyms, AND/OR, quoted phrases and match highlighting
   const { filteredTemplates, searchMatchMap } = useMemo(() => {
     const empty = { filteredTemplates: [], searchMatchMap: {} }
     if (!templatesData) return empty
@@ -605,7 +605,7 @@ function App() {
       })
     }
 
-    const tokens = tokenize(qRaw)
+  const tokens = tokenize(qRaw)
     const hasOps = tokens.some(t => t === 'AND' || t === 'OR') || /"/.test(qRaw)
     // Build clauses (OR of AND groups)
     const clauses = []
@@ -635,12 +635,101 @@ function App() {
     }
     if (!gated.length) return { filteredTemplates: [], searchMatchMap: {} }
 
-    // Fuse fuzzy search with per-term union to avoid over-constraining long queries
+    // Helper: find diacritic-insensitive ranges in original text for highlighting
+    const findRangesInsensitive = (text = '', needle = '') => {
+      const ranges = []
+      if (!needle) return ranges
+      const nNeedle = normalize(needle)
+      const win = nNeedle.length
+      if (!win) return ranges
+      for (let i = 0; i + win <= text.length; i++) {
+        const seg = text.substr(i, win)
+        if (normalize(seg) === nNeedle) {
+          ranges.push([i, i + win - 1])
+        }
+      }
+      return ranges
+    }
+
+    // Helper: collect exact matches across bilingual fields and build highlight map
+    const collectExact = (items, termsList) => {
+      const out = []
+      const map = {}
+      const FIELDS = [
+        ['title.fr', (it) => it.title?.fr || ''],
+        ['title.en', (it) => it.title?.en || ''],
+        ['description.fr', (it) => it.description?.fr || ''],
+        ['description.en', (it) => it.description?.en || ''],
+        ['category', (it) => it.category || ''],
+      ]
+      for (const it of items) {
+        const matches = {}
+        let totalHits = 0
+        for (const [key, getter] of FIELDS) {
+          const txt = String(getter(it))
+          let keyRanges = []
+          for (const term of termsList) {
+            const r = findRangesInsensitive(txt, term)
+            if (r.length) {
+              keyRanges.push(...r)
+            }
+          }
+          if (keyRanges.length) {
+            // Merge overlapping/adjacent ranges for cleanliness
+            keyRanges.sort((a, b) => a[0] - b[0])
+            const merged = []
+            for (const rng of keyRanges) {
+              const last = merged[merged.length - 1]
+              if (!last || rng[0] > last[1] + 1) merged.push(rng)
+              else last[1] = Math.max(last[1], rng[1])
+            }
+            matches[key] = merged
+            totalHits += merged.length
+          }
+        }
+        if (totalHits > 0) {
+          out.push({ item: it, hits: totalHits })
+          map[it.id] = matches
+        }
+      }
+      // Sort exact by number of hits desc, stable by original order otherwise
+      out.sort((a, b) => b.hits - a.hits)
+      return { items: out.map(o => o.item), matchMap: map }
+    }
+
+    // Stage 1: exact match on RAW tokens (no synonyms) — reduces noisy synonym-only results
+    const rawTerms = tokens.filter(t => t !== 'AND' && t !== 'OR').map(s => s.trim()).filter(Boolean)
+    if (rawTerms.length) {
+      const { items: exactItems, matchMap: exactMap } = collectExact(gated, rawTerms)
+      if (exactItems.length) {
+        return { filteredTemplates: exactItems, searchMatchMap: exactMap }
+      }
+    }
+
+    // Stage 2: exact match on expanded synonyms if raw terms produced nothing
+    const expanded = expandQuery(qRaw)
+    const expandedTerms = Array.from(new Set(expanded.split(/\s+/).filter(Boolean)))
+    if (expandedTerms.length) {
+      const { items: exactItems2, matchMap: exactMap2 } = collectExact(gated, expandedTerms)
+      if (exactItems2.length) {
+        return { filteredTemplates: exactItems2, searchMatchMap: exactMap2 }
+      }
+    }
+
+    // Stage 3: conservative fuzzy using ONLY raw tokens and dynamic threshold based on shortest token
+    const shortest = (rawTerms.length ? Math.min(...rawTerms.map(t => t.length)) : qRaw.length) || 1
+    let dynThreshold = 0.32
+    if (shortest <= 2) dynThreshold = 0.1
+    else if (shortest === 3) dynThreshold = 0.18
+    else if (shortest === 4) dynThreshold = 0.22
+    else if (shortest === 5) dynThreshold = 0.28
+    else dynThreshold = 0.32
+
     const fuse = new Fuse(gated, {
       includeScore: true,
       includeMatches: true,
       shouldSort: false,
-      threshold: 0.34,
+      threshold: dynThreshold,
       ignoreLocation: true,
       minMatchCharLength: 2,
       keys: [
@@ -652,10 +741,12 @@ function App() {
       ]
     })
 
-    const expanded = expandQuery(qRaw)
-    const terms = expanded.split(/\s+/).filter(Boolean)
-    const acc = new Map() // id -> { item, score, matches }
+    const fuzzTerms = rawTerms.length ? rawTerms : expandedTerms
+    if (fuzzTerms.length === 0) {
+      return { filteredTemplates: gated, searchMatchMap: {} }
+    }
 
+    const acc = new Map() // id -> { item, score, matches }
     const mergeMatches = (dst, srcMatches) => {
       if (!Array.isArray(srcMatches)) return
       for (const m of srcMatches) {
@@ -666,12 +757,7 @@ function App() {
       }
     }
 
-    if (terms.length === 0) {
-      // Fallback: no terms after expansion; return gated as-is
-      return { filteredTemplates: gated, searchMatchMap: {} }
-    }
-
-    for (const term of terms) {
+    for (const term of fuzzTerms) {
       const res = fuse.search(term)
       for (const r of res) {
         const id = r.item.id
@@ -686,18 +772,34 @@ function App() {
       }
     }
 
-    // If Fuse found nothing, do a simple normalized substring contains over bilingual fields
+    // If Fuse found nothing, do a simple normalized substring contains over bilingual fields (raw query)
     if (acc.size === 0) {
       const needle = normalize(qRaw)
       const simple = []
+      const sMatchMap = {}
       for (const it of gated) {
-        const hay = normalize([
-          it.title?.fr || '', it.title?.en || '', it.description?.fr || '', it.description?.en || '', it.category || ''
-        ].join(' '))
-        if (hay.includes(needle)) simple.push({ item: it, score: 1.0, matches: {} })
+        const fields = [
+          ['title.fr', it.title?.fr || ''],
+          ['title.en', it.title?.en || ''],
+          ['description.fr', it.description?.fr || ''],
+          ['description.en', it.description?.en || ''],
+          ['category', it.category || ''],
+        ]
+        let matched = false
+        const keyMap = {}
+        for (const [key, val] of fields) {
+          if (normalize(val).includes(needle)) {
+            matched = true
+            keyMap[key] = findRangesInsensitive(String(val), qRaw)
+          }
+        }
+        if (matched) {
+          simple.push({ item: it, score: 1.0 })
+          sMatchMap[it.id] = keyMap
+        }
       }
       if (simple.length === 0) return { filteredTemplates: [], searchMatchMap: {} }
-      return { filteredTemplates: simple.map(s => s.item), searchMatchMap: {} }
+      return { filteredTemplates: simple.map(s => s.item), searchMatchMap: sMatchMap }
     }
 
     // Sort by best (lowest) score, stable by original order
