@@ -1025,13 +1025,8 @@ function App() {
     }
   }
 
-  // Close popup on ESC
-  useEffect(() => {
-    if (!showVariablePopup) return
-    const onKey = (e) => { if (e.key === 'Escape') setShowVariablePopup(false) }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [showVariablePopup])
+  // Persist variables popup: no ESC-to-close
+  // (Intentionally disabled per design: close only via the X button)
 
   // Track resize to persist size
   useEffect(() => {
@@ -1877,7 +1872,7 @@ function App() {
 
       {/* Resizable Variables Popup */}
       {showVariablePopup && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-  <div className="fixed inset-0 bg-black/30 z-50 p-2" onMouseDown={(e) => { /* click backdrop to close only if truly outside card */ if (e.target === e.currentTarget) setShowVariablePopup(false) }}>
+  <div className="fixed inset-0 bg-black/30 z-50 p-2">
           <div 
             ref={varPopupRef}
             className="bg-white rounded-[14px] shadow-2xl border border-[#e6eef5] min-w-[540px] max-w-[92vw] max-h-[88vh] overflow-hidden resizable-popup"
@@ -1893,7 +1888,7 @@ function App() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="vars-title"
-            onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); setShowVariablePopup(false) } }}
+            // Do not close on keyboard; keep persistent unless user clicks X
           >
             {/* Popup Header: Teal background, white text */}
             <div 
