@@ -4,17 +4,14 @@ import { createPortal } from 'react-dom'
 import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
 // Deploy marker: 2025-10-16T07:31Z
-import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2, ExternalLink } from 'lucide-react'
 import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2, ExternalLink, Expand, Shrink } from 'lucide-react'
 import { Button } from './components/ui/button.jsx'
 import { Input } from './components/ui/input.jsx'
-import { Textarea } from './components/ui/textarea.jsx'
 import HighlightingEditor from './components/HighlightingEditor';
 import AISidebar from './components/AISidebar';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card.jsx'
 import { Badge } from './components/ui/badge.jsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select.jsx'
-import { Separator } from './components/ui/separator.jsx'
 import { ScrollArea } from './components/ui/scroll-area.jsx'
 import './App.css'
 
@@ -545,7 +542,6 @@ function App() {
       }
       return () => { try { ch.close() } catch {} }
     } catch {}
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Emit updates when local variables change (avoid echo loops)
@@ -622,7 +618,7 @@ function App() {
       byDesc[vn] = keys.map(norm).filter(Boolean)
     }
     for (const line of lines) {
-      const m = line.match(/^\s*([^:=]+?)\s*[:=\-]\s*(.+)\s*$/)
+      const m = line.match(/^\s*([^:=]+?)\s*[:=-]\s*(.+)\s*$/)
       if (!m) continue
       const keyN = norm(m[1])
       const val = m[2]
@@ -675,7 +671,6 @@ function App() {
         // Absolute path based on Vite base for GitHub Pages (e.g., /email-assistant-v8-fixed/)
         const BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) ? import.meta.env.BASE_URL : '/'
         const ABSOLUTE_URL = (BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/') + 'complete_email_templates.json'
-        const isLocal = /^(localhost|127\.|0\.0\.0\.0)/i.test(window.location.hostname)
         const ts = Date.now()
         const withBust = (u) => u + (u.includes('?') ? '&' : '?') + 'cb=' + ts
         // Prefer local JSON first in all environments; fall back to raw repo
@@ -896,7 +891,7 @@ function App() {
         let totalHits = 0
         for (const [key, getter] of FIELDS) {
           const txt = String(getter(it))
-          let keyRanges = []
+          const keyRanges = []
           for (const term of termsList) {
             const r = findRangesInsensitive(txt, term)
             if (r.length) {
@@ -1330,7 +1325,7 @@ function App() {
 
   // Open default mail client (Outlook if default) with subject/body prefilled
   function openInOutlook() {
-    console.log('Opening email client with subject:', finalSubject)
+    if (debug) console.log('Opening email client with subject:', finalSubject)
     
     if (!finalSubject && !finalBody) {
       alert(templateLanguage === 'fr' ? 'Veuillez d\'abord sélectionner un modèle et remplir le contenu.' : 'Please first select a template and fill in the content.')
@@ -1346,7 +1341,6 @@ function App() {
       window.location.href = mailtoUrl
       
       // Provide visual feedback
-      const originalText = document.activeElement?.textContent
       if (document.activeElement) {
         const button = document.activeElement
         const originalText = button.textContent
@@ -2470,7 +2464,7 @@ function App() {
                             ok=/^\d{4}-\d{2}-\d{2}$/.test(v)
                           } else if (fmt==='amount' || (!fmt && /[\d][\d,.]*\s?(€|\$|usd|cad|eur|$)/i.test(v))) {
                             kind='amount'
-                            ok=/^[-+]?\d{1,3}(?:[\s,]\d{3})*(?:[\.,]\d+)?(?:\s?(€|\$|usd|cad|eur))?$/i.test(v)
+                            ok=/^[-+]?\d{1,3}(?:[\s,]\d{3})*(?:[.,]\d+)?(?:\s?(€|\$|usd|cad|eur))?$/i.test(v)
                           }
                           if (!kind) return null
                           return (

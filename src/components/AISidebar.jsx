@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Button } from '@/components/ui/button.jsx'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card.jsx'
+import { Button } from './ui/button.jsx'
 import { Sparkles, Settings, Loader2, MessageCircle, Wand2, CheckCircle, AlertTriangle } from 'lucide-react'
 import { callOpenAI, hasOpenAIKey, setOpenAIKey } from '../utils/openai'
 
