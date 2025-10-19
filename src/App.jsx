@@ -285,7 +285,7 @@ function App() {
   })
   const [leftWidth, setLeftWidth] = useState(() => {
     const saved = Number(localStorage.getItem('ea_left_width'))
-    return Number.isFinite(saved) && saved >= 300 && saved <= 680 ? saved : 440
+    return Number.isFinite(saved) && saved >= 340 && saved <= 680 ? saved : 480
   })
   const isDragging = useRef(false)
   const [varPopupPos, setVarPopupPos] = useState(() => {
@@ -1055,23 +1055,15 @@ function App() {
 
               <CardContent className="p-0">
                 <ScrollArea className="h-[600px]" style={{ '--scrollbar-width': '8px' }}>
-                  <div className="space-y-3 p-2 relative">
-                    {/* Scroll indicator at bottom */}
-                    {filteredTemplates.length > 6 && (
-                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10 flex items-end justify-center pb-1">
-                        <div className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full shadow-sm border">
-                          ↓ {filteredTemplates.length - 6}+ more templates
-                        </div>
-                      </div>
-                    )}
+                  <div className="space-y-3 p-2">
                     {filteredTemplates.map((template) => (
                       <div
                         key={template.id}
                         onClick={() => setSelectedTemplate(template)}
-                        className={`p-4 border cursor-pointer transition-all duration-200 ${
+                        className={`w-full p-4 border cursor-pointer transition-all duration-200 ${
                           selectedTemplate?.id === template.id
                             ? 'shadow-lg transform scale-[1.02]'
-                            : 'border-[#e1eaf2] hover:border-[#bfe7e3] bg-white hover:shadow-sm'
+                            : 'border-[#e1eaf2] bg-white hover:border-[#7bd1ca] hover:shadow-md hover:translate-y-[-1px]'
                         }`}
                         style={
                           selectedTemplate?.id === template.id
@@ -1130,7 +1122,7 @@ function App() {
               const onMove = (ev) => {
                 if (isDragging.current !== 'left') return
                 const dx = ev.clientX - startX
-                const nextLeft = Math.max(300, Math.min(680, startLeft + dx))
+                const nextLeft = Math.max(340, Math.min(680, startLeft + dx))
                 setLeftWidth(nextLeft)
               }
               const onUp = () => { isDragging.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
@@ -1145,7 +1137,7 @@ function App() {
               <>
                 {/* Editable version - MAIN AREA */}
                 <Card className="card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
-                  <CardHeader style={{ background: 'var(--primary)', paddingTop: 10, paddingBottom: 10, boxShadow: 'none', borderBottom: 'none', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
+                  <CardHeader style={{ background: 'var(--primary)', paddingTop: 10, paddingBottom: 10, minHeight: 56, boxShadow: 'none', borderBottom: 'none', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
                     <CardTitle className="text-2xl font-bold text-white flex items-center justify-between">
                       <div className="flex items-center">
                         <Mail className="h-6 w-6 mr-3 text-white" />
@@ -1198,7 +1190,7 @@ function App() {
 
 
                     {/* Editable subject with preview highlighting */}
-                    <div className="space-y-3">
+                    <div className="space-y-3 mt-2">
                       <div className="flex items-center gap-2 text-slate-800 font-semibold">
                         <span className="inline-block h-2 w-2 rounded-full bg-[#1f8a99]"></span>
                         <span>{t.subject}</span>
