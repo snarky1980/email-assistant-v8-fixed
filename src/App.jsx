@@ -484,17 +484,21 @@ function App() {
     } catch {}
   }
 
-  // Automatically save important preferences
+  // Automatically save important preferences with debouncing for variables
   useEffect(() => {
-    saveState({
-      interfaceLanguage,
-      templateLanguage,
-      searchQuery,
-      selectedCategory,
-      variables,
-      favorites,
-      favoritesOnly
-    })
+    const timeoutId = setTimeout(() => {
+      saveState({
+        interfaceLanguage,
+        templateLanguage,
+        searchQuery,
+        selectedCategory,
+        variables,
+        favorites,
+        favoritesOnly
+      })
+    }, 300) // 300ms debounce
+    
+    return () => clearTimeout(timeoutId)
   }, [interfaceLanguage, templateLanguage, searchQuery, selectedCategory, variables, favorites, favoritesOnly])
 
   // Persist pane sizes
@@ -564,13 +568,18 @@ function App() {
     } catch {}
   }, [])
 
-  // Emit updates when local variables change (avoid echo loops)
+  // Emit updates when local variables change (avoid echo loops) with debouncing
   useEffect(() => {
     if (!canUseBC) return
     if (varsRemoteUpdateRef.current) { varsRemoteUpdateRef.current = false; return }
-    const ch = varsChannelRef.current
-    if (!ch) return
-    try { ch.postMessage({ type: 'update', variables, sender: varsSenderIdRef.current }) } catch {}
+    
+    const timeoutId = setTimeout(() => {
+      const ch = varsChannelRef.current
+      if (!ch) return
+      try { ch.postMessage({ type: 'update', variables, sender: varsSenderIdRef.current }) } catch {}
+    }, 150) // 150ms debounce for real-time sync
+    
+    return () => clearTimeout(timeoutId)
   }, [variables])
 
   // Emit selected template and language so pop-out stays in sync
@@ -2401,12 +2410,16 @@ function App() {
                           ref={el => { if (el) varInputRefs.current[varName] = el }}
                           value={currentValue}
                           onChange={(e) => {
-                            setVariables(prev => ({
-                              ...prev,
-                              [varName]: e.target.value
-                            }))
+                            const newValue = e.target.value
+                            // Only update if value actually changed
+                            if (newValue !== currentValue) {
+                              setVariables(prev => ({
+                                ...prev,
+                                [varName]: newValue
+                              }))
+                            }
                             // Auto-resize (max 2 lines)
-                            const lines = (e.target.value.match(/\n/g) || []).length + 1
+                            const lines = (newValue.match(/\n/g) || []).length + 1
                             e.target.style.height = lines <= 2 ? (lines === 1 ? '32px' : '52px') : '52px'
                           }}
                           onFocus={() => setFocusedVar(varName)}
