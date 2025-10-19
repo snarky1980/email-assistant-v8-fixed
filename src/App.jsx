@@ -361,6 +361,9 @@ function App() {
   const [copySuccess, setCopySuccess] = useState(false)
   const [showVariablePopup, setShowVariablePopup] = useState(false)
   const [showAIPanel, setShowAIPanel] = useState(false)
+  const [preferPopout, setPreferPopout] = useState(() => {
+    try { return localStorage.getItem('ea_prefer_popout') === 'true' } catch { return false }
+  })
   const [showHighlights, setShowHighlights] = useState(() => {
     const saved = localStorage.getItem('ea_show_highlights')
     return saved === null ? true : saved === 'true'
@@ -520,6 +523,42 @@ function App() {
     try { localStorage.setItem('ea_var_popup_pos', JSON.stringify(varPopupPos)) } catch {}
   }, [varPopupPos])
 
+  // Persist popout preference
+  useEffect(() => {
+    try { localStorage.setItem('ea_prefer_popout', String(preferPopout)) } catch {}
+  }, [preferPopout])
+
+  // Smart function to open variables (popup or popout based on preference)
+  const openVariables = useCallback(() => {
+    if (preferPopout && selectedTemplate?.variables?.length > 0) {
+      // Auto-open popout
+      const url = new URL(window.location.href)
+      url.searchParams.set('varsOnly', '1')
+      if (selectedTemplate?.id) url.searchParams.set('id', selectedTemplate.id)
+      if (templateLanguage) url.searchParams.set('lang', templateLanguage)
+      
+      const count = selectedTemplate?.variables?.length || 0
+      const columns = Math.max(1, Math.min(3, count >= 3 ? 3 : count))
+      const cardW = 360, gap = 8, headerH = 64, rowH = 112
+      const rows = Math.max(1, Math.ceil(count / columns))
+      let w = columns * cardW + (columns - 1) * gap
+      let h = headerH + rows * rowH
+      const availW = (window.screen?.availWidth || window.innerWidth) - 40
+      const availH = (window.screen?.availHeight || window.innerHeight) - 80
+      w = Math.min(Math.max(560, w), availW)
+      h = Math.min(Math.max(420, h), availH)
+      const left = Math.max(0, Math.floor(((window.screen?.availWidth || window.innerWidth) - w) / 2))
+      const top = Math.max(0, Math.floor(((window.screen?.availHeight || window.innerHeight) - h) / 3))
+      const features = `popup=yes,width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top},toolbar=0,location=0,menubar=0,status=0,scrollbars=1,resizable=1,noopener=1`
+      
+      const win = window.open(url.toString(), '_blank', features)
+      if (win && win.focus) win.focus()
+    } else {
+      // Open popup
+      setShowVariablePopup(true)
+    }
+  }, [preferPopout, selectedTemplate, templateLanguage])
+
   // Setup BroadcastChannel for variables syncing
   useEffect(() => {
     if (!canUseBC) return
@@ -600,20 +639,26 @@ function App() {
 
   // Emit focused variable changes immediately for real-time visual feedback
   useEffect(() => {
-    // Save to localStorage for cross-window sync
-    try {
-      localStorage.setItem('ea_focused_var', JSON.stringify({ 
-        focusedVar, 
-        timestamp: Date.now(),
-        sender: varsSenderIdRef.current 
-      }))
-    } catch {}
+    // Primary: BroadcastChannel for immediate sync
+    if (canUseBC) {
+      const ch = varsChannelRef.current
+      if (ch) {
+        try { ch.postMessage({ type: 'update', focusedVar, sender: varsSenderIdRef.current }) } catch {}
+      }
+    }
     
-    // Also send via BroadcastChannel if available
-    if (!canUseBC) return
-    const ch = varsChannelRef.current
-    if (!ch) return
-    try { ch.postMessage({ type: 'update', focusedVar, sender: varsSenderIdRef.current }) } catch {}
+    // Fallback: localStorage with minimal delay
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem('ea_focused_var', JSON.stringify({ 
+          focusedVar, 
+          timestamp: Date.now(),
+          sender: varsSenderIdRef.current 
+        }))
+      } catch {}
+    }, 50) // Small delay to let BroadcastChannel work first
+    
+    return () => clearTimeout(timeoutId)
   }, [focusedVar])
 
   // Listen for localStorage changes (fallback for cross-window sync)
@@ -1953,7 +1998,7 @@ function App() {
 	                      {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
                           <>
                             <Button
-                              onClick={() => setShowVariablePopup(true)}
+                              onClick={openVariables}
                               size="sm"
                               className="shadow-soft"
                               variant="outline"
@@ -2315,12 +2360,17 @@ function App() {
                         const features = `popup=yes,width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top},toolbar=0,location=0,menubar=0,status=0,scrollbars=1,resizable=1,noopener=1`
                         const win = window.open(url.toString(), '_blank', features)
                         if (win && win.focus) win.focus()
+                        
+                        // Auto-close the popup when popout opens successfully
+                        if (win) {
+                          setShowVariablePopup(false)
+                        }
                       }}
                       variant="outline"
                       size="sm"
                       className="border-2 text-white"
                       style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
-                      title={interfaceLanguage==='fr'?'Ouvrir dans une nouvelle fenêtre':'Open in new window'}
+                      title={interfaceLanguage==='fr'?'Détacher dans une nouvelle fenêtre\n• Déplacer sur un autre écran\n• Redimensionner librement\n• Ferme automatiquement cette popup':'Detach to new window\n• Move to another screen\n• Resize freely\n• Auto-closes this popup'}
                       onMouseDown={(e)=> e.stopPropagation()}
                     >
                       <ExternalLink className="h-4 w-4" />
@@ -2350,6 +2400,23 @@ function App() {
                   >
                     {varsPinned ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
                   </Button>
+                  {!varsOnlyMode && (
+                    <Button
+                      onClick={() => setPreferPopout(v => !v)}
+                      variant="outline"
+                      size="sm"
+                      className="border-2 text-white"
+                      style={{ 
+                        borderColor: preferPopout ? 'rgba(34, 197, 94, 0.8)' : 'rgba(255,255,255,0.5)', 
+                        borderRadius: 10, 
+                        background: preferPopout ? 'rgba(34, 197, 94, 0.2)' : 'transparent' 
+                      }}
+                      title={interfaceLanguage==='fr'?(preferPopout?'Mode détaché activé (les variables s\'ouvriront dans une nouvelle fenêtre)':'Mode popup (cliquer pour activer le mode détaché)'):(preferPopout?'Popout mode enabled (variables will open in new window)':'Popup mode (click to enable popout mode)')}
+                      onMouseDown={(e)=> e.stopPropagation()}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     onClick={() => {
                       if (!selectedTemplate || !templatesData || !templatesData.variables) return
