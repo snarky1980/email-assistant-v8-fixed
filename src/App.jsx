@@ -1929,7 +1929,7 @@ function App() {
       {/* Variables minimized pill */}
       {showVariablePopup && varsMinimized && (
         <div
-          className="fixed z-40 select-none"
+          className="fixed z-[70] select-none"
           style={{ right: pillPos.right, bottom: pillPos.bottom }}
         >
           <button
@@ -1962,8 +1962,8 @@ function App() {
       )}
 
       {/* Resizable Variables Popup (no blocking backdrop) */}
-      {showVariablePopup && !varsMinimized && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-  <div className="fixed inset-0 z-40 pointer-events-none">
+    {showVariablePopup && !varsMinimized && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
+  <div className="fixed inset-0 z-[70] pointer-events-none">
           <div 
             ref={varPopupRef}
             className="bg-white rounded-[14px] shadow-2xl border border-[#e6eef5] min-w-[540px] max-w-[92vw] max-h-[88vh] overflow-hidden resizable-popup pointer-events-auto"
