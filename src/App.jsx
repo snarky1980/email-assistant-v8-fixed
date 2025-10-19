@@ -136,6 +136,12 @@ const customEditorStyles = `
     color: #1a365d;
     font-style: italic;
   }
+  /* Focus assist: when a variable input is focused, outline matching marks */
+  mark.var-highlight.focused {
+    outline: 2px solid rgba(20, 90, 100, 0.9);
+    box-shadow: 0 0 0 3px rgba(20, 90, 100, 0.18);
+    transition: outline-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  }
   
   .editor-textarea {
     position: relative;
@@ -373,6 +379,28 @@ function App() {
   const varsRemoteUpdateRef = useRef(false)
   const pendingTemplateIdRef = useRef(null)
   const canUseBC = typeof window !== 'undefined' && 'BroadcastChannel' in window
+  // Focus → outline matching marks in subject/body; blur → fade out
+  useEffect(() => {
+    if (!focusedVar) return
+    try {
+      const selector = `mark.var-highlight[data-var="${CSS.escape(focusedVar)}"]`
+      const nodes = document.querySelectorAll(selector)
+      nodes.forEach(n => n.classList.add('focused'))
+      return () => { nodes.forEach(n => n.classList.remove('focused')) }
+    } catch {}
+  }, [focusedVar])
+
+  // Refresh outlines if content updates while focused
+  useEffect(() => {
+    if (!focusedVar) return
+    try {
+      requestAnimationFrame(() => {
+        const selector = `mark.var-highlight[data-var="${CSS.escape(focusedVar)}"]`
+        document.querySelectorAll('mark.var-highlight.focused').forEach(n => n.classList.remove('focused'))
+        document.querySelectorAll(selector).forEach(n => n.classList.add('focused'))
+      })
+    } catch {}
+  }, [variables, showHighlights, focusedVar])
   // Export menu state (replaces <details> for reliability)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const exportMenuRef = useRef(null)
@@ -1241,8 +1269,28 @@ function App() {
       if (!dragState.current.dragging) return
       const dx = ev.clientX - dragState.current.startX
       const dy = ev.clientY - dragState.current.startY
-      const nextTop = Math.max(0, Math.min(window.innerHeight - 80, dragState.current.origTop + dy))
-      const nextLeft = Math.max(0, Math.min(window.innerWidth - 80, dragState.current.origLeft + dx))
+      let nextTop = dragState.current.origTop + dy
+      let nextLeft = dragState.current.origLeft + dx
+
+      // Grid snapping (12px)
+      const grid = 12
+      const snap = (val) => Math.round(val / grid) * grid
+      nextTop = snap(nextTop)
+      nextLeft = snap(nextLeft)
+
+      // Edge snapping with threshold (magnetic)
+      const thresh = 16
+      const maxLeft = window.innerWidth - (varPopupPos.width || 600)
+      const maxTop = window.innerHeight - (varPopupPos.height || 400)
+      if (Math.abs(nextLeft - 0) <= thresh) nextLeft = 0
+      if (Math.abs(nextTop - 0) <= thresh) nextTop = 0
+      if (Math.abs(nextLeft - maxLeft) <= thresh) nextLeft = Math.max(0, maxLeft)
+      if (Math.abs(nextTop - maxTop) <= thresh) nextTop = Math.max(0, maxTop)
+
+      // Clamp inside viewport with small margin
+      nextTop = Math.max(0, Math.min(maxTop, nextTop))
+      nextLeft = Math.max(0, Math.min(maxLeft, nextLeft))
+
       setVarPopupPos(p => ({ ...p, top: nextTop, left: nextLeft }))
     }
     const onUp = () => {
@@ -2079,7 +2127,11 @@ function App() {
               const onMove = (ev) => {
                 const dx = ev.clientX - startX
                 const dy = ev.clientY - startY
-                setPillPos({ right: Math.max(8, startR - dx), bottom: Math.max(8, startB - dy) })
+                const grid = 12
+                const snap = (v)=> Math.round(v/grid)*grid
+                const nextRight = snap(Math.max(8, startR - dx))
+                const nextBottom = snap(Math.max(8, startB - dy))
+                setPillPos({ right: nextRight, bottom: nextBottom })
               }
               const onUp = () => {
                 document.removeEventListener('mousemove', onMove)
@@ -2134,6 +2186,39 @@ function App() {
                   <h2 id="vars-title" className="text-base font-bold text-white">{t.variables}</h2>
                 </div>
                 <div className="flex items-center space-x-2">
+                  {/* Remaining empty count */}
+                  {selectedTemplate && (
+                    <span className="text-white/85 text-[12px] mr-1" title={interfaceLanguage==='fr'?'Champs vides restants':'Empty fields left'}>
+                      {(selectedTemplate.variables||[]).reduce((n,vn)=> n + (((variables[vn]||'').trim()) ? 0 : 1), 0)}
+                    </span>
+                  )}
+                  {/* Next empty field */}
+                  {selectedTemplate && (
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const order = selectedTemplate.variables || []
+                        const startIdx = Math.max(0, order.indexOf(focusedVar||''))
+                        let found = null
+                        for (let i=1;i<=order.length;i++) {
+                          const j = (startIdx + i) % order.length
+                          const vn = order[j]
+                          if (!((variables[vn]||'').trim())) { found = vn; break }
+                        }
+                        const target = found || order[(startIdx+1)%order.length]
+                        const el = varInputRefs.current[target]
+                        if (el && el.focus) { el.focus(); el.select?.() }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="border-2 text-white"
+                      style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
+                      title={interfaceLanguage==='fr'?'Champ vide suivant':'Next empty field'}
+                      onMouseDown={(e)=> e.stopPropagation()}
+                    >
+                      {interfaceLanguage==='fr'?'Suivant':'Next'}
+                    </Button>
+                  )}
                   {!varsOnlyMode && (
                     <Button
                       onClick={() => {
@@ -2347,9 +2432,59 @@ function App() {
                             [varName]: e.target.value
                           }))}
                           onFocus={() => setFocusedVar(varName)}
+                          onKeyDown={(e) => {
+                            if (!selectedTemplate?.variables) return
+                            const list = selectedTemplate.variables
+                            if (e.key==='ArrowDown' || (e.key==='Enter' && !e.shiftKey)) {
+                              e.preventDefault()
+                              const idx = Math.max(0, list.indexOf(varName))
+                              const next = list[(idx+1)%list.length]
+                              const el = varInputRefs.current[next]
+                              if (el && el.focus) { el.focus(); el.select?.() }
+                            } else if (e.key==='ArrowUp' || (e.key==='Enter' && e.shiftKey)) {
+                              e.preventDefault()
+                              const idx = Math.max(0, list.indexOf(varName))
+                              const prev = list[(idx-1+list.length)%list.length]
+                              const el = varInputRefs.current[prev]
+                              if (el && el.focus) { el.focus(); el.select?.() }
+                            }
+                          }}
+                          onBlur={() => setFocusedVar(prev => (prev===varName? null : prev))}
                           placeholder=""
                           className="h-10 border-2 input-rounded border-[#e6eef5]"
                         />
+                        {/* Soft validation hint: email/URL/date/amount */}
+                        {(currentValue || focusedVar===varName) && (()=>{
+                          const v = (currentValue||'').trim()
+                          const fmt = (varInfo?.format||'').toLowerCase()
+                          let kind = ''
+                          let ok = true
+                          if (fmt==='email' || (!fmt && /@/.test(v))) {
+                            kind='email'
+                            ok=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)
+                          } else if (fmt==='url' || (!fmt && /^(https?:\/\/|www\.)/i.test(v))) {
+                            kind='url'
+                            try { new URL(v.startsWith('http')? v : ('https://'+v)); ok=true } catch { ok=false }
+                          } else if (fmt==='date' || (!fmt && /\d{4}-\d{2}-\d{2}/.test(v))) {
+                            kind='date'
+                            ok=/^\d{4}-\d{2}-\d{2}$/.test(v)
+                          } else if (fmt==='amount' || (!fmt && /[\d][\d,.]*\s?(€|\$|usd|cad|eur|$)/i.test(v))) {
+                            kind='amount'
+                            ok=/^[-+]?\d{1,3}(?:[\s,]\d{3})*(?:[\.,]\d+)?(?:\s?(€|\$|usd|cad|eur))?$/i.test(v)
+                          }
+                          if (!kind) return null
+                          return (
+                            <div className="mt-1 text-[11px] flex items-center gap-1" style={{color: ok? '#166534' : '#7f1d1d'}}>
+                              <span aria-hidden="true" style={{display:'inline-block', width:8, height:8, borderRadius:9999, background: ok? '#16a34a' : '#dc2626'}} />
+                              <span>
+                                {kind==='email' && (ok ? (interfaceLanguage==='fr'?'Courriel valide':'Looks like an email') : (interfaceLanguage==='fr'?'Vérifiez le courriel':'Check email format'))}
+                                {kind==='url' && (ok ? (interfaceLanguage==='fr'?'URL':'Looks like a URL') : (interfaceLanguage==='fr'?'Vérifiez l’URL':'Check URL'))}
+                                {kind==='date' && (ok ? (interfaceLanguage==='fr'?'Date AAAA-MM-JJ':'Date YYYY-MM-DD') : (interfaceLanguage==='fr'?'Format: AAAA-MM-JJ':'Format: YYYY-MM-DD'))}
+                                {kind==='amount' && (ok ? (interfaceLanguage==='fr'?'Montant':'Amount') : (interfaceLanguage==='fr'?'Ex: 100,50 €':'Ex: $1,600.50'))}
+                              </span>
+                            </div>
+                          )
+                        })()}
                         {/* Focus-only example hint */}
                         {focusedVar === varName && ((varInfo?.example || '') !== '') && (
                           <div className="mt-1 text-[11px] text-gray-500">
@@ -2361,6 +2496,30 @@ function App() {
                   )
                 })}
               </div>
+              {/* enlarged resize hit area for easier grabs */}
+              {!varsOnlyMode && <div
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  const startX = e.clientX
+                  const startY = e.clientY
+                  const startW = varPopupPos.width
+                  const startH = varPopupPos.height
+                  const onMove = (ev) => {
+                    const dw = ev.clientX - startX
+                    const dh = ev.clientY - startY
+                    setVarPopupPos(p => ({ ...p, width: Math.max(540, Math.min(window.innerWidth * 0.92, startW + dw)), height: Math.max(380, Math.min(window.innerHeight * 0.88, startH + dh)) }))
+                  }
+                  const onUp = () => {
+                    document.removeEventListener('mousemove', onMove)
+                    document.removeEventListener('mouseup', onUp)
+                  }
+                  document.addEventListener('mousemove', onMove)
+                  document.addEventListener('mouseup', onUp)
+                }}
+                title="Resize"
+                style={{ position: 'absolute', right: 8, bottom: 8, width: 24, height: 24, cursor: 'nwse-resize', background: 'transparent' }}
+                onMouseDownCapture={(e)=> e.stopPropagation()}
+              />}
               {/* custom resize arrow in bottom-right (hidden in varsOnlyMode) */}
               {!varsOnlyMode && <div
                 onMouseDown={(e) => {
@@ -2392,7 +2551,7 @@ function App() {
                   cursor: 'nwse-resize'
                 }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M20 20 L12 20 L20 12" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
                 </svg>
               </div>}
