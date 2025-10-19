@@ -159,7 +159,7 @@ const customEditorStyles = `
   
   .resizable-popup::-webkit-resizer {
     background-color: var(--tb-teal);
-    background-image: linear-gradient(45deg, transparent 50%, var(--tb-teal-dark) 50%);
+    background-image: none;
   }
 
   /* Search hit highlight */
@@ -351,7 +351,7 @@ function App() {
       if (saved && typeof saved.top === 'number' && typeof saved.left === 'number' && typeof saved.width === 'number' && typeof saved.height === 'number') return saved
     } catch {}
     // Comfortable default size
-    return { top: 96, left: 96, width: 560, height: 440 }
+    return { top: 96, left: 96, width: 760, height: 540 }
   })
   const varPopupRef = useRef(null)
   const dragState = useRef({ dragging: false, startX: 0, startY: 0, origTop: 0, origLeft: 0 })
@@ -1895,16 +1895,23 @@ function App() {
             aria-labelledby="vars-title"
             onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); setShowVariablePopup(false) } }}
           >
-            {/* Popup Header */}
+            {/* Popup Header: Teal background, white text */}
             <div 
-              className="px-6 py-3 border-b border-[#e6eef5] flex items-center justify-between select-none bg-white"
-              style={{ cursor: 'grab' }}
+              className="px-6 py-3 flex items-center justify-between select-none"
+              style={{ cursor: 'grab', background: 'var(--primary)', color: '#fff' }}
               onMouseDown={startDrag}
             >
               <div className="flex items-center">
-                <Edit3 className="h-5 w-5 mr-3 text-[#1f8a99]" />
-                <h2 id="vars-title" className="text-lg font-bold text-gray-800">{t.variables}</h2>
-                <Badge variant="outline" className="ml-3 text-[11px]">
+                <Edit3 className="h-5 w-5 mr-3 text-white" />
+                <h2 id="vars-title" className="text-lg font-bold text-white">{t.variables}</h2>
+                <Badge
+                  className="ml-3 text-[11px]"
+                  style={{
+                    background: 'rgba(101,163,13,0.16)',
+                    color: '#3f6212',
+                    borderColor: 'rgba(101,163,13,0.35)'
+                  }}
+                >
                   {selectedTemplate.variables.length} variable{selectedTemplate.variables.length > 1 ? 's' : ''}
                 </Badge>
               </div>
@@ -1934,15 +1941,6 @@ function App() {
                   className="hover:bg-red-100 hover:text-red-600"
                 >
                   <X className="h-4 w-4" />
-                </Button>
-                <Button
-                  onClick={() => setShowVariablePopup(false)}
-                  size="sm"
-                  className="shadow-soft"
-                  variant="outline"
-                  style={{ background: '#fff', color: '#145a64', borderColor: 'rgba(20,90,100,0.35)', borderRadius: 10 }}
-                >
-                  {interfaceLanguage === 'fr' ? 'Terminé' : 'Done'}
                 </Button>
               </div>
             </div>
