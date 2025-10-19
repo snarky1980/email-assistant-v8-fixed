@@ -350,7 +350,8 @@ function App() {
       const saved = JSON.parse(localStorage.getItem('ea_var_popup_pos') || 'null')
       if (saved && typeof saved.top === 'number' && typeof saved.left === 'number' && typeof saved.width === 'number' && typeof saved.height === 'number') return saved
     } catch {}
-    return { top: 80, left: 80, width: 600, height: 500 }
+    // Comfortable default size
+    return { top: 96, left: 96, width: 560, height: 440 }
   })
   const varPopupRef = useRef(null)
   const dragState = useRef({ dragging: false, startX: 0, startY: 0, origTop: 0, origLeft: 0 })
@@ -403,6 +404,18 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem('ea_var_popup_pos', JSON.stringify(varPopupPos)) } catch {}
   }, [varPopupPos])
+
+  // Autofocus first input when variable popup opens
+  useEffect(() => {
+    if (!showVariablePopup) return
+    const t = setTimeout(() => {
+      try {
+        const el = varPopupRef.current?.querySelector('input')
+        if (el) { el.focus(); el.select?.() }
+      } catch {}
+    }, 0)
+    return () => clearTimeout(t)
+  }, [showVariablePopup])
 
   // Close export menu on outside click or ESC
   useEffect(() => {
@@ -1716,7 +1729,7 @@ function App() {
   <div className="fixed inset-0 bg-black/30 z-50 p-4" onMouseDown={() => setShowVariablePopup(false)}>
           <div 
             ref={varPopupRef}
-            className="bg-white rounded-xl shadow-2xl border border-gray-200 min-w-[400px] max-w-[90vw] min-h-[300px] max-h-[85vh] overflow-hidden resizable-popup"
+            className="bg-white rounded-[14px] shadow-2xl border border-[#e6eef5] min-w-[420px] max-w-[90vw] min-h-[320px] max-h-[85vh] overflow-hidden resizable-popup"
             style={{ 
               position: 'fixed',
               top: varPopupPos.top,
@@ -1726,25 +1739,43 @@ function App() {
               cursor: dragState.current.dragging ? 'grabbing' : 'default'
             }}
             onMouseDown={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="vars-title"
+            onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); setShowVariablePopup(false) } }}
           >
             {/* Popup Header */}
             <div 
-              className="px-6 py-4 border-b border-gray-200 flex items-center justify-between select-none"
-              style={{ background: 'linear-gradient(to right, #dbeafe, #bfe7e3)', cursor: 'grab' }}
+              className="px-6 py-3 border-b border-[#e6eef5] flex items-center justify-between select-none bg-white"
+              style={{ cursor: 'grab' }}
               onMouseDown={startDrag}
             >
               <div className="flex items-center">
-                <Edit3 className="h-6 w-6 mr-3 text-[#1f8a99]" />
-                <h2 className="text-xl font-bold text-gray-800">{t.variables}</h2>
-                <Badge variant="outline" className="ml-3 text-xs">
+                <Edit3 className="h-5 w-5 mr-3 text-[#1f8a99]" />
+                <h2 id="vars-title" className="text-lg font-bold text-gray-800">{t.variables}</h2>
+                <Badge variant="outline" className="ml-3 text-[11px]">
                   {selectedTemplate.variables.length} variable{selectedTemplate.variables.length > 1 ? 's' : ''}
                 </Badge>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="flex items-center text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                  <Move className="h-3 w-3 mr-1" />
-                  {interfaceLanguage === 'fr' ? 'Déplaçable + redimensionnable' : 'Movable + resizable'}
-                </div>
+                <Button
+                  onClick={() => {
+                    if (!selectedTemplate) return
+                    const initialVars = {}
+                    selectedTemplate.variables.forEach(varName => {
+                      const varInfo = templatesData.variables[varName]
+                      if (varInfo) initialVars[varName] = varInfo.example || ''
+                    })
+                    setVariables(initialVars)
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="border-2 text-[#145a64]"
+                  style={{ borderColor: 'rgba(20,90,100,0.35)', borderRadius: 10, background: '#fff' }}
+                  title={t.reset}
+                >
+                  <RotateCcw className="h-4 w-4 mr-1" /> {t.reset}
+                </Button>
                 <Button
                   onClick={() => setShowVariablePopup(false)}
                   variant="ghost"
@@ -1753,52 +1784,35 @@ function App() {
                 >
                   <X className="h-4 w-4" />
                 </Button>
+                <Button
+                  onClick={() => setShowVariablePopup(false)}
+                  size="sm"
+                  className="shadow-soft"
+                  variant="outline"
+                  style={{ background: '#fff', color: '#145a64', borderColor: 'rgba(20,90,100,0.35)', borderRadius: 10 }}
+                >
+                  {interfaceLanguage === 'fr' ? 'Terminé' : 'Done'}
+                </Button>
               </div>
             </div>
 
             {/* Popup Content - Scrollable */}
-            <div className="p-6 overflow-y-auto" style={{ height: 'calc(100% - 80px)' }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-5 overflow-y-auto" style={{ height: 'calc(100% - 70px)' }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {selectedTemplate.variables.map((varName) => {
                   const varInfo = templatesData.variables[varName]
                   if (!varInfo) return null
                   
                   const currentValue = variables[varName] || ''
                   
-                  // Color based on variable type
-                  const getTypeColor = () => {
-                    switch (varInfo.type) {
-                      case 'email': return 'border-blue-300 focus:border-blue-500 focus:ring-blue-200'
-                      case 'phone': return 'border-green-300 focus:border-green-500 focus:ring-green-200'
-                      case 'date': return 'border-purple-300 focus:border-purple-500 focus:ring-purple-200'
-                      case 'number': return 'border-orange-300 focus:border-orange-500 focus:ring-orange-200'
-                      default: return 'border-gray-300 focus:border-gray-500 focus:ring-gray-200'
-                    }
-                  }
-                  
                   return (
-                    <div key={varName} className="bg-gradient-to-br from-white to-emerald-50 rounded-lg p-4 border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all duration-200">
+                    <div key={varName} className="bg-white rounded-[14px] p-4 border border-[#e6eef5] hover:border-[#7bd1ca] hover:shadow-sm transition-all duration-150">
                       {/* Header */}
-                      <div className="flex items-center justify-between mb-3">
-                        <label className="text-sm font-semibold text-gray-700 flex items-center">
-                          <span className={`w-3 h-3 rounded-full mr-2 ${
-                            varInfo.type === 'email' ? 'bg-blue-400' :
-                            varInfo.type === 'phone' ? 'bg-green-400' :
-                            varInfo.type === 'date' ? 'bg-purple-400' :
-                            varInfo.type === 'number' ? 'bg-orange-400' :
-                            'bg-gray-400'
-                          }`}></span>
+                      <div className="flex items-start justify-between mb-2">
+                        <label className="text-[13px] font-semibold text-gray-800">
                           {varInfo.description[interfaceLanguage]}
                         </label>
-                        
-                        {/* Type badge */}
-                        <Badge variant="outline" className={`text-xs font-medium ${
-                          varInfo.type === 'email' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          varInfo.type === 'phone' ? 'bg-green-50 text-green-700 border-green-200' :
-                          varInfo.type === 'date' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                          varInfo.type === 'number' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                          'bg-gray-50 text-gray-700 border-gray-200'
-                        }`}>
+                        <Badge variant="secondary" className="text-[10px] font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
                           {varInfo.type}
                         </Badge>
                       </div>
@@ -1810,32 +1824,12 @@ function App() {
                           ...prev,
                           [varName]: e.target.value
                         }))}
-                        placeholder={varInfo.example}
-                        className={`h-11 border-2 transition-all duration-200 input-rounded ${getTypeColor()}`}
+                        placeholder=""
+                        className="h-11 border-2 transition-all duration-150 input-rounded border-[#e6eef5] focus:border-[#1f8a99] focus:ring-emerald-100"
                       />
-                      
-                      {/* Example and counter */}
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-gray-500">
-                          Ex: {varInfo.example}
-                        </span>
-                        {varInfo.type === 'text' && currentValue.length > 20 && (
-                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
-                            {currentValue.length} characters
-                          </span>
-                        )}
-                      </div>
                     </div>
                   )
                 })}
-              </div>
-              
-              {/* Footer info */}
-              <div className="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
-                <p className="text-sm text-emerald-800">
-                  <span className="font-semibold">💡 Tip:</span> Changes are applied in real-time to your email.
-                  You can resize this window by dragging the corners.
-                </p>
               </div>
             </div>
           </div>
