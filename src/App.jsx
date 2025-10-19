@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { loadState, saveState } from './utils/storage.js';
 // Deploy marker: 2025-10-16T07:31Z
-import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send } from 'lucide-react'
+import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star } from 'lucide-react'
 import { Button } from './components/ui/button.jsx'
 import { Input } from './components/ui/input.jsx'
 import { Textarea } from './components/ui/textarea.jsx'
@@ -195,6 +195,8 @@ const interfaceTexts = {
     openInOutlook: 'Ouvrir dans Outlook',
     openInOutlookTitle: 'Composer un courriel avec Outlook',
     sendEmail: 'Envoyer courriel',
+  favorites: 'Favoris',
+  showFavoritesOnly: 'Afficher uniquement les favoris',
     noTemplate: 'Sélectionnez un modèle pour commencer',
     resetWarningTitle: 'Confirmer la réinitialisation',
     resetWarningMessage: 'Êtes-vous sûr de vouloir réinitialiser toutes les variables ? Cette action ne peut pas être annulée.',
@@ -232,6 +234,8 @@ const interfaceTexts = {
     openInOutlook: 'Open in Outlook',
     openInOutlookTitle: 'Compose email in Outlook',
     sendEmail: 'Send Email',
+  favorites: 'Favorites',
+  showFavoritesOnly: 'Show only favorites',
     noTemplate: 'Select a template to get started',
     resetWarningTitle: 'Confirm Reset',
     resetWarningMessage: 'Are you sure you want to reset all variables? This action cannot be undone.',
@@ -955,9 +959,8 @@ function App() {
     {/* Left panel - Template list (resizable) */}
     <div style={{ width: leftWidth }} className="shrink-0">
             <Card className="h-fit card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
-              <CardHeader className="pb-3">
-                {/* Teal header bar for "Sélectionnez un modèle" */}
-                <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[12px] mb-3" style={{ background: 'var(--primary)' }}>
+              <CardHeader className="pb-0" style={{ background: 'var(--primary)', borderTopLeftRadius: 12, borderTopRightRadius: 12, boxShadow: 'none', borderBottom: 'none' }}>
+                <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center">
                   <div className="col-start-2 justify-self-center min-w-0">
                     <div data-slot="card-title" className="text-lg md:text-xl font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
                       <FileText className="h-6 w-6 text-white" aria-hidden="true" />
@@ -965,13 +968,21 @@ function App() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
+              {/* small white spacer to match main banner separation */}
+              <div style={{ height: 8, background: '#ffffff' }} />
+                <div className="flex items-center justify-between px-4 py-2" style={{ background: '#f6fbfb', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
                   <p className="text-sm text-gray-600">{filteredTemplates.length} {t.templatesCount}</p>
-                  <button
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => setFavoritesOnly(v => !v)}
-                    className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-300 button-ripple teal-focus ${favoritesOnly ? '' : ''}`}
-                    title="Show only favorites"
-                  >★ Favorites</button>
+                    className="shadow-soft"
+                    style={{ background: '#fff', color: '#145a64', borderColor: 'rgba(20,90,100,0.35)', borderRadius: 10 }}
+                    title={t.showFavoritesOnly}
+                    aria-pressed={favoritesOnly}
+                  >
+                    <Star className="h-4 w-4 mr-2" /> {t.favorites}
+                  </Button>
                 </div>
                 
                 {/* Category filter with style (white background wrapper) */}
@@ -1186,11 +1197,13 @@ function App() {
 	                    </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-5 space-y-5 mt-1" style={{ background: '#f6fbfb', borderRadius: 12 }}>
+                  {/* small white spacer to separate banner from content */}
+                  <div style={{ height: 8, background: '#ffffff' }} />
+                  <CardContent className="p-5 space-y-5" style={{ background: '#f6fbfb', borderRadius: 12 }}>
 
 
                     {/* Editable subject with preview highlighting */}
-                    <div className="space-y-3">
+                    <div className="space-y-3 mt-1">
                       <div className="flex items-center gap-2 text-slate-800 font-semibold">
                         <span className="inline-block h-2 w-2 rounded-full bg-[#1f8a99]"></span>
                         <span>{t.subject}</span>
@@ -1259,7 +1272,7 @@ function App() {
                       onClick={handleResetClick}
                       size="sm"
                       variant="outline"
-                      className="font-semibold shadow-soft hover:shadow-md border-2 text-[#7f1d1d] hover:bg-[#fee2e2]"
+                      className="font-semibold shadow-soft hover:shadow-md border-2 text-black hover:bg-[#fee2e2]"
                       style={{ borderColor: '#7f1d1d', borderRadius: 12 }}
                       title={t.resetWarningTitle}
                     >
