@@ -396,6 +396,16 @@ function App() {
     if (varsOnlyMode) setShowVariablePopup(true)
   }, [varsOnlyMode])
 
+  // In varsOnly mode, make the popup fill the window and follow resize
+  useEffect(() => {
+    if (!varsOnlyMode) return
+    const setFull = () => setVarPopupPos(p => ({ ...p, top: 0, left: 0, width: window.innerWidth, height: window.innerHeight }))
+    setFull()
+    const onResize = () => setFull()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [varsOnlyMode])
+
   // Automatically save important preferences
   useEffect(() => {
     saveState({
@@ -2056,10 +2066,10 @@ function App() {
 
       {/* Resizable Variables Popup (no blocking backdrop) */}
     {showVariablePopup && !varsMinimized && selectedTemplate && templatesData && templatesData.variables && selectedTemplate.variables && selectedTemplate.variables.length > 0 && createPortal(
-  <div className="fixed inset-0 z-[9999] pointer-events-none">
+  <div className="fixed inset-0 z-[9999] pointer-events-none" style={varsOnlyMode ? { background: '#ffffff' } : undefined}>
           <div 
             ref={varPopupRef}
-            className="bg-white rounded-[14px] shadow-2xl border border-[#e6eef5] min-w-[540px] max-w-[92vw] max-h-[88vh] overflow-hidden resizable-popup pointer-events-auto"
+            className={`bg-white ${varsOnlyMode ? '' : 'rounded-[14px] shadow-2xl border border-[#e6eef5]'} min-w-[540px] ${varsOnlyMode ? 'max-w-[100vw] max-h-[100vh]' : 'max-w-[92vw] max-h-[88vh]'} overflow-hidden resizable-popup pointer-events-auto`}
             style={{ 
               position: 'fixed',
               top: varPopupPos.top,
@@ -2076,7 +2086,7 @@ function App() {
           >
             {/* Popup Header: Teal background, white text + sticky tools */}
             <div 
-              className="px-3 py-2 select-none"
+              className={`px-3 py-2 select-none ${varsOnlyMode ? '' : ''}`}
               style={{ background: 'var(--primary)', color: '#fff', cursor: 'grab' }}
               onMouseDown={(e)=>{
                 // allow dragging by header background but not when targeting inputs/buttons/icons
@@ -2098,7 +2108,24 @@ function App() {
                         url.searchParams.set('varsOnly', '1')
                         if (selectedTemplate?.id) url.searchParams.set('id', selectedTemplate.id)
                         if (templateLanguage) url.searchParams.set('lang', templateLanguage)
-                        const win = window.open(url.toString(), '_blank', 'popup=yes,width=800,height=640')
+                        // Compute an approximate size to fit all fields without scroll
+                        const count = selectedTemplate?.variables?.length || 0
+                        const columns = Math.max(1, Math.min(3, count >= 3 ? 3 : count))
+                        const cardW = 360 // px per field card
+                        const gap = 8
+                        const headerH = 64
+                        const rowH = 112 // approx per row
+                        const rows = Math.max(1, Math.ceil(count / columns))
+                        let w = columns * cardW + (columns - 1) * gap
+                        let h = headerH + rows * rowH
+                        const availW = (window.screen?.availWidth || window.innerWidth) - 40
+                        const availH = (window.screen?.availHeight || window.innerHeight) - 80
+                        w = Math.min(Math.max(560, w), availW)
+                        h = Math.min(Math.max(420, h), availH)
+                        const left = Math.max(0, Math.floor(((window.screen?.availWidth || window.innerWidth) - w) / 2))
+                        const top = Math.max(0, Math.floor(((window.screen?.availHeight || window.innerHeight) - h) / 3))
+                        const features = `popup=yes,width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top}`
+                        const win = window.open(url.toString(), '_blank', features)
                         if (win && win.focus) win.focus()
                       }}
                       variant="outline"
@@ -2231,7 +2258,7 @@ function App() {
             </div>
 
             {/* Popup Content - Scrollable */}
-            <div className="p-3 overflow-y-auto" style={{ height: `calc(${varPopupPos.height}px - 48px)` }}>
+            <div className="overflow-y-auto" style={{ height: varsOnlyMode ? `calc(${varPopupPos.height}px - 40px)` : `calc(${varPopupPos.height}px - 48px)`, padding: varsOnlyMode ? '8px' : '12px' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                 {selectedTemplate.variables
                   .filter(vn => {
@@ -2288,8 +2315,8 @@ function App() {
                   )
                 })}
               </div>
-              {/* custom resize arrow in bottom-right */}
-              <div
+              {/* custom resize arrow in bottom-right (hidden in varsOnlyMode) */}
+              {!varsOnlyMode && <div
                 onMouseDown={(e) => {
                   e.preventDefault()
                   // emulate resize by dragging from bottom-right corner
@@ -2322,7 +2349,7 @@ function App() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M20 20 L12 20 L20 12" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
                 </svg>
-              </div>
+              </div>}
             </div>
           </div>
         </div>,
