@@ -959,8 +959,9 @@ function App() {
     {/* Left panel - Template list (resizable) */}
     <div style={{ width: leftWidth }} className="shrink-0">
             <Card className="h-fit card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
-              <CardHeader className="pb-0" style={{ background: 'var(--primary)', borderTopLeftRadius: 12, borderTopRightRadius: 12, boxShadow: 'none', borderBottom: 'none' }}>
-                <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center">
+              <CardHeader className="pb-3">
+                {/* Teal header bar for "Sélectionnez un modèle" */}
+                <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[12px] mb-3" style={{ background: 'var(--primary)' }}>
                   <div className="col-start-2 justify-self-center min-w-0">
                     <div data-slot="card-title" className="text-lg md:text-xl font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
                       <FileText className="h-6 w-6 text-white" aria-hidden="true" />
@@ -968,21 +969,17 @@ function App() {
                     </div>
                   </div>
                 </div>
-              {/* small white spacer to match main banner separation */}
-              <div style={{ height: 8, background: '#ffffff' }} />
-                <div className="flex items-center justify-between px-4 py-2" style={{ background: '#f6fbfb', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
+                <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-600">{filteredTemplates.length} {t.templatesCount}</p>
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  <button
                     onClick={() => setFavoritesOnly(v => !v)}
-                    className="shadow-soft"
-                    style={{ background: '#fff', color: '#145a64', borderColor: 'rgba(20,90,100,0.35)', borderRadius: 10 }}
+                    className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 border ${favoritesOnly ? 'bg-[#f0fbfb] text-[#145a64] border-[#bfe7e3]' : 'bg-white text-[#145a64] border-[#bfe7e3]'} flex items-center gap-2`}
                     title={t.showFavoritesOnly}
                     aria-pressed={favoritesOnly}
                   >
-                    <Star className="h-4 w-4 mr-2" /> {t.favorites}
-                  </Button>
+                    <span className={`text-base ${favoritesOnly ? 'text-[#f5c542]' : 'text-gray-300'}`}>★</span>
+                    {t.favorites}
+                  </button>
                 </div>
                 
                 {/* Category filter with style (white background wrapper) */}
@@ -1197,13 +1194,11 @@ function App() {
 	                    </div>
                     </CardTitle>
                   </CardHeader>
-                  {/* small white spacer to separate banner from content */}
-                  <div style={{ height: 8, background: '#ffffff' }} />
-                  <CardContent className="p-5 space-y-5" style={{ background: '#f6fbfb', borderRadius: 12 }}>
+                  <CardContent className="p-5 space-y-5 mt-1" style={{ background: '#f6fbfb', borderRadius: 12 }}>
 
 
                     {/* Editable subject with preview highlighting */}
-                    <div className="space-y-3 mt-1">
+                    <div className="space-y-3">
                       <div className="flex items-center gap-2 text-slate-800 font-semibold">
                         <span className="inline-block h-2 w-2 rounded-full bg-[#1f8a99]"></span>
                         <span>{t.subject}</span>
