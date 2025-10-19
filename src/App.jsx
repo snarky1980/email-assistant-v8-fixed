@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
 // Deploy marker: 2025-10-16T07:31Z
-import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser } from 'lucide-react'
+import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2 } from 'lucide-react'
 import { Button } from './components/ui/button.jsx'
 import { Input } from './components/ui/input.jsx'
 import { Textarea } from './components/ui/textarea.jsx'
@@ -359,6 +359,9 @@ function App() {
   const [varsFilter, setVarsFilter] = useState('')
   const [focusedVar, setFocusedVar] = useState(null)
   const varInputRefs = useRef({})
+  const [varsPinned, setVarsPinned] = useState(true)
+  const [varsMinimized, setVarsMinimized] = useState(false)
+  const [pillPos, setPillPos] = useState({ right: 16, bottom: 16 })
   // Export menu state (replaces <details> for reliability)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const exportMenuRef = useRef(null)
@@ -411,7 +414,7 @@ function App() {
 
   // Autofocus first empty variable when popup opens
   useEffect(() => {
-    if (!showVariablePopup) return
+    if (!showVariablePopup || varsMinimized) return
     const t = setTimeout(() => {
       try {
         if (!selectedTemplate) return
@@ -422,7 +425,20 @@ function App() {
       } catch {}
     }, 0)
     return () => clearTimeout(t)
-  }, [showVariablePopup])
+  }, [showVariablePopup, varsMinimized])
+
+  // Outside click to auto-minimize when not pinned
+  useEffect(() => {
+    if (!showVariablePopup || varsPinned || varsMinimized) return
+    const onDown = (e) => {
+      if (!varPopupRef.current) return
+      if (!varPopupRef.current.contains(e.target)) {
+        setVarsMinimized(true)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [showVariablePopup, varsPinned, varsMinimized])
 
   // Smart paste-to-fill: parse lines like "var: value" or "var = value" and map to known variables (case/diacritic-insensitive)
   const handleVarsSmartPaste = (text) => {
@@ -1910,12 +1926,47 @@ function App() {
         </div>
       )}
 
-      {/* Resizable Variables Popup */}
-      {showVariablePopup && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-  <div className="fixed inset-0 bg-black/30 z-50 p-2">
+      {/* Variables minimized pill */}
+      {showVariablePopup && varsMinimized && (
+        <div
+          className="fixed z-40 select-none"
+          style={{ right: pillPos.right, bottom: pillPos.bottom }}
+        >
+          <button
+            className="px-3 py-2 rounded-full shadow-lg border bg-white text-[#145a64] font-semibold"
+            style={{ borderColor: '#bfe7e3' }}
+            onMouseDown={(e) => {
+              e.preventDefault()
+              const startX = e.clientX
+              const startY = e.clientY
+              const startR = pillPos.right
+              const startB = pillPos.bottom
+              const onMove = (ev) => {
+                const dx = ev.clientX - startX
+                const dy = ev.clientY - startY
+                setPillPos({ right: Math.max(8, startR - dx), bottom: Math.max(8, startB - dy) })
+              }
+              const onUp = () => {
+                document.removeEventListener('mousemove', onMove)
+                document.removeEventListener('mouseup', onUp)
+              }
+              document.addEventListener('mousemove', onMove)
+              document.addEventListener('mouseup', onUp)
+            }}
+            onClick={() => setVarsMinimized(false)}
+            title={interfaceLanguage==='fr'?'Variables':'Variables'}
+          >
+            <Edit3 className="inline h-4 w-4 mr-1" /> {t.variables}
+          </button>
+        </div>
+      )}
+
+      {/* Resizable Variables Popup (no blocking backdrop) */}
+      {showVariablePopup && !varsMinimized && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
+  <div className="fixed inset-0 z-40 pointer-events-none">
           <div 
             ref={varPopupRef}
-            className="bg-white rounded-[14px] shadow-2xl border border-[#e6eef5] min-w-[540px] max-w-[92vw] max-h-[88vh] overflow-hidden resizable-popup"
+            className="bg-white rounded-[14px] shadow-2xl border border-[#e6eef5] min-w-[540px] max-w-[92vw] max-h-[88vh] overflow-hidden resizable-popup pointer-events-auto"
             style={{ 
               position: 'fixed',
               top: varPopupPos.top,
@@ -1933,8 +1984,13 @@ function App() {
             {/* Popup Header: Teal background, white text + sticky tools */}
             <div 
               className="px-3 py-2 select-none"
-              style={{ background: 'var(--primary)', color: '#fff' }}
-              onMouseDown={startDrag}
+              style={{ background: 'var(--primary)', color: '#fff', cursor: 'grab' }}
+              onMouseDown={(e)=>{
+                // allow dragging by header background but not when targeting inputs/buttons
+                const tag = (e.target && e.target.tagName) || ''
+                if (['INPUT','BUTTON','svg','path'].includes(String(tag).toUpperCase())) return
+                startDrag(e)
+              }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -1942,6 +1998,28 @@ function App() {
                   <h2 id="vars-title" className="text-base font-bold text-white">{t.variables}</h2>
                 </div>
                 <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => setVarsPinned(v => !v)}
+                    variant="outline"
+                    size="sm"
+                    className="border-2 text-white"
+                    style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
+                    title={interfaceLanguage==='fr'?(varsPinned?'Épinglé (cliquer pour libérer)':'Libre (cliquer pour épingler)'):(varsPinned?'Pinned (click to unpin)':'Unpinned (click to pin)')}
+                    onMouseDown={(e)=> e.stopPropagation()}
+                  >
+                    {varsPinned ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    onClick={() => setVarsMinimized(true)}
+                    variant="outline"
+                    size="sm"
+                    className="border-2 text-white"
+                    style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
+                    title={interfaceLanguage==='fr'?'Minimiser':'Minimize'}
+                    onMouseDown={(e)=> e.stopPropagation()}
+                  >
+                    <Minimize2 className="h-4 w-4" />
+                  </Button>
                   <Button
                     onClick={() => {
                       if (!selectedTemplate) return
