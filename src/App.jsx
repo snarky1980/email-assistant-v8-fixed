@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
 // Deploy marker: 2025-10-16T07:31Z
-import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star } from 'lucide-react'
+import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser } from 'lucide-react'
 import { Button } from './components/ui/button.jsx'
 import { Input } from './components/ui/input.jsx'
 import { Textarea } from './components/ui/textarea.jsx'
@@ -355,6 +355,10 @@ function App() {
   })
   const varPopupRef = useRef(null)
   const dragState = useRef({ dragging: false, startX: 0, startY: 0, origTop: 0, origLeft: 0 })
+  // Vars popup UX state
+  const [varsFilter, setVarsFilter] = useState('')
+  const [focusedVar, setFocusedVar] = useState(null)
+  const varInputRefs = useRef({})
   // Export menu state (replaces <details> for reliability)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const exportMenuRef = useRef(null)
@@ -405,17 +409,63 @@ function App() {
     try { localStorage.setItem('ea_var_popup_pos', JSON.stringify(varPopupPos)) } catch {}
   }, [varPopupPos])
 
-  // Autofocus first input when variable popup opens
+  // Autofocus first empty variable when popup opens
   useEffect(() => {
     if (!showVariablePopup) return
     const t = setTimeout(() => {
       try {
-        const el = varPopupRef.current?.querySelector('input')
-        if (el) { el.focus(); el.select?.() }
+        if (!selectedTemplate) return
+        // find first empty variable by template order
+        const firstEmpty = selectedTemplate.variables.find(vn => !(variables[vn] || '').trim()) || selectedTemplate.variables[0]
+        const el = varInputRefs.current[firstEmpty]
+        if (el && typeof el.focus === 'function') { el.focus(); el.select?.() }
       } catch {}
     }, 0)
     return () => clearTimeout(t)
   }, [showVariablePopup])
+
+  // Smart paste-to-fill: parse lines like "var: value" or "var = value" and map to known variables (case/diacritic-insensitive)
+  const handleVarsSmartPaste = (text) => {
+    if (!text || !selectedTemplate) return
+    const lines = String(text).split(/\r?\n/)
+    const map = {}
+    const norm = (s='') => s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase().trim()
+    const known = selectedTemplate.variables
+    const byDesc = {}
+    for (const vn of known) {
+      const info = templatesData?.variables?.[vn]
+      const keys = [vn]
+      if (info?.description) {
+        const dfr = info.description.fr || ''
+        const den = info.description.en || ''
+        keys.push(dfr, den)
+      }
+      byDesc[vn] = keys.map(norm).filter(Boolean)
+    }
+    for (const line of lines) {
+      const m = line.match(/^\s*([^:=]+?)\s*[:=\-]\s*(.+)\s*$/)
+      if (!m) continue
+      const keyN = norm(m[1])
+      const val = m[2]
+      // find best variable with key match by name or description words
+      let target = null
+      for (const vn of known) {
+        if (byDesc[vn].some(k => keyN.includes(k) || k.includes(keyN))) { target = vn; break }
+      }
+      if (!target) {
+        // fallback: exact variable name within
+        target = known.find(vn => norm(vn) === keyN)
+      }
+      if (target) map[target] = val
+    }
+    if (Object.keys(map).length) {
+      setVariables(prev => ({ ...prev, ...map }))
+      // focus first mapped field
+      const first = Object.keys(map)[0]
+      const el = varInputRefs.current[first]
+      if (el) el.focus()
+    }
+  }
 
   // Close export menu on outside click or ESC
   useEffect(() => {
@@ -1880,50 +1930,119 @@ function App() {
             aria-labelledby="vars-title"
             // Do not close on keyboard; keep persistent unless user clicks X
           >
-            {/* Popup Header: Teal background, white text */}
+            {/* Popup Header: Teal background, white text + sticky tools */}
             <div 
-              className="px-4 py-2 flex items-center justify-between select-none"
-              style={{ cursor: 'grab', background: 'var(--primary)', color: '#fff' }}
+              className="px-3 py-2 select-none"
+              style={{ background: 'var(--primary)', color: '#fff' }}
               onMouseDown={startDrag}
             >
-              <div className="flex items-center">
-                <Edit3 className="h-5 w-5 mr-2 text-white" />
-                <h2 id="vars-title" className="text-base font-bold text-white">{t.variables}</h2>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={() => {
-                    if (!selectedTemplate) return
-                    const initialVars = {}
-                    selectedTemplate.variables.forEach(varName => {
-                      const varInfo = templatesData.variables[varName]
-                      if (varInfo) initialVars[varName] = varInfo.example || ''
-                    })
-                    setVariables(initialVars)
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="border-2 text-[#145a64]"
-                  style={{ borderColor: 'rgba(20,90,100,0.35)', borderRadius: 10, background: '#fff' }}
-                  title={t.reset}
-                >
-                  <RotateCcw className="h-4 w-4 mr-1" /> {t.reset}
-                </Button>
-                <Button
-                  onClick={() => setShowVariablePopup(false)}
-                  variant="ghost"
-                  size="sm"
-                  className="hover:bg-red-100 hover:text-red-600"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Edit3 className="h-5 w-5 mr-2 text-white" />
+                  <h2 id="vars-title" className="text-base font-bold text-white">{t.variables}</h2>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => {
+                      if (!selectedTemplate) return
+                      const initialVars = {}
+                      selectedTemplate.variables.forEach(varName => {
+                        const varInfo = templatesData.variables[varName]
+                        if (varInfo) initialVars[varName] = varInfo.example || ''
+                      })
+                      setVariables(prev => ({ ...prev, ...initialVars }))
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="border-2 text-[#145a64]"
+                    style={{ borderColor: 'rgba(20,90,100,0.35)', borderRadius: 10, background: '#fff' }}
+                    title={t.reset}
+                    onMouseDown={(e)=> e.stopPropagation()}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" /> {t.reset}
+                  </Button>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-white/80" />
+                    <input
+                      value={varsFilter}
+                      onChange={(e)=>setVarsFilter(e.target.value)}
+                      placeholder={interfaceLanguage==='fr'?'Filtrer les champs…':'Filter fields…'}
+                      className="pl-8 pr-2 py-1 rounded-md text-[13px] bg-white/15 text-white placeholder:text-white/80 focus:outline-none"
+                      style={{ minWidth: 200 }}
+                      onMouseDown={(e)=> e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter') return
+                        e.preventDefault()
+                        if (!selectedTemplate) return
+                        const list = selectedTemplate.variables.filter(vn => {
+                          if (!varsFilter.trim()) return true
+                          const info = templatesData.variables[vn]
+                          const txt = `${vn} ${(info?.description?.fr||'')} ${(info?.description?.en||'')} ${(info?.example||'')}`
+                          return txt.toLowerCase().includes(varsFilter.toLowerCase())
+                        })
+                        if (!list.length) return
+                        const idx = Math.max(0, list.indexOf(focusedVar))
+                        const next = list[(idx + 1) % list.length]
+                        setFocusedVar(next)
+                        const el = varInputRefs.current[next]
+                        if (el) { el.focus(); el.select?.() }
+                      }}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => {
+                      const clip = (navigator.clipboard && navigator.clipboard.readText) ? navigator.clipboard.readText() : Promise.resolve('')
+                      clip.then(text => handleVarsSmartPaste(text || ''))
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="border-2 text-[#145a64]"
+                    style={{ borderColor: 'rgba(20,90,100,0.35)', borderRadius: 10, background: '#fff' }}
+                    title={interfaceLanguage==='fr'?'Coller pour remplir':'Paste to fill'}
+                    onMouseDown={(e)=> e.stopPropagation()}
+                  >
+                    <ClipboardPaste className="h-4 w-4 mr-1" /> {interfaceLanguage==='fr'?'Coller':'Paste'}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (!selectedTemplate) return
+                      const cleared = {}
+                      selectedTemplate.variables.forEach(vn => { cleared[vn] = '' })
+                      setVariables(prev => ({ ...prev, ...cleared }))
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="border-2 text-[#7f1d1d] hover:bg-[#fee2e2]"
+                    style={{ borderColor: '#7f1d1d', borderRadius: 10, background: '#fff' }}
+                    title={interfaceLanguage==='fr'?'Tout effacer':'Clear all'}
+                    onMouseDown={(e)=> e.stopPropagation()}
+                  >
+                    <Eraser className="h-4 w-4 mr-1" /> {interfaceLanguage==='fr'?'Effacer':'Clear'}
+                  </Button>
+                  <Button
+                    onClick={() => setShowVariablePopup(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="hover:bg-red-100 hover:text-red-600"
+                    onMouseDown={(e)=> e.stopPropagation()}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
             {/* Popup Content - Scrollable */}
-            <div className="p-3 overflow-y-auto" style={{ height: `calc(${varPopupPos.height}px - 44px)` }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {selectedTemplate.variables.map((varName) => {
+            <div className="p-3 overflow-y-auto" style={{ height: `calc(${varPopupPos.height}px - 48px)` }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                {selectedTemplate.variables
+                  .filter(vn => {
+                    if (!varsFilter.trim()) return true
+                    const info = templatesData.variables[vn]
+                    const txt = `${vn} ${(info?.description?.fr||'')} ${(info?.description?.en||'')} ${(info?.example||'')}`
+                    return txt.toLowerCase().includes(varsFilter.toLowerCase())
+                  })
+                  .map((varName) => {
                   const varInfo = templatesData.variables[varName]
                   if (!varInfo) return null
                   
@@ -1932,20 +2051,40 @@ function App() {
                   return (
                     <div key={varName} className="rounded-[12px] p-2" style={{ background: '#e6f0ff', border: '1px solid #c7dbff' }}>
                       <div className="bg-white rounded-[10px] p-3 border border-[#e6eef5]">
-                        <div className="mb-2">
+                        <div className="mb-2 flex items-start justify-between gap-2">
                           <label className="text-[12px] font-semibold text-gray-800">
                             {varInfo.description[interfaceLanguage]}
                           </label>
+                          <div className="shrink-0 flex items-center gap-1 opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                            <button
+                              className="text-[11px] px-2 py-0.5 rounded border border-[#e6eef5] text-[#145a64] hover:bg-[#f0fbfb]"
+                              title={interfaceLanguage==='fr'?'Remettre l’exemple':'Reset to example'}
+                              onClick={() => setVariables(prev => ({ ...prev, [varName]: varInfo.example || '' }))}
+                            >Ex.</button>
+                            <button
+                              className="text-[11px] px-2 py-0.5 rounded border border-[#e6eef5] text-[#7f1d1d] hover:bg-[#fee2e2]"
+                              title={interfaceLanguage==='fr'?'Effacer ce champ':'Clear this field'}
+                              onClick={() => setVariables(prev => ({ ...prev, [varName]: '' }))}
+                            >X</button>
+                          </div>
                         </div>
                         <Input
+                          ref={el => { if (el) varInputRefs.current[varName] = el }}
                           value={currentValue}
                           onChange={(e) => setVariables(prev => ({
                             ...prev,
                             [varName]: e.target.value
                           }))}
+                          onFocus={() => setFocusedVar(varName)}
                           placeholder=""
                           className="h-10 border-2 input-rounded border-[#e6eef5]"
                         />
+                        {/* Focus-only example hint */}
+                        {focusedVar === varName && (varInfo.example || '') && (
+                          <div className="mt-1 text-[11px] text-gray-500">
+                            {interfaceLanguage==='fr'?'Exemple:':'Example:'} <span className="font-medium text-gray-700">{varInfo.example}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
