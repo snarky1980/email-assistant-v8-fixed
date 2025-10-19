@@ -635,11 +635,11 @@ function App() {
     }
     if (!gated.length) return { filteredTemplates: [], searchMatchMap: {} }
 
-    // Fuse fuzzy search with matches for highlighting
+    // Fuse fuzzy search with per-term union to avoid over-constraining long queries
     const fuse = new Fuse(gated, {
       includeScore: true,
       includeMatches: true,
-      shouldSort: true,
+      shouldSort: false,
       threshold: 0.34,
       ignoreLocation: true,
       minMatchCharLength: 2,
@@ -653,20 +653,60 @@ function App() {
     })
 
     const expanded = expandQuery(qRaw)
-    const results = fuse.search(expanded)
+    const terms = expanded.split(/\s+/).filter(Boolean)
+    const acc = new Map() // id -> { item, score, matches }
+
+    const mergeMatches = (dst, srcMatches) => {
+      if (!Array.isArray(srcMatches)) return
+      for (const m of srcMatches) {
+        if (!m?.key || !Array.isArray(m?.indices)) continue
+        const key = m.key
+        if (!dst[key]) dst[key] = []
+        dst[key].push(...m.indices)
+      }
+    }
+
+    if (terms.length === 0) {
+      // Fallback: no terms after expansion; return gated as-is
+      return { filteredTemplates: gated, searchMatchMap: {} }
+    }
+
+    for (const term of terms) {
+      const res = fuse.search(term)
+      for (const r of res) {
+        const id = r.item.id
+        const prev = acc.get(id)
+        if (!prev) {
+          acc.set(id, { item: r.item, score: r.score ?? 0.0, matches: {} })
+          mergeMatches(acc.get(id).matches, r.matches)
+        } else {
+          prev.score = Math.min(prev.score, r.score ?? prev.score)
+          mergeMatches(prev.matches, r.matches)
+        }
+      }
+    }
+
+    // If Fuse found nothing, do a simple normalized substring contains over bilingual fields
+    if (acc.size === 0) {
+      const needle = normalize(qRaw)
+      const simple = []
+      for (const it of gated) {
+        const hay = normalize([
+          it.title?.fr || '', it.title?.en || '', it.description?.fr || '', it.description?.en || '', it.category || ''
+        ].join(' '))
+        if (hay.includes(needle)) simple.push({ item: it, score: 1.0, matches: {} })
+      }
+      if (simple.length === 0) return { filteredTemplates: [], searchMatchMap: {} }
+      return { filteredTemplates: simple.map(s => s.item), searchMatchMap: {} }
+    }
+
+    // Sort by best (lowest) score, stable by original order
+    const results = Array.from(acc.values()).sort((a, b) => (a.score ?? 1) - (b.score ?? 1))
     const items = results.map(r => r.item)
     const matchMap = {}
     for (const r of results) {
       const id = r.item.id
-      if (!matchMap[id]) matchMap[id] = {}
-      if (Array.isArray(r.matches)) {
-        for (const m of r.matches) {
-          if (!m?.key || !Array.isArray(m?.indices)) continue
-          const key = m.key
-          if (!matchMap[id][key]) matchMap[id][key] = []
-          matchMap[id][key].push(...m.indices)
-        }
-      }
+      matchMap[id] = r.matches
     }
     return { filteredTemplates: items, searchMatchMap: matchMap }
   }, [templatesData, searchQuery, selectedCategory, favoritesOnly, favorites])
