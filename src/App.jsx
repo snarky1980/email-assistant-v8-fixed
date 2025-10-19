@@ -285,7 +285,7 @@ function App() {
   })
   const [leftWidth, setLeftWidth] = useState(() => {
     const saved = Number(localStorage.getItem('ea_left_width'))
-    return Number.isFinite(saved) && saved >= 320 && saved <= 680 ? saved : 480
+    return Number.isFinite(saved) && saved >= 340 && saved <= 680 ? saved : 480
   })
   const isDragging = useRef(false)
   const [varPopupPos, setVarPopupPos] = useState(() => {
@@ -996,13 +996,11 @@ function App() {
           >
             {/* Sticky header inside scroll area */}
             <div className="sticky top-0 z-10 px-0 pt-0 pb-2">
-              {/* Teal header bar */}
-              <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-t-[14px] mb-2" style={{ background: 'var(--primary)' }}>
-                <div className="col-start-2 justify-self-center min-w-0">
-                  <div data-slot="card-title" className="text-lg md:text-xl font-bold text-white flex items-center justify-center gap-2 leading-none whitespace-nowrap">
-                    <FileText className="h-6 w-6 text-white" aria-hidden="true" />
-                    <span className="truncate">{t.selectTemplate}</span>
-                  </div>
+              {/* Teal header bar - match style of "Langue du modèle" */}
+              <div className="h-[48px] w-full rounded-[14px] px-4 flex items-center justify-center mb-2" style={{ background: 'var(--primary)' }}>
+                <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-none whitespace-nowrap">
+                  <FileText className="h-5 w-5 text-white" aria-hidden="true" />
+                  <span className="truncate">{t.selectTemplate}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -1192,12 +1190,10 @@ function App() {
             {/* For simplicity, render the same ScrollArea block */}
             <div className="pr-2">
               {/* We re-mount the desktop block content by calling setShowMobileTemplates; for brevity, we mirror the header-only quick access and basic list without virtualization */}
-              <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[14px] mb-2" style={{ background: 'var(--primary)' }}>
-                <div className="col-start-2 justify-self-center min-w-0">
-                  <div className="text-lg font-bold text-white flex items-center justify-center gap-2 leading-none whitespace-nowrap">
-                    <FileText className="h-6 w-6 text-white" aria-hidden="true" />
-                    <span className="truncate">{t.selectTemplate}</span>
-                  </div>
+              <div className="h-[48px] w-full rounded-[14px] px-4 flex items-center justify-center mb-2" style={{ background: 'var(--primary)' }}>
+                <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-none whitespace-nowrap">
+                  <FileText className="h-5 w-5 text-white" aria-hidden="true" />
+                  <span className="truncate">{t.selectTemplate}</span>
                 </div>
               </div>
               <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2">
@@ -1266,7 +1262,7 @@ function App() {
               const onMove = (ev) => {
                 if (isDragging.current !== 'left') return
                 const dx = ev.clientX - startX
-                const nextLeft = Math.max(320, Math.min(680, startLeft + dx))
+                const nextLeft = Math.max(340, Math.min(680, startLeft + dx))
                 setLeftWidth(nextLeft)
               }
               const onUp = () => { isDragging.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
