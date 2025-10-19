@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
 // Deploy marker: 2025-10-16T07:31Z
-import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2, ExternalLink, Expand, Shrink } from 'lucide-react'
+import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2, ExternalLink, Expand, Shrink, MoveRight } from 'lucide-react'
 import { Button } from './components/ui/button.jsx'
 import { Input } from './components/ui/input.jsx'
 import HighlightingEditor from './components/HighlightingEditor';
@@ -160,11 +160,31 @@ const customEditorStyles = `
   .resizable-popup {
     resize: both;
     overflow: auto;
+    position: relative;
   }
   
   .resizable-popup::-webkit-resizer {
-    background-color: transparent; /* hide default square, we'll overlay a teal arrow */
-    background-image: none;
+    display: none; /* Hide default resizer completely */
+  }
+  
+  /* Custom resize handle */
+  .custom-resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nw-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    pointer-events: none; /* Let browser handle resize */
+  }
+  
+  .resizable-popup:hover .custom-resize-handle {
+    opacity: 1;
   }
 
   /* Search hit highlight */
@@ -783,12 +803,49 @@ function App() {
           searchRef.current.focus()
         }
       }
+      
+      // Variables popup keyboard shortcuts (only when popup is open)
+      if (showVariablePopup && selectedTemplate) {
+        // Escape: Minimize variables popup
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setVarsMinimized(true)
+        }
+        
+        // Ctrl/Cmd + Enter: Close and apply variables
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault()
+          setShowVariablePopup(false)
+        }
+        
+        // Ctrl/Cmd + R: Reset all fields to examples
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+          e.preventDefault()
+          if (templatesData?.variables) {
+            const initialVars = {}
+            selectedTemplate.variables.forEach(varName => {
+              const varInfo = templatesData.variables[varName]
+              if (varInfo) initialVars[varName] = varInfo.example || ''
+            })
+            setVariables(prev => ({ ...prev, ...initialVars }))
+          }
+        }
+        
+        // Ctrl/Cmd + Shift + V: Smart paste
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'v') {
+          e.preventDefault()
+          const clip = (navigator.clipboard && navigator.clipboard.readText) ? navigator.clipboard.readText() : Promise.resolve('')
+          clip.then(text => handleVarsSmartPaste(text || ''))
+        }
+      }
     }
 
     // Attach keyboard events globally
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [selectedTemplate]) // Re-bind when template changes
+  }, [selectedTemplate, showVariablePopup, templatesData, variables, handleVarsSmartPaste]) // Re-bind when template changes
+  
+
 
   // Filter templates based on search and category
   // Advanced search with exact-first + conservative fuzzy, bilingual fields, synonyms, AND/OR, quoted phrases and match highlighting
@@ -2148,7 +2205,7 @@ function App() {
   <div className="fixed inset-0 z-[9999] pointer-events-none" style={varsOnlyMode ? { background: '#ffffff' } : undefined}>
           <div 
             ref={varPopupRef}
-            className={`bg-white ${varsOnlyMode ? '' : 'rounded-[14px] shadow-2xl border border-[#e6eef5]'} min-w-[540px] ${varsOnlyMode ? 'max-w-[100vw] max-h-[100vh]' : 'max-w-[92vw] max-h-[88vh]'} overflow-hidden resizable-popup pointer-events-auto`}
+            className={`bg-white ${varsOnlyMode ? '' : 'rounded-[14px] shadow-2xl border border-[#e6eef5]'} min-w-[540px] ${varsOnlyMode ? 'max-w-[100vw] max-h-[100vh]' : 'max-w-[92vw] max-h-[88vh]'} resizable-popup pointer-events-auto flex flex-col`}
             style={{ 
               position: 'fixed',
               top: varPopupPos.top,
@@ -2165,7 +2222,7 @@ function App() {
           >
             {/* Popup Header: Teal background, white text + sticky tools */}
             <div 
-              className={`px-3 py-2 select-none ${varsOnlyMode ? '' : ''}`}
+              className={`px-3 py-2 select-none flex-shrink-0 ${varsOnlyMode ? '' : ''}`}
               style={{ background: 'var(--primary)', color: '#fff', cursor: 'grab' }}
               onMouseDown={(e)=>{
                 // allow dragging by header background but not when targeting inputs/buttons/icons
@@ -2180,39 +2237,6 @@ function App() {
                   <h2 id="vars-title" className="text-base font-bold text-white">{t.variables}</h2>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {/* Remaining empty count */}
-                  {selectedTemplate && (
-                    <span className="text-white/85 text-[12px] mr-1" title={interfaceLanguage==='fr'?'Champs vides restants':'Empty fields left'}>
-                      {(selectedTemplate.variables||[]).reduce((n,vn)=> n + (((variables[vn]||'').trim()) ? 0 : 1), 0)}
-                    </span>
-                  )}
-                  {/* Next empty field */}
-                  {selectedTemplate && (
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        const order = selectedTemplate.variables || []
-                        const startIdx = Math.max(0, order.indexOf(focusedVar||''))
-                        let found = null
-                        for (let i=1;i<=order.length;i++) {
-                          const j = (startIdx + i) % order.length
-                          const vn = order[j]
-                          if (!((variables[vn]||'').trim())) { found = vn; break }
-                        }
-                        const target = found || order[(startIdx+1)%order.length]
-                        const el = varInputRefs.current[target]
-                        if (el && el.focus) { el.focus(); el.select?.() }
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="border-2 text-white"
-                      style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
-                      title={interfaceLanguage==='fr'?'Champ vide suivant':'Next empty field'}
-                      onMouseDown={(e)=> e.stopPropagation()}
-                    >
-                      {interfaceLanguage==='fr'?'Suivant':'Next'}
-                    </Button>
-                  )}
                   {!varsOnlyMode && (
                     <Button
                       onClick={() => {
@@ -2275,17 +2299,6 @@ function App() {
                     {varsPinned ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
                   </Button>
                   <Button
-                    onClick={() => setVarsMinimized(true)}
-                    variant="outline"
-                    size="sm"
-                    className="border-2 text-white"
-                    style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
-                    title={interfaceLanguage==='fr'?'Minimiser':'Minimize'}
-                    onMouseDown={(e)=> e.stopPropagation()}
-                  >
-                    <Minimize2 className="h-4 w-4" />
-                  </Button>
-                  <Button
                     onClick={() => {
                       if (!selectedTemplate || !templatesData || !templatesData.variables) return
                       const initialVars = {}
@@ -2304,48 +2317,6 @@ function App() {
                   >
                     <RotateCcw className="h-4 w-4 mr-1" /> {t.reset}
                   </Button>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-white/80" />
-                    <input
-                      value={varsFilter}
-                      onChange={(e)=>setVarsFilter(e.target.value)}
-                      placeholder={interfaceLanguage==='fr'?'Filtrer les champs…':'Filter fields…'}
-                      className="pl-8 pr-2 py-1 rounded-md text-[13px] bg-white/15 text-white placeholder:text-white/80 focus:outline-none"
-                      style={{ minWidth: 200 }}
-                      onMouseDown={(e)=> e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        if (e.key !== 'Enter') return
-                        e.preventDefault()
-                        if (!selectedTemplate) return
-                        const list = selectedTemplate.variables.filter(vn => {
-                          if (!varsFilter.trim()) return true
-                          const info = templatesData.variables[vn]
-                          const txt = `${vn} ${(info?.description?.fr||'')} ${(info?.description?.en||'')} ${(info?.example||'')}`
-                          return txt.toLowerCase().includes(varsFilter.toLowerCase())
-                        })
-                        if (!list.length) return
-                        const idx = Math.max(0, list.indexOf(focusedVar))
-                        const next = list[(idx + 1) % list.length]
-                        setFocusedVar(next)
-                        const el = varInputRefs.current[next]
-                        if (el) { el.focus(); el.select?.() }
-                      }}
-                    />
-                  </div>
-                  <Button
-                    onClick={() => {
-                      const clip = (navigator.clipboard && navigator.clipboard.readText) ? navigator.clipboard.readText() : Promise.resolve('')
-                      clip.then(text => handleVarsSmartPaste(text || ''))
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="border-2 text-[#145a64]"
-                    style={{ borderColor: 'rgba(20,90,100,0.35)', borderRadius: 10, background: '#fff' }}
-                    title={interfaceLanguage==='fr'?'Coller pour remplir':'Paste to fill'}
-                    onMouseDown={(e)=> e.stopPropagation()}
-                  >
-                    <ClipboardPaste className="h-4 w-4 mr-1" /> {interfaceLanguage==='fr'?'Coller':'Paste'}
-                  </Button>
                   <Button
                     onClick={() => {
                       if (!selectedTemplate) return
@@ -2361,6 +2332,20 @@ function App() {
                     onMouseDown={(e)=> e.stopPropagation()}
                   >
                     <Eraser className="h-4 w-4 mr-1" /> {interfaceLanguage==='fr'?'Effacer':'Clear'}
+                  </Button>
+                  <Button
+                    onClick={() => setVarsMinimized(true)}
+                    variant="outline"
+                    size="sm"
+                    className="border-2 text-white"
+                    style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
+                    title={interfaceLanguage === 'fr' 
+                      ? 'Minimiser\n\nRaccourcis clavier:\n• Tab/Entrée: Champ suivant\n• Échap: Minimiser\n• Ctrl+Entrée: Fermer\n• Ctrl+R: Réinitialiser\n• Ctrl+Shift+V: Coller intelligent' 
+                      : 'Minimize\n\nKeyboard shortcuts:\n• Tab/Enter: Next field\n• Escape: Minimize\n• Ctrl+Enter: Close\n• Ctrl+R: Reset all\n• Ctrl+Shift+V: Smart paste'
+                    }
+                    onMouseDown={(e)=> e.stopPropagation()}
+                  >
+                    <Minimize2 className="h-4 w-4" />
                   </Button>
                   <Button
                     onClick={() => {
@@ -2382,16 +2367,10 @@ function App() {
               </div>
             </div>
 
-            {/* Popup Content - Scrollable */}
-            <div className="overflow-y-auto" style={{ height: varsOnlyMode ? `calc(${varPopupPos.height}px - 40px)` : `calc(${varPopupPos.height}px - 48px)`, padding: varsOnlyMode ? '8px' : '12px' }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+            {/* Popup Content - Scrollable Area */}
+            <div className="flex-1 overflow-y-auto" style={{ padding: varsOnlyMode ? '12px' : '16px' }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {selectedTemplate.variables
-                  .filter(vn => {
-                    if (!varsFilter.trim()) return true
-                    const info = templatesData?.variables?.[vn]
-                    const txt = `${vn} ${(info?.description?.fr||'')} ${(info?.description?.en||'')} ${(info?.example||'')}`
-                    return txt.toLowerCase().includes(varsFilter.toLowerCase())
-                  })
                   .map((varName) => {
                   const varInfo = templatesData?.variables?.[varName]
                   if (!varInfo) return null
@@ -2399,10 +2378,10 @@ function App() {
                   const currentValue = variables[varName] || ''
                   
                   return (
-                    <div key={varName} className="rounded-[12px] p-3" style={{ background: '#e6f0ff', border: '1px solid #cfe0f3' }}>
-                      <div className="bg-white rounded-[10px] p-3 border" style={{ border: '1px solid #e6eef5' }}>
-                        <div className="mb-2 flex items-start justify-between gap-2">
-                          <label className="text-[12px] font-semibold text-gray-800">
+                    <div key={varName} className="rounded-[10px] p-3" style={{ background: 'rgba(200, 215, 150, 0.4)', border: '1px solid rgba(190, 210, 140, 0.6)' }}>
+                      <div className="bg-white rounded-[8px] p-4 border" style={{ border: '1px solid rgba(190, 210, 140, 0.4)' }}>
+                        <div className="mb-2 flex items-start justify-between gap-3">
+                          <label className="text-[14px] font-semibold text-gray-900 flex-1 leading-tight">
                             {varInfo?.description?.[interfaceLanguage] || varName}
                           </label>
                           <div className="shrink-0 flex items-center gap-1 opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity">
@@ -2418,34 +2397,74 @@ function App() {
                             >X</button>
                           </div>
                         </div>
-                        <Input
+                        <textarea
                           ref={el => { if (el) varInputRefs.current[varName] = el }}
                           value={currentValue}
-                          onChange={(e) => setVariables(prev => ({
-                            ...prev,
-                            [varName]: e.target.value
-                          }))}
+                          onChange={(e) => {
+                            setVariables(prev => ({
+                              ...prev,
+                              [varName]: e.target.value
+                            }))
+                            // Auto-resize (max 2 lines)
+                            const lines = (e.target.value.match(/\n/g) || []).length + 1
+                            e.target.style.height = lines <= 2 ? (lines === 1 ? '32px' : '52px') : '52px'
+                          }}
                           onFocus={() => setFocusedVar(varName)}
                           onKeyDown={(e) => {
                             if (!selectedTemplate?.variables) return
                             const list = selectedTemplate.variables
-                            if (e.key==='ArrowDown' || (e.key==='Enter' && !e.shiftKey)) {
+                            
+                            // Tab or Enter to next field (unless Shift+Enter for new line)
+                            if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
                               e.preventDefault()
-                              const idx = Math.max(0, list.indexOf(varName))
-                              const next = list[(idx+1)%list.length]
-                              const el = varInputRefs.current[next]
-                              if (el && el.focus) { el.focus(); el.select?.() }
-                            } else if (e.key==='ArrowUp' || (e.key==='Enter' && e.shiftKey)) {
-                              e.preventDefault()
-                              const idx = Math.max(0, list.indexOf(varName))
-                              const prev = list[(idx-1+list.length)%list.length]
-                              const el = varInputRefs.current[prev]
-                              if (el && el.focus) { el.focus(); el.select?.() }
+                              const currentIdx = list.indexOf(varName)
+                              let nextIdx
+                              
+                              if (e.shiftKey && e.key === 'Tab') {
+                                // Shift+Tab = previous field
+                                nextIdx = (currentIdx - 1 + list.length) % list.length
+                              } else {
+                                // Tab or Enter = next empty field, or next field if none empty
+                                const emptyFields = list.filter(vn => !((variables[vn] || '').trim()))
+                                if (emptyFields.length > 0) {
+                                  const currentEmptyIdx = emptyFields.findIndex(vn => 
+                                    list.indexOf(vn) > currentIdx
+                                  )
+                                  nextIdx = currentEmptyIdx >= 0 
+                                    ? list.indexOf(emptyFields[currentEmptyIdx])
+                                    : list.indexOf(emptyFields[0])
+                                } else {
+                                  nextIdx = (currentIdx + 1) % list.length
+                                }
+                              }
+                              
+                              const nextVar = list[nextIdx]
+                              const el = varInputRefs.current[nextVar]
+                              if (el && el.focus) { 
+                                el.focus()
+                                el.select?.()
+                              }
                             }
                           }}
                           onBlur={() => setFocusedVar(prev => (prev===varName? null : prev))}
-                          placeholder=""
-                          className="h-10 border-2 input-rounded border-[#e6eef5]"
+                          placeholder={varInfo?.example || ''}
+                          className="w-full min-h-[32px] border-2 input-rounded border-[#e6eef5] resize-none transition-all duration-200 text-sm px-2 py-1 leading-5 flex items-center"
+                          style={{ 
+                            height: (() => {
+                              const lines = (currentValue.match(/\n/g) || []).length + 1
+                              return lines <= 2 ? (lines === 1 ? '32px' : '52px') : '52px'
+                            })(),
+                            maxHeight: '52px',
+                            overflow: 'hidden',
+                            borderColor: currentValue.trim() 
+                              ? 'rgba(34, 197, 94, 0.4)' // Green for filled
+                              : (focusedVar === varName 
+                                ? 'rgba(59, 130, 246, 0.4)' // Blue for focused
+                                : 'rgba(239, 68, 68, 0.2)'), // Light red for empty
+                            backgroundColor: !currentValue.trim() && focusedVar !== varName 
+                              ? 'rgba(254, 242, 242, 0.5)' 
+                              : 'white'
+                          }}
                         />
                         {/* Soft validation hint: email/URL/date/amount */}
                         {(currentValue || focusedVar===varName) && (()=>{
@@ -2479,45 +2498,16 @@ function App() {
                             </div>
                           )
                         })()}
-                        {/* Focus-only example hint */}
-                        {focusedVar === varName && ((varInfo?.example || '') !== '') && (
-                          <div className="mt-1 text-[11px] text-gray-500">
-                            {interfaceLanguage==='fr'?'Exemple:':'Example:'} <span className="font-medium text-gray-700">{varInfo.example}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   )
                 })}
               </div>
-              {/* enlarged resize hit area for easier grabs */}
+              {/* Custom resize handle in bottom-right (hidden in varsOnlyMode) */}
               {!varsOnlyMode && <div
                 onMouseDown={(e) => {
                   e.preventDefault()
-                  const startX = e.clientX
-                  const startY = e.clientY
-                  const startW = varPopupPos.width
-                  const startH = varPopupPos.height
-                  const onMove = (ev) => {
-                    const dw = ev.clientX - startX
-                    const dh = ev.clientY - startY
-                    setVarPopupPos(p => ({ ...p, width: Math.max(540, Math.min(window.innerWidth * 0.92, startW + dw)), height: Math.max(380, Math.min(window.innerHeight * 0.88, startH + dh)) }))
-                  }
-                  const onUp = () => {
-                    document.removeEventListener('mousemove', onMove)
-                    document.removeEventListener('mouseup', onUp)
-                  }
-                  document.addEventListener('mousemove', onMove)
-                  document.addEventListener('mouseup', onUp)
-                }}
-                title="Resize"
-                style={{ position: 'absolute', right: 8, bottom: 8, width: 24, height: 24, cursor: 'nwse-resize', background: 'transparent' }}
-                onMouseDownCapture={(e)=> e.stopPropagation()}
-              />}
-              {/* custom resize arrow in bottom-right (hidden in varsOnlyMode) */}
-              {!varsOnlyMode && <div
-                onMouseDown={(e) => {
-                  e.preventDefault()
+                  e.stopPropagation()
                   // emulate resize by dragging from bottom-right corner
                   const startX = e.clientX
                   const startY = e.clientY
@@ -2536,18 +2526,21 @@ function App() {
                   document.addEventListener('mouseup', onUp)
                 }}
                 title="Resize"
+                className="custom-resize-handle"
                 style={{
                   position: 'absolute',
-                  right: 10,
-                  bottom: 10,
-                  width: 18,
-                  height: 18,
-                  cursor: 'nwse-resize'
+                  right: 8,
+                  bottom: 8,
+                  width: 16,
+                  height: 16,
+                  cursor: 'nwse-resize',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1000
                 }}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 20 L12 20 L20 12" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
-                </svg>
+                <MoveRight className="h-4 w-4 text-gray-400 transform rotate-45 hover:text-gray-600 transition-colors" />
               </div>}
             </div>
           </div>
