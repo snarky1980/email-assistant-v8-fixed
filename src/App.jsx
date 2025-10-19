@@ -1899,12 +1899,6 @@ function App() {
               <div className="flex items-center">
                 <Edit3 className="h-5 w-5 mr-2 text-white" />
                 <h2 id="vars-title" className="text-base font-bold text-white">{t.variables}</h2>
-                <Badge
-                  className="ml-2 text-[11px]"
-                  style={{ background: 'var(--tb-sage)', color: 'white', borderColor: 'var(--tb-sage)' }}
-                >
-                  {selectedTemplate.variables.length} variable{selectedTemplate.variables.length > 1 ? 's' : ''}
-                </Badge>
               </div>
               <div className="flex items-center space-x-2">
                 <Button
@@ -1937,7 +1931,7 @@ function App() {
             </div>
 
             {/* Popup Content - Scrollable */}
-            <div className="p-3 overflow-y-auto" style={{ background: 'rgba(164, 185, 92, 0.10)' }}>
+            <div className="p-3 overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {selectedTemplate.variables.map((varName) => {
                   const varInfo = templatesData.variables[varName]
@@ -1946,27 +1940,23 @@ function App() {
                   const currentValue = variables[varName] || ''
                   
                   return (
-                    <div key={varName} className="bg-white rounded-[12px] p-3 border border-[#e6eef5] hover:border-[#7bd1ca] transition-colors duration-150">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-1">
-                        <label className="text-[12px] font-semibold text-gray-800">
-                          {varInfo.description[interfaceLanguage]}
-                        </label>
-                        <Badge variant="secondary" className="text-[10px] font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
-                          {varInfo.type}
-                        </Badge>
+                    <div key={varName} className="rounded-[12px] p-2" style={{ background: '#e6f0ff', border: '1px solid #c7dbff' }}>
+                      <div className="bg-white rounded-[10px] p-3 border border-[#e6eef5]">
+                        <div className="mb-2">
+                          <label className="text-[12px] font-semibold text-gray-800">
+                            {varInfo.description[interfaceLanguage]}
+                          </label>
+                        </div>
+                        <Input
+                          value={currentValue}
+                          onChange={(e) => setVariables(prev => ({
+                            ...prev,
+                            [varName]: e.target.value
+                          }))}
+                          placeholder=""
+                          className="h-10 border-2 input-rounded border-[#e6eef5]"
+                        />
                       </div>
-                      
-                      {/* Input field */}
-                      <Input
-                        value={currentValue}
-                        onChange={(e) => setVariables(prev => ({
-                          ...prev,
-                          [varName]: e.target.value
-                        }))}
-                        placeholder=""
-                        className="h-10 border-2 input-rounded border-[#e6eef5]"
-                      />
                     </div>
                   )
                 })}
