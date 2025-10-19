@@ -1230,10 +1230,10 @@ function App() {
                 </button>
               </div>
               {/* Category filter */}
-              <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2 px-4">
+              <div className="mt-2">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger
-                    className={`border-2 transition-all duration-200 rounded-md ${selectedCategory === 'all' ? 'font-semibold' : ''}`}
+                    className={`w-full h-12 border-2 transition-all duration-200 rounded-[14px] ${selectedCategory === 'all' ? 'font-semibold' : ''}`}
                     style={{ background: 'rgba(163, 179, 84, 0.36)', borderColor: '#bfe7e3', color: '#1a365d' }}
                   >
                     <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
@@ -1250,7 +1250,7 @@ function App() {
                 </Select>
               </div>
               {/* Search */}
-              <div className="relative group mt-2 px-4">
+              <div className="relative group mt-2">
                 <Search className="absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" style={{ left: 18 }} />
                 <Input
                   ref={searchRef}
@@ -1258,7 +1258,7 @@ function App() {
                   placeholder={t.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-12 pr-10 border-2 transition-all duration-300 teal-focus"
+                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-[14px] bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-12 pl-12 pr-10 border-2 transition-all duration-300 teal-focus"
                 />
                 {searchQuery && (
                   <button
@@ -1408,9 +1408,9 @@ function App() {
                   <span className="truncate">{t.selectTemplate}</span>
                 </div>
               </div>
-              <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2">
+              <div className="mt-2">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className={`border-2 transition-all duration-200 rounded-md ${selectedCategory === 'all' ? 'font-semibold' : ''}`} style={{ background: 'rgba(163, 179, 84, 0.36)', borderColor: '#bfe7e3', color: '#1a365d' }}>
+                  <SelectTrigger className={`w-full h-12 border-2 transition-all duration-200 rounded-[14px] ${selectedCategory === 'all' ? 'font-semibold' : ''}`} style={{ background: 'rgba(163, 179, 84, 0.36)', borderColor: '#bfe7e3', color: '#1a365d' }}>
                     <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                     <SelectValue placeholder={t.allCategories} />
                   </SelectTrigger>
@@ -1426,7 +1426,7 @@ function App() {
               </div>
               <div className="relative group mt-2">
                 <Search className="absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" style={{ left: 14 }} />
-                <Input ref={searchRef} type="text" placeholder={t.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-12 pr-10 border-2 transition-all duration-300 teal-focus" />
+                <Input ref={searchRef} type="text" placeholder={t.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-[14px] bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-12 pl-12 pr-10 border-2 transition-all duration-300 teal-focus" />
               </div>
               <div className="mt-3 space-y-3">
                 {filteredTemplates.slice(0, 80).map((template) => (
