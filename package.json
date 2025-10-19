@@ -13,6 +13,8 @@
     "dev": "vite",
     "dev:fixed": "vite",
     "start": "vite",
+    "dev:clean": "lsof -ti:5173 | xargs -r kill -9; vite",
+    "dev:retry": "(vite --strictPort || vite --port 5174 --strictPort || vite --port 5175 --strictPort)",
     "build": "vite build",
     "preview": "vite preview",
     "serve:static": "npx http-server -p 5173 .",

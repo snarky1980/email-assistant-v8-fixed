@@ -85,6 +85,22 @@ Then start dev with:
 eav8
 ```
 
+### Port conflicts and auto-retry
+
+The dev server binds to port 5173 with `strictPort: true`.
+
+- Free the port and start:
+
+```bash
+npm run dev:clean
+```
+
+- Auto-retry on alternate ports 5174/5175 if 5173 is busy:
+
+```bash
+npm run dev:retry
+```
+
 ## Production preview (optional)
 
 ```bash
