@@ -2014,7 +2014,7 @@ function App() {
       )}
 
       {/* Resizable Variables Popup (no blocking backdrop) */}
-      {showVariablePopup && !varsMinimized && selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && createPortal(
+    {showVariablePopup && !varsMinimized && selectedTemplate && templatesData && templatesData.variables && selectedTemplate.variables && selectedTemplate.variables.length > 0 && createPortal(
   <div className="fixed inset-0 z-[9999] pointer-events-none">
           <div 
             ref={varPopupRef}
@@ -2038,9 +2038,9 @@ function App() {
               className="px-3 py-2 select-none"
               style={{ background: 'var(--primary)', color: '#fff', cursor: 'grab' }}
               onMouseDown={(e)=>{
-                // allow dragging by header background but not when targeting inputs/buttons
-                const tag = (e.target && e.target.tagName) || ''
-                if (['INPUT','BUTTON','svg','path'].includes(String(tag).toUpperCase())) return
+                // allow dragging by header background but not when targeting inputs/buttons/icons
+                const tag = (e.target && e.target.tagName) ? String(e.target.tagName).toUpperCase() : ''
+                if (tag === 'INPUT' || tag === 'BUTTON' || tag === 'SVG' || tag === 'PATH') return
                 startDrag(e)
               }}
             >
@@ -2193,12 +2193,12 @@ function App() {
                 {selectedTemplate.variables
                   .filter(vn => {
                     if (!varsFilter.trim()) return true
-                    const info = templatesData.variables[vn]
+                    const info = templatesData?.variables?.[vn]
                     const txt = `${vn} ${(info?.description?.fr||'')} ${(info?.description?.en||'')} ${(info?.example||'')}`
                     return txt.toLowerCase().includes(varsFilter.toLowerCase())
                   })
                   .map((varName) => {
-                  const varInfo = templatesData.variables[varName]
+                  const varInfo = templatesData?.variables?.[varName]
                   if (!varInfo) return null
                   
                   const currentValue = variables[varName] || ''
@@ -2208,13 +2208,13 @@ function App() {
                       <div className="bg-white rounded-[10px] p-3 border border-[#e6eef5]">
                         <div className="mb-2 flex items-start justify-between gap-2">
                           <label className="text-[12px] font-semibold text-gray-800">
-                            {varInfo.description[interfaceLanguage]}
+                            {varInfo?.description?.[interfaceLanguage] || varName}
                           </label>
                           <div className="shrink-0 flex items-center gap-1 opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               className="text-[11px] px-2 py-0.5 rounded border border-[#e6eef5] text-[#145a64] hover:bg-[#f0fbfb]"
                               title={interfaceLanguage==='fr'?'Remettre l’exemple':'Reset to example'}
-                              onClick={() => setVariables(prev => ({ ...prev, [varName]: varInfo.example || '' }))}
+                              onClick={() => setVariables(prev => ({ ...prev, [varName]: (varInfo?.example || '') }))}
                             >Ex.</button>
                             <button
                               className="text-[11px] px-2 py-0.5 rounded border border-[#e6eef5] text-[#7f1d1d] hover:bg-[#fee2e2]"
@@ -2235,7 +2235,7 @@ function App() {
                           className="h-10 border-2 input-rounded border-[#e6eef5]"
                         />
                         {/* Focus-only example hint */}
-                        {focusedVar === varName && (varInfo.example || '') && (
+                        {focusedVar === varName && ((varInfo?.example || '') !== '') && (
                           <div className="mt-1 text-[11px] text-gray-500">
                             {interfaceLanguage==='fr'?'Exemple:':'Example:'} <span className="font-medium text-gray-700">{varInfo.example}</span>
                           </div>
