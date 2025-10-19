@@ -1028,17 +1028,7 @@ function App() {
   // Persist variables popup: no ESC-to-close
   // (Intentionally disabled per design: close only via the X button)
 
-  // Track resize to persist size
-  useEffect(() => {
-    if (!showVariablePopup || !varPopupRef.current) return
-    const el = varPopupRef.current
-    const ro = new ResizeObserver((entries) => {
-      const rect = entries[0].contentRect
-      setVarPopupPos(p => ({ ...p, width: Math.round(rect.width), height: Math.round(rect.height) }))
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [showVariablePopup])
+  // Disable automatic size persistence to avoid auto-resizing on open
 
   // Drag handlers
   const startDrag = (e) => {
@@ -1881,7 +1871,7 @@ function App() {
               top: varPopupPos.top,
               left: varPopupPos.left,
               width: varPopupPos.width,
-              height: 'auto',
+              height: varPopupPos.height,
               cursor: dragState.current.dragging ? 'grabbing' : 'default'
             }}
             onMouseDown={(e) => e.stopPropagation()}
@@ -1931,7 +1921,7 @@ function App() {
             </div>
 
             {/* Popup Content - Scrollable */}
-            <div className="p-3 overflow-y-auto">
+            <div className="p-3 overflow-y-auto" style={{ height: `calc(${varPopupPos.height}px - 44px)` }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {selectedTemplate.variables.map((varName) => {
                   const varInfo = templatesData.variables[varName]
@@ -1969,7 +1959,7 @@ function App() {
                   const startX = e.clientX
                   const startY = e.clientY
                   const startW = varPopupPos.width
-                  const startH = varPopupPos.height || varPopupRef.current?.getBoundingClientRect().height || 620
+                  const startH = varPopupPos.height
                   const onMove = (ev) => {
                     const dw = ev.clientX - startX
                     const dh = ev.clientY - startY
