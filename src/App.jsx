@@ -5,6 +5,7 @@ import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
 // Deploy marker: 2025-10-16T07:31Z
 import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2, ExternalLink } from 'lucide-react'
+import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2, ExternalLink, Expand, Shrink } from 'lucide-react'
 import { Button } from './components/ui/button.jsx'
 import { Input } from './components/ui/input.jsx'
 import { Textarea } from './components/ui/textarea.jsx'
@@ -363,6 +364,9 @@ function App() {
   const [varsPinned, setVarsPinned] = useState(true)
   const [varsMinimized, setVarsMinimized] = useState(false)
   const [pillPos, setPillPos] = useState({ right: 16, bottom: 16 })
+  const [isFullscreen, setIsFullscreen] = useState(() => {
+    try { return !!(document.fullscreenElement || document.webkitFullscreenElement) } catch { return false }
+  })
   // Cross-window sync for variables (main <-> pop-out)
   const varsChannelRef = useRef(null)
   const varsSenderIdRef = useRef(Math.random().toString(36).slice(2))
@@ -405,6 +409,35 @@ function App() {
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [varsOnlyMode])
+
+  // Track fullscreen state (pop-out only)
+  useEffect(() => {
+    const onFs = () => {
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement))
+      // adjust size again when entering/exiting fullscreen
+      if (varsOnlyMode) setVarPopupPos(p => ({ ...p, top: 0, left: 0, width: window.innerWidth, height: window.innerHeight }))
+    }
+    document.addEventListener('fullscreenchange', onFs)
+    document.addEventListener('webkitfullscreenchange', onFs)
+    return () => {
+      document.removeEventListener('fullscreenchange', onFs)
+      document.removeEventListener('webkitfullscreenchange', onFs)
+    }
+  }, [varsOnlyMode])
+
+  const toggleFullscreen = () => {
+    try {
+      const el = document.documentElement
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement)
+      if (!isFs) {
+        if (el.requestFullscreen) el.requestFullscreen()
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen()
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+      }
+    } catch {}
+  }
 
   // Automatically save important preferences
   useEffect(() => {
@@ -2125,6 +2158,7 @@ function App() {
                         const left = Math.max(0, Math.floor(((window.screen?.availWidth || window.innerWidth) - w) / 2))
                         const top = Math.max(0, Math.floor(((window.screen?.availHeight || window.innerHeight) - h) / 3))
                         const features = `popup=yes,width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top}`
+                        const features = `popup=yes,width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top},toolbar=0,location=0,menubar=0,status=0,scrollbars=1,resizable=1,noopener=1`
                         const win = window.open(url.toString(), '_blank', features)
                         if (win && win.focus) win.focus()
                       }}
@@ -2136,6 +2170,19 @@ function App() {
                       onMouseDown={(e)=> e.stopPropagation()}
                     >
                       <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {varsOnlyMode && (
+                    <Button
+                      onClick={(e) => { e.stopPropagation(); toggleFullscreen() }}
+                      variant="outline"
+                      size="sm"
+                      className="border-2 text-white"
+                      style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
+                      title={interfaceLanguage==='fr'?(isFullscreen?'Quitter le plein écran':'Plein écran'):(isFullscreen?'Exit full screen':'Full screen')}
+                      onMouseDown={(e)=> e.stopPropagation()}
+                    >
+                      {isFullscreen ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
                     </Button>
                   )}
                   <Button
