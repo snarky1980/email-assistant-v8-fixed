@@ -1,5 +1,6 @@
 /* DEPLOY: 2025-10-15 07:40 - FIXED: Function hoisting error resolved */
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
 // Deploy marker: 2025-10-16T07:31Z
 import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star } from 'lucide-react'
@@ -160,7 +161,63 @@ const customEditorStyles = `
     background-color: var(--tb-teal);
     background-image: linear-gradient(45deg, transparent 50%, var(--tb-teal-dark) 50%);
   }
+
+  /* Search hit highlight */
+  mark.search-hit {
+    background: #fff3bf;
+    border-radius: 3px;
+    padding: 0 2px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+  }
 `
+
+// Lightweight bilingual synonyms for better recall in fuzzy search
+const SYNONYMS = {
+  // FR <-> EN common domain terms
+  devis: ['devis', 'estimation', 'soumission', 'quote', 'estimate', 'quotation'],
+  estimation: ['estimation', 'devis', 'quote', 'estimate'],
+  soumission: ['soumission', 'devis', 'quote'],
+  facture: ['facture', 'facturation', 'invoice', 'billing'],
+  paiement: ['paiement', 'payment', 'payer', 'pay'],
+  client: ['client', 'cliente', 'clients', 'customer', 'customers', 'user', 'utilisateur', 'usager'],
+  projet: ['projet', 'projets', 'project', 'projects', 'gestion', 'management'],
+  gestion: ['gestion', 'management', 'project management'],
+  technique: ['technique', 'techniques', 'technical', 'tech', 'support'],
+  probleme: ['problème', 'probleme', 'incident', 'bug', 'issue', 'problem', 'outage', 'panne'],
+  urgent: ['urgent', 'urgence', 'priority', 'prioritaire', 'rush'],
+  delai: ['délai', 'delai', 'delais', 'délai(s)', 'deadline', 'due date', 'turnaround'],
+  tarif: ['tarif', 'tarifs', 'prix', 'price', 'pricing', 'rate', 'rates'],
+  rabais: ['rabais', 'remise', 'escompte', 'discount'],
+  traduction: ['traduction', 'translation', 'translate'],
+  terminologie: ['terminologie', 'terminology', 'termes', 'glossary'],
+  revision: ['révision', 'revision', 'review', 'proofreading'],
+  service: ['service', 'services', 'offre', 'offer'],
+}
+
+const normalize = (s = '') => s
+  .normalize('NFD')
+  .replace(/\p{Diacritic}+/gu, '')
+  .toLowerCase()
+
+function expandQuery(q) {
+  if (!q) return ''
+  const tokens = normalize(q).split(/\s+/).filter(Boolean)
+  const bag = new Set()
+  for (const t of tokens) {
+    bag.add(t)
+    // try direct lookup
+    if (SYNONYMS[t]) SYNONYMS[t].forEach(w => bag.add(normalize(w)))
+    // try approximate key without accents
+    const found = Object.keys(SYNONYMS).find(k => k === t)
+    if (!found) {
+      // fallback: add close matches by startsWith to avoid explosion
+      for (const k of Object.keys(SYNONYMS)) {
+        if (k.startsWith(t) || t.startsWith(k)) SYNONYMS[k].forEach(w => bag.add(normalize(w)))
+      }
+    }
+  }
+  return Array.from(bag).join(' ')
+}
 
 // Interface texts by language - moved outside component to avoid TDZ issues
 const interfaceTexts = {
@@ -497,29 +554,124 @@ function App() {
   }, [selectedTemplate]) // Re-bind when template changes
 
   // Filter templates based on search and category
-  const filteredTemplates = useMemo(() => {
-    if (!templatesData) return []
-    let filtered = templatesData.templates
+  // Advanced search with fuzzy, bilingual fields, synonyms, AND/OR, quoted phrases and match highlighting
+  const { filteredTemplates, searchMatchMap } = useMemo(() => {
+    const empty = { filteredTemplates: [], searchMatchMap: {} }
+    if (!templatesData) return empty
+    let dataset = templatesData.templates
 
-    if (searchQuery) {
-      filtered = filtered.filter(template => 
-        template.title[templateLanguage]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        template.description[templateLanguage]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        template.category.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    }
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(template => template.category === selectedCategory)
-    }
-
+    // Apply category and favorites filters first
+    if (selectedCategory !== 'all') dataset = dataset.filter(t => t.category === selectedCategory)
     if (favoritesOnly) {
       const favSet = new Set(favorites)
-      filtered = filtered.filter(t => favSet.has(t.id))
+      dataset = dataset.filter(t => favSet.has(t.id))
     }
 
-    return filtered
-  }, [templatesData, searchQuery, selectedCategory, templateLanguage, favoritesOnly, favorites])
+    const qRaw = (searchQuery || '').trim()
+    if (!qRaw) return { filteredTemplates: dataset, searchMatchMap: {} }
+
+    // Tokenize query supporting quotes and AND/OR (EN/FR)
+    const tokenize = (s) => {
+      const out = []
+      let buf = ''
+      let inQ = false
+      for (let i = 0; i < s.length; i++) {
+        const ch = s[i]
+        if (ch === '"') { inQ = !inQ; if (!inQ && buf) { out.push(buf); buf = '' } continue }
+        if (!inQ && /\s/.test(ch)) { if (buf) { out.push(buf); buf = '' } continue }
+        buf += ch
+      }
+      if (buf) out.push(buf)
+      // Normalize operators
+      return out.map(tok => {
+        const t = tok.trim()
+        const upper = t.toUpperCase()
+        if (upper === 'AND' || upper === 'ET' || upper === '&&') return 'AND'
+        if (upper === 'OR' || upper === 'OU' || upper === '||' || upper === '|') return 'OR'
+        return t
+      })
+    }
+
+    const tokens = tokenize(qRaw)
+    const hasOps = tokens.some(t => t === 'AND' || t === 'OR') || /"/.test(qRaw)
+    // Build clauses (OR of AND groups)
+    const clauses = []
+    let current = []
+    const pushCurrent = () => { if (current.length) { clauses.push(current); current = [] } }
+    for (const t of tokens) {
+      if (t === 'OR') { pushCurrent() } else if (t === 'AND') { /* implicit */ } else { current.push(t) }
+    }
+    pushCurrent()
+
+    const itemText = (it) => normalize([
+      it.title?.fr || '', it.title?.en || '', it.description?.fr || '', it.description?.en || '', it.category || ''
+    ].join(' '))
+
+    const itemMatchesClause = (it, clause) => {
+      const text = itemText(it)
+      return clause.every(term => {
+        const exp = expandQuery(term).split(/\s+/).filter(Boolean)
+        if (!exp.length) return true
+        return exp.some(w => text.includes(w))
+      })
+    }
+
+    let gated = dataset
+    if (hasOps && clauses.length) {
+      gated = dataset.filter(it => clauses.some(cl => itemMatchesClause(it, cl)))
+    }
+    if (!gated.length) return { filteredTemplates: [], searchMatchMap: {} }
+
+    // Fuse fuzzy search with matches for highlighting
+    const fuse = new Fuse(gated, {
+      includeScore: true,
+      includeMatches: true,
+      shouldSort: true,
+      threshold: 0.34,
+      ignoreLocation: true,
+      minMatchCharLength: 2,
+      keys: [
+        { name: 'title.fr', weight: 0.45 },
+        { name: 'title.en', weight: 0.45 },
+        { name: 'description.fr', weight: 0.30 },
+        { name: 'description.en', weight: 0.30 },
+        { name: 'category', weight: 0.20 },
+      ]
+    })
+
+    const expanded = expandQuery(qRaw)
+    const results = fuse.search(expanded)
+    const items = results.map(r => r.item)
+    const matchMap = {}
+    for (const r of results) {
+      const id = r.item.id
+      if (!matchMap[id]) matchMap[id] = {}
+      if (Array.isArray(r.matches)) {
+        for (const m of r.matches) {
+          if (!m?.key || !Array.isArray(m?.indices)) continue
+          const key = m.key
+          if (!matchMap[id][key]) matchMap[id][key] = []
+          matchMap[id][key].push(...m.indices)
+        }
+      }
+    }
+    return { filteredTemplates: items, searchMatchMap: matchMap }
+  }, [templatesData, searchQuery, selectedCategory, favoritesOnly, favorites])
+
+  // Helpers for rendering highlighted text
+  const getMatchRanges = (id, key) => (searchMatchMap && searchMatchMap[id] && searchMatchMap[id][key]) || null
+  const renderHighlighted = (text = '', ranges) => {
+    if (!ranges || !ranges.length) return text
+    const parts = []
+    let last = 0
+    for (const [start, end] of ranges) {
+      if (start > last) parts.push(text.slice(last, start))
+      parts.push(<mark key={`${start}-${end}`} className="search-hit">{text.slice(start, end + 1)}</mark>)
+      last = end + 1
+    }
+    if (last < text.length) parts.push(text.slice(last))
+    return <>{parts}</>
+  }
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -1029,7 +1181,7 @@ function App() {
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger
                     className={`border-2 transition-all duration-200 rounded-md ${selectedCategory === 'all' ? 'font-semibold' : ''}`}
-                    style={{ background: 'rgba(163, 179, 84, 0.30)', borderColor: '#bfe7e3', color: '#1a365d' }}
+                    style={{ background: 'rgba(163, 179, 84, 0.36)', borderColor: '#bfe7e3', color: '#1a365d' }}
                   >
                     <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                     <SelectValue placeholder={t.allCategories} />
@@ -1130,10 +1282,16 @@ function App() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h3 className="font-bold text-gray-900 text-[13px] mb-1" title={template.title[templateLanguage]}>
-                              {template.title[templateLanguage]}
+                              {renderHighlighted(
+                                template.title[templateLanguage],
+                                getMatchRanges(template.id, `title.${templateLanguage}`)
+                              )}
                             </h3>
                             <p className="text-[12px] text-gray-600 mb-2 leading-relaxed line-clamp-2" title={template.description[templateLanguage]}>
-                              {template.description[templateLanguage]}
+                              {renderHighlighted(
+                                template.description[templateLanguage],
+                                getMatchRanges(template.id, `description.${templateLanguage}`)
+                              )}
                             </p>
                             <Badge variant="secondary" className="text-[11px] font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
                               {template.category}
@@ -1199,7 +1357,7 @@ function App() {
               </div>
               <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5] mt-2">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className={`border-2 transition-all duration-200 rounded-md ${selectedCategory === 'all' ? 'font-semibold' : ''}`} style={{ background: 'rgba(163, 179, 84, 0.30)', borderColor: '#bfe7e3', color: '#1a365d' }}>
+                  <SelectTrigger className={`border-2 transition-all duration-200 rounded-md ${selectedCategory === 'all' ? 'font-semibold' : ''}`} style={{ background: 'rgba(163, 179, 84, 0.36)', borderColor: '#bfe7e3', color: '#1a365d' }}>
                     <Filter className="h-4 w-4 mr-2 text-[#1f8a99]" />
                     <SelectValue placeholder={t.allCategories} />
                   </SelectTrigger>
@@ -1223,10 +1381,16 @@ function App() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="font-bold text-gray-900 text-[13px] mb-1" title={template.title[templateLanguage]}>
-                          {template.title[templateLanguage]}
+                          {renderHighlighted(
+                            template.title[templateLanguage],
+                            getMatchRanges(template.id, `title.${templateLanguage}`)
+                          )}
                         </h3>
                         <p className="text-[12px] text-gray-600 mb-2 leading-relaxed line-clamp-2" title={template.description[templateLanguage]}>
-                          {template.description[templateLanguage]}
+                          {renderHighlighted(
+                            template.description[templateLanguage],
+                            getMatchRanges(template.id, `description.${templateLanguage}`)
+                          )}
                         </p>
                         <Badge variant="secondary" className="text-[11px] font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
                           {template.category}
@@ -1437,28 +1601,28 @@ function App() {
                       <span className="text-[#1a365d]">{t.copySubject || 'Subject'}</span>
                     </Button>
                     
-                    {/* Body Copy Button - Sage accent */}
+                    {/* Body Copy Button - Sage accent (slightly darker) */}
                     <Button 
                       onClick={() => copyToClipboard('body')} 
                       variant="outline"
                       size="sm"
                       className="font-medium border-2 transition-all duration-300 group shadow-soft"
                       style={{ 
-                        borderColor: 'rgba(163, 179, 84, 0.3)',
+                        borderColor: 'rgba(163, 179, 84, 0.5)',
                         borderRadius: '12px',
-                        backgroundColor: 'rgba(163, 179, 84, 0.1)'
+                        backgroundColor: 'rgba(163, 179, 84, 0.18)'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#a3b354';
-                        e.currentTarget.style.backgroundColor = 'rgba(163, 179, 84, 0.2)';
+                        e.currentTarget.style.borderColor = '#8ea345';
+                        e.currentTarget.style.backgroundColor = 'rgba(163, 179, 84, 0.28)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(163, 179, 84, 0.3)';
-                        e.currentTarget.style.backgroundColor = 'rgba(163, 179, 84, 0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(163, 179, 84, 0.5)';
+                        e.currentTarget.style.backgroundColor = 'rgba(163, 179, 84, 0.18)';
                       }}
                       title="Copy body only (Ctrl+B)"
                     >
-                      <Edit3 className="h-4 w-4 mr-2 text-[#a3b354]" />
+                      <Edit3 className="h-4 w-4 mr-2 text-[#8ea345]" />
                       <span className="text-[#1a365d]">{t.copyBody || 'Body'}</span>
                     </Button>
                     
