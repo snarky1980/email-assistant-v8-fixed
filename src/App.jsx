@@ -304,6 +304,12 @@ function App() {
   // References for keyboard shortcuts
   const searchRef = useRef(null) // Reference for focus on search (Ctrl+J)
 
+  // Template list interaction states
+  const [pressedCardId, setPressedCardId] = useState(null)
+  const [focusedIndex, setFocusedIndex] = useState(-1)
+  const itemRefs = useRef({})
+  const [favLiveMsg, setFavLiveMsg] = useState('')
+
   // Automatically save important preferences
   useEffect(() => {
     saveState({
@@ -958,10 +964,10 @@ function App() {
   <div className="flex gap-4 items-stretch w-full">
     {/* Left panel - Template list (resizable) */}
     <div style={{ width: leftWidth }} className="shrink-0">
-            <Card className="h-fit card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
+            <Card className="h-fit card-soft border-0 overflow-hidden rounded-[14px]" style={{ background: '#ffffff' }}>
               <CardHeader className="pb-3">
                 {/* Teal header bar for "Sélectionnez un modèle" */}
-                <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[12px] mb-3" style={{ background: 'var(--primary)' }}>
+                <div className="h-[56px] grid grid-cols-[1fr_auto_1fr] items-center rounded-[14px] mb-2" style={{ background: 'var(--primary)' }}>
                   <div className="col-start-2 justify-self-center min-w-0">
                     <div data-slot="card-title" className="text-lg md:text-xl font-bold text-white flex items-center justify-center gap-2 leading-tight whitespace-nowrap">
                       <FileText className="h-6 w-6 text-white" aria-hidden="true" />
@@ -972,18 +978,27 @@ function App() {
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-600">{filteredTemplates.length} {t.templatesCount}</p>
                   <button
-                    onClick={() => setFavoritesOnly(v => !v)}
+                    onClick={() => {
+                      setFavoritesOnly(v => {
+                        const next = !v
+                        setFavLiveMsg(next ? `${t.favorites} (${favorites.length || 0})` : t.favorites)
+                        return next
+                      })
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
                     className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 border ${favoritesOnly ? 'bg-[#f0fbfb] text-[#145a64] border-[#bfe7e3]' : 'bg-white text-[#145a64] border-[#bfe7e3]'} flex items-center gap-2`}
                     title={t.showFavoritesOnly}
                     aria-pressed={favoritesOnly}
+                    aria-live="polite"
                   >
-                    <span className={`text-base ${favoritesOnly ? 'text-[#f5c542]' : 'text-gray-300'}`}>★</span>
-                    {t.favorites}
+                    <span className={`text-base transition-all duration-150 ${favoritesOnly ? 'text-[#f5c542] scale-110' : 'text-gray-300 scale-100'}`}>★</span>
+                    {favoritesOnly ? `${t.favorites} (${favorites.length || 0})` : t.favorites}
+                    <span style={{position:'absolute',left:'-9999px',height:0,width:0,overflow:'hidden'}} aria-live="polite">{favLiveMsg}</span>
                   </button>
                 </div>
                 
                 {/* Category filter with style (white background wrapper) */}
-                <div className="bg-white p-2 rounded-[12px] border border-[#e6eef5]">
+                <div className="bg-white p-2 rounded-[14px] border border-[#e6eef5]">
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger
                       className="border-2 transition-all duration-200 rounded-md"
@@ -1029,7 +1044,7 @@ function App() {
                 </div>
 
                 {/* Template language header and toggler on one teal bar */}
-                <div className="h-[48px] w-full rounded-lg mt-3 px-3 flex items-center justify-between" style={{ background: 'var(--primary)' }}>
+                <div className="h-[48px] w-full rounded-[14px] mt-3 px-3 flex items-center justify-between" style={{ background: 'var(--primary)' }}>
                   <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-tight whitespace-nowrap">
                     <Languages className="h-5 w-5 text-white" />
                     <span className="truncate">{t.templateLanguage}</span>
@@ -1055,15 +1070,34 @@ function App() {
 
               <CardContent className="p-0">
                 <ScrollArea className="h-[600px]" style={{ '--scrollbar-width': '8px' }}>
-                  <div className="space-y-3 p-2">
-                    {filteredTemplates.map((template) => (
+                  <div
+                    className="space-y-3 p-2 outline-none focus-visible:ring-2 focus-visible:ring-[#bfe7e3] rounded-[14px]"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (!filteredTemplates.length) return;
+                      if (e.key === '/') { e.preventDefault(); searchRef.current?.focus(); return; }
+                      if (e.key === 'Escape') { if (searchQuery) setSearchQuery(''); return; }
+                      const max = filteredTemplates.length - 1;
+                      let idx = focusedIndex;
+                      if (idx < 0) idx = selectedTemplate ? Math.max(0, filteredTemplates.findIndex(t => t.id === selectedTemplate.id)) : 0;
+                      if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(max, idx + 1); setFocusedIndex(idx); itemRefs.current[filteredTemplates[idx].id]?.scrollIntoView({ block: 'nearest' }); return; }
+                      if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(0, idx - 1); setFocusedIndex(idx); itemRefs.current[filteredTemplates[idx].id]?.scrollIntoView({ block: 'nearest' }); return; }
+                      if (e.key.toLowerCase() === 'f') { e.preventDefault(); const id = filteredTemplates[idx]?.id; if (id) toggleFav(id); return; }
+                      if (e.key === 'Enter') { e.preventDefault(); const tSel = filteredTemplates[idx]; if (tSel) setSelectedTemplate(tSel); return; }
+                    }}
+                  >
+                    {filteredTemplates.map((template, i) => (
                       <div
                         key={template.id}
+                        ref={(el) => { if (el) itemRefs.current[template.id] = el }}
                         onClick={() => setSelectedTemplate(template)}
-                        className={`w-full p-4 border cursor-pointer transition-all duration-200 ${
+                        onMouseDown={() => setPressedCardId(template.id)}
+                        onMouseUp={() => setPressedCardId(null)}
+                        onMouseLeave={() => setPressedCardId(null)}
+                        className={`w-full p-4 border cursor-pointer transition-all duration-150 ${
                           selectedTemplate?.id === template.id
                             ? 'shadow-lg transform scale-[1.02]'
-                            : 'border-[#e1eaf2] bg-white hover:border-[#7bd1ca] hover:shadow-md hover:translate-y-[-1px]'
+                            : 'border-[#e1eaf2] bg-white hover:border-[#7bd1ca] hover:shadow-md hover:-translate-y-[1px]'
                         }`}
                         style={
                           selectedTemplate?.id === template.id
@@ -1072,15 +1106,15 @@ function App() {
                                 background: '#e6f0ff',
                                 borderRadius: '14px',
                               }
-                            : { borderRadius: '14px' }
+                            : { borderRadius: '14px', transform: pressedCardId === template.id ? 'scale(0.995)' : undefined, boxShadow: pressedCardId === template.id ? 'inset 0 0 0 1px rgba(0,0,0,0.05)' : undefined }
                         }
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="font-bold text-gray-900 text-[13px] mb-0.5">
+                            <h3 className="font-bold text-gray-900 text-[13px] mb-1" title={template.title[templateLanguage]}>
                               {template.title[templateLanguage]}
                             </h3>
-                            <p className="text-[12px] text-gray-600 mb-1.5 leading-relaxed line-clamp-2">
+                            <p className="text-[12px] text-gray-600 mb-2 leading-relaxed line-clamp-2">
                               {template.description[templateLanguage]}
                             </p>
                             <Badge variant="secondary" className="text-[11px] font-medium bg-[#e6f0ff] text-[#1a365d] border-[#c7dbff]">
@@ -1136,8 +1170,8 @@ function App() {
             {selectedTemplate ? (
               <>
                 {/* Editable version - MAIN AREA */}
-                <Card className="card-soft border-0 overflow-hidden" style={{ background: '#ffffff' }}>
-                  <CardHeader style={{ background: 'var(--primary)', paddingTop: 10, paddingBottom: 10, minHeight: 56, boxShadow: 'none', borderBottom: 'none', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
+                <Card className="card-soft border-0 overflow-hidden rounded-[14px]" style={{ background: '#ffffff' }}>
+                  <CardHeader style={{ background: 'var(--primary)', paddingTop: 10, paddingBottom: 10, minHeight: 56, boxShadow: 'none', borderBottom: 'none', borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
                     <CardTitle className="text-2xl font-bold text-white flex items-center justify-between">
                       <div className="flex items-center">
                         <Mail className="h-6 w-6 mr-3 text-white" />
@@ -1186,7 +1220,7 @@ function App() {
 	                    </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-5 space-y-5 mt-1" style={{ background: '#f6fbfb', borderRadius: 12 }}>
+                  <CardContent className="p-5 space-y-5 mt-1" style={{ background: '#f6fbfb', borderRadius: 14 }}>
 
 
                     {/* Editable subject with preview highlighting */}
