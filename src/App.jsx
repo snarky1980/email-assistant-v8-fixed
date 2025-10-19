@@ -985,7 +985,7 @@ function App() {
         <CardContent className="p-0">
           <ScrollArea
             className="rounded-[14px] overflow-hidden"
-            style={{ '--scrollbar-width': '8px', height: 'calc(100vh - 280px)' }}
+            style={{ '--scrollbar-width': '8px', height: 'calc(100vh - 208px)' }}
             viewportRef={viewportRef}
             onViewportScroll={() => {
               const vp = viewportRef.current
@@ -995,9 +995,9 @@ function App() {
             }}
           >
             {/* Sticky header inside scroll area */}
-            <div className="sticky top-0 z-10 px-0 pt-0 pb-2">
+            <div className="sticky top-0 z-10 px-0 pt-2 pb-2 bg-white border-b border-[#e6eef5]">
               {/* Teal header bar - match style of "Langue du modèle" */}
-              <div className="h-[48px] w-full rounded-[14px] px-4 flex items-center justify-center mb-2" style={{ background: 'var(--primary)' }}>
+              <div className="h-[48px] w-full rounded-[14px] px-4 flex items-center justify-center mb-3" style={{ background: 'var(--primary)' }}>
                 <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-none whitespace-nowrap">
                   <FileText className="h-5 w-5 text-white" aria-hidden="true" />
                   <span className="truncate">{t.selectTemplate}</span>
@@ -1046,7 +1046,7 @@ function App() {
               </div>
               {/* Search */}
               <div className="relative group mt-2 px-4">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Search className="absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" style={{ left: 18 }} />
                 <Input
                   ref={searchRef}
                   type="text"
@@ -1122,8 +1122,9 @@ function App() {
                                 borderColor: '#1f8a99',
                                 background: '#e6f0ff',
                                 borderRadius: '14px',
+                                scrollMarginTop: 220,
                               }
-                            : { borderRadius: '14px', transform: pressedCardId === template.id ? 'scale(0.995)' : undefined, boxShadow: pressedCardId === template.id ? 'inset 0 0 0 1px rgba(0,0,0,0.05)' : undefined }
+                            : { borderRadius: '14px', transform: pressedCardId === template.id ? 'scale(0.995)' : undefined, boxShadow: pressedCardId === template.id ? 'inset 0 0 0 1px rgba(0,0,0,0.05)' : undefined, scrollMarginTop: 220 }
                         }
                       >
                         <div className="flex items-start justify-between">
@@ -1213,7 +1214,7 @@ function App() {
                 </Select>
               </div>
               <div className="relative group mt-2">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Search className="absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" style={{ left: 14 }} />
                 <Input ref={searchRef} type="text" placeholder={t.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex w-full min-w-0 rounded-md bg-transparent px-3 py-1 text-base shadow-xs outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 pl-12 pr-10 border-2 transition-all duration-300 teal-focus" />
               </div>
               <div className="mt-3 space-y-3">
