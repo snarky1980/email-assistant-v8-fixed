@@ -253,6 +253,8 @@ const AISidebar = ({ emailText, onResult, variables }) => {
             <div className="mb-6">
               <input
                 type="password"
+                id="openai-api-key"
+                name="openai-api-key"
                 value={tempApiKey}
                 onChange={(e) => setTempApiKey(e.target.value)}
                 placeholder="sk-..."

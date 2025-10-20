@@ -1781,6 +1781,8 @@ function App() {
                 <Search className="absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" style={{ left: 18 }} />
                 <Input
                   ref={searchRef}
+                  id="template-search-main"
+                  name="template-search-main"
                   type="text"
                   placeholder={t.searchPlaceholder}
                   value={searchQuery}
@@ -1956,6 +1958,8 @@ function App() {
                 <Search className="absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" style={{ left: 14 }} />
                 <Input
                   ref={searchRef}
+                  id="template-search-mobile"
+                  name="template-search-mobile"
                   type="text"
                   placeholder={t.searchPlaceholder}
                   value={searchQuery}
@@ -2565,6 +2569,8 @@ function App() {
                         </div>
                         <textarea
                           ref={el => { if (el) varInputRefs.current[varName] = el }}
+                          id={`var-${varName}`}
+                          name={`var-${varName}`}
                           value={currentValue}
                           onChange={(e) => {
                             const newValue = e.target.value
