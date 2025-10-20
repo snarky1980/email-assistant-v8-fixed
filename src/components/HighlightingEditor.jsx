@@ -13,6 +13,8 @@ const HighlightingEditor = ({
   const lastValueRef = useRef(value)
   const isInternalUpdateRef = useRef(false)
   const updateTimeoutRef = useRef(null)
+  const lastShowHighlightsRef = useRef(showHighlights)
+  const hasInitializedRef = useRef(false)
 
   const escapeHtml = (s = '') =>
     s.replace(/&/g, '&amp;')
@@ -341,10 +343,19 @@ const HighlightingEditor = ({
       // Generate the HTML with highlighting
       const newHtml = buildHighlightedHTML(textToRender)
       
-
+      // Force update if showHighlights changed to ensure highlighting is applied
+      const showHighlightsChanged = lastShowHighlightsRef.current !== showHighlights
+      if (showHighlightsChanged) {
+        lastShowHighlightsRef.current = showHighlights
+      }
       
-      // Update if content or highlighting changed
-      if (editableRef.current.innerHTML !== newHtml) {
+      // Update if content changed, highlighting changed, or not initialized
+      const shouldUpdate = editableRef.current.innerHTML !== newHtml || 
+                          showHighlightsChanged || 
+                          !hasInitializedRef.current
+      
+      if (shouldUpdate) {
+        hasInitializedRef.current = true
         const cursorPos = saveCursorPosition()
         lastValueRef.current = textToRender
         editableRef.current.innerHTML = newHtml
@@ -371,6 +382,34 @@ const HighlightingEditor = ({
       }
     }
   }, [value, showHighlights, variables, templateOriginal])
+
+  // Force re-highlighting when window focus changes (popout opens/closes)
+  useEffect(() => {
+    const handleFocusChange = () => {
+      // Small delay to let any state changes settle
+      setTimeout(() => {
+        if (editableRef.current && showHighlights) {
+          const currentText = extractText(editableRef.current)
+          const newHtml = buildHighlightedHTML(currentText)
+          if (editableRef.current.innerHTML !== newHtml) {
+            const cursorPos = saveCursorPosition()
+            editableRef.current.innerHTML = newHtml
+            requestAnimationFrame(() => {
+              restoreCursorPosition(cursorPos)
+            })
+          }
+        }
+      }, 100)
+    }
+
+    window.addEventListener('focus', handleFocusChange)
+    window.addEventListener('blur', handleFocusChange)
+    
+    return () => {
+      window.removeEventListener('focus', handleFocusChange)
+      window.removeEventListener('blur', handleFocusChange)
+    }
+  }, [showHighlights, variables, templateOriginal])
 
   return (
     <div
