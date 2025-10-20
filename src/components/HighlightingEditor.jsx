@@ -152,6 +152,8 @@ const HighlightingEditor = ({
       return escapeHtml(text).replace(/\n/g, '<br>')
     }
     
+
+    
     // Strategy 1: Look for existing <<VarName>> patterns in the current text
     const variablePattern = /<<([^>]+)>>/g
     const foundPlaceholders = []
@@ -296,61 +298,59 @@ const HighlightingEditor = ({
     }
   }
 
-  // Update content when value changes externally
-  useEffect(() => {
-    if (!editableRef.current || isInternalUpdateRef.current) return
-    const currentText = extractText(editableRef.current)
-    
-    // Only update if the value has genuinely changed and it's not just a formatting difference
-    if (value !== currentText && value !== lastValueRef.current) {
-      // Check if it's just a formatting difference (same content, different spacing)
-      const normalizedCurrent = currentText.replace(/\s+/g, ' ').trim()
-      const normalizedValue = value.replace(/\s+/g, ' ').trim()
-      
-      if (normalizedCurrent !== normalizedValue) {
-        const cursorPos = saveCursorPosition()
-        lastValueRef.current = value
-        const html = buildHighlightedHTML(value)
-        editableRef.current.innerHTML = html
-        // Use requestAnimationFrame for smoother updates
-        requestAnimationFrame(() => {
-          restoreCursorPosition(cursorPos)
-        })
-      }
-    }
-  }, [value, variables, templateOriginal])
-
-  // Update highlights when showHighlights toggles
+  // Combined effect for content updates and highlighting
   useEffect(() => {
     if (!editableRef.current) return
     
-    // Get current text content from the editor
-    const currentText = extractText(editableRef.current)
-    // Use the current text content, not the prop value, to preserve any edits
-    const textToProcess = currentText || value
-    const newHtml = buildHighlightedHTML(textToProcess)
-    
-    // Always update when showHighlights changes to ensure proper state
-    const cursorPos = saveCursorPosition()
-    editableRef.current.innerHTML = newHtml
-    
-    // Update the parent component with current content if it differs
-    if (textToProcess !== value && onChange) {
-      onChange({ target: { value: textToProcess } })
+    // Skip if this is an internal update (to avoid loops)
+    if (isInternalUpdateRef.current) {
+      isInternalUpdateRef.current = false
+      return
     }
     
-    // Use requestAnimationFrame for smoother updates
-    requestAnimationFrame(() => {
-      restoreCursorPosition(cursorPos)
-    })
-  }, [showHighlights, variables, templateOriginal])
-
-  // Initial render only
-  useEffect(() => {
-    if (!editableRef.current || editableRef.current.innerHTML) return
-    const html = buildHighlightedHTML(value)
-    editableRef.current.innerHTML = html
-  }, [])
+    const currentText = extractText(editableRef.current)
+    
+    // Determine what text to render
+    let textToRender = value
+    
+    // If we have current content that differs from the prop value, use current content
+    // unless the prop value has genuinely changed
+    if (currentText && currentText !== value) {
+      const normalizedCurrent = currentText.replace(/\s+/g, ' ').trim()
+      const normalizedValue = (value || '').replace(/\s+/g, ' ').trim()
+      
+      // Use current text if it's just formatting differences, otherwise use prop value
+      if (normalizedCurrent === normalizedValue) {
+        textToRender = currentText
+      } else if (lastValueRef.current === value) {
+        // Value hasn't changed from parent, keep current text
+        textToRender = currentText
+      }
+    }
+    
+    // Generate the HTML with highlighting
+    const newHtml = buildHighlightedHTML(textToRender)
+    
+    // Update if content or highlighting changed
+    if (editableRef.current.innerHTML !== newHtml) {
+      const cursorPos = saveCursorPosition()
+      lastValueRef.current = textToRender
+      editableRef.current.innerHTML = newHtml
+      
+      // Update parent if text differs from prop
+      if (textToRender !== value && onChange) {
+        // Temporarily set flag to prevent recursive updates
+        setTimeout(() => {
+          onChange({ target: { value: textToRender } })
+        }, 0)
+      }
+      
+      // Restore cursor position
+      requestAnimationFrame(() => {
+        restoreCursorPosition(cursorPos)
+      })
+    }
+  }, [value, showHighlights, variables, templateOriginal])
 
   return (
     <div
