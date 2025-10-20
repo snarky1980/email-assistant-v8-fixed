@@ -207,20 +207,33 @@ const HighlightingEditor = ({
   const extractText = (el) => {
     if (!el) return ''
     let text = ''
+    let hasContent = false
+    
     for (const node of el.childNodes) {
       if (node.nodeType === Node.TEXT_NODE) {
         text += node.textContent
+        if (node.textContent.trim()) hasContent = true
       } else if (node.nodeName === 'BR') {
         text += '\n'
+        hasContent = true
       } else if (node.nodeName === 'MARK') {
         // For highlighted variables, just extract the content as-is
-        // The highlighting system will handle the display properly
         text += node.textContent || ''
+        if (node.textContent && node.textContent.trim()) hasContent = true
       } else if (node.nodeName === 'DIV') {
-        if (text && !text.endsWith('\n')) text += '\n'
-        text += extractText(node)
+        // Only add line break if there's already content and the div has content
+        const divContent = extractText(node)
+        if (divContent.trim()) {
+          if (hasContent && text && !text.endsWith('\n')) {
+            text += '\n'
+          }
+          text += divContent
+          hasContent = true
+        }
       } else {
-        text += node.textContent || ''
+        const nodeText = node.textContent || ''
+        text += nodeText
+        if (nodeText.trim()) hasContent = true
       }
     }
     return text
@@ -287,15 +300,23 @@ const HighlightingEditor = ({
   useEffect(() => {
     if (!editableRef.current || isInternalUpdateRef.current) return
     const currentText = extractText(editableRef.current)
+    
+    // Only update if the value has genuinely changed and it's not just a formatting difference
     if (value !== currentText && value !== lastValueRef.current) {
-      const cursorPos = saveCursorPosition()
-      lastValueRef.current = value
-      const html = buildHighlightedHTML(value)
-      editableRef.current.innerHTML = html
-      // Use requestAnimationFrame for smoother updates
-      requestAnimationFrame(() => {
-        restoreCursorPosition(cursorPos)
-      })
+      // Check if it's just a formatting difference (same content, different spacing)
+      const normalizedCurrent = currentText.replace(/\s+/g, ' ').trim()
+      const normalizedValue = value.replace(/\s+/g, ' ').trim()
+      
+      if (normalizedCurrent !== normalizedValue) {
+        const cursorPos = saveCursorPosition()
+        lastValueRef.current = value
+        const html = buildHighlightedHTML(value)
+        editableRef.current.innerHTML = html
+        // Use requestAnimationFrame for smoother updates
+        requestAnimationFrame(() => {
+          restoreCursorPosition(cursorPos)
+        })
+      }
     }
   }, [value, variables, templateOriginal])
 
@@ -303,19 +324,26 @@ const HighlightingEditor = ({
   useEffect(() => {
     if (!editableRef.current) return
     
-    // Avoid unnecessary updates if the content hasn't changed
-    const currentHtml = editableRef.current.innerHTML
-    const newHtml = buildHighlightedHTML(value)
+    // Get current text content from the editor
+    const currentText = extractText(editableRef.current)
+    // Use the current text content, not the prop value, to preserve any edits
+    const textToProcess = currentText || value
+    const newHtml = buildHighlightedHTML(textToProcess)
     
-    if (currentHtml !== newHtml) {
-      const cursorPos = saveCursorPosition()
-      editableRef.current.innerHTML = newHtml
-      // Use requestAnimationFrame for smoother updates
-      requestAnimationFrame(() => {
-        restoreCursorPosition(cursorPos)
-      })
+    // Always update when showHighlights changes to ensure proper state
+    const cursorPos = saveCursorPosition()
+    editableRef.current.innerHTML = newHtml
+    
+    // Update the parent component with current content if it differs
+    if (textToProcess !== value && onChange) {
+      onChange(textToProcess)
     }
-  }, [showHighlights])
+    
+    // Use requestAnimationFrame for smoother updates
+    requestAnimationFrame(() => {
+      restoreCursorPosition(cursorPos)
+    })
+  }, [showHighlights, variables, templateOriginal])
 
   // Initial render only
   useEffect(() => {
