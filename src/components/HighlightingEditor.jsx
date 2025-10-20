@@ -29,49 +29,98 @@ const HighlightingEditor = ({
       return escapeHtml(text).replace(/\n/g, '<br>')
     }
     
+    // Try to use templateOriginal structure to identify where variables should be highlighted
     if (templateOriginal && templateOriginal.includes('<<')) {
+      // Parse the template structure to find variable positions
       const parts = []
       const tokenNames = []
       const re = /<<([^>]+)>>/g
       let lastIdx = 0
-      let m
-      while ((m = re.exec(templateOriginal)) !== null) {
-        parts.push(templateOriginal.slice(lastIdx, m.index))
-        tokenNames.push(m[1])
-        lastIdx = m.index + m[0].length
+      let match
+      
+      while ((match = re.exec(templateOriginal)) !== null) {
+        parts.push(templateOriginal.slice(lastIdx, match.index))
+        tokenNames.push(match[1])
+        lastIdx = match.index + match[0].length
       }
       parts.push(templateOriginal.slice(lastIdx))
 
+      // Try to match the current text against this structure
       let cursor = 0
       let html = ''
+      let successfulMatch = true
+      
       for (let i = 0; i < parts.length; i++) {
-        const lit = parts[i]
-        if (lit) {
-          const idx = text.indexOf(lit, cursor)
-          if (idx === -1) {
-            html += escapeHtml(text.slice(cursor)).replace(/\n/g, '<br>')
-            return html
+        const literalPart = parts[i]
+        
+        // Look for literal part in current text
+        if (literalPart) {
+          const foundIndex = text.indexOf(literalPart, cursor)
+          if (foundIndex === -1) {
+            // Structure doesn't match, fall back to simple approach
+            successfulMatch = false
+            break
           }
-          html += escapeHtml(text.slice(cursor, idx + lit.length)).replace(/\n/g, '<br>')
-          cursor = idx + lit.length
+          // Add any text before this literal part (could be from previous variables)
+          html += escapeHtml(text.slice(cursor, foundIndex + literalPart.length)).replace(/\n/g, '<br>')
+          cursor = foundIndex + literalPart.length
         }
+        
+        // If there's a variable at this position
         if (i < tokenNames.length) {
-          const nextLit = parts[i + 1] || ''
-          let nextIdx = nextLit ? text.indexOf(nextLit, cursor) : text.length
-          if (nextIdx === -1) nextIdx = text.length
-          
-          const seg = text.slice(cursor, nextIdx)
           const varName = tokenNames[i]
-          const filled = (seg || '').trim().length > 0
-          html += `<mark class="var-highlight ${filled ? 'filled' : 'empty'}" data-var="${escapeHtml(varName)}">${escapeHtml(seg) || '&nbsp;'}</mark>`
-          cursor = nextIdx
+          const nextLiteralPart = parts[i + 1] || ''
+          
+          // Find where this variable content ends
+          let variableEndPos
+          if (nextLiteralPart) {
+            variableEndPos = text.indexOf(nextLiteralPart, cursor)
+            if (variableEndPos === -1) variableEndPos = text.length
+          } else {
+            variableEndPos = text.length
+          }
+          
+          const variableContent = text.slice(cursor, variableEndPos)
+          const isEmpty = !variableContent.trim() || variableContent === `<<${varName}>>`
+          
+          html += `<mark class="var-highlight ${isEmpty ? 'empty' : 'filled'}" data-var="${escapeHtml(varName)}">${escapeHtml(variableContent) || '&nbsp;'}</mark>`
+          cursor = variableEndPos
         }
       }
-      if (cursor < text.length) html += escapeHtml(text.slice(cursor)).replace(/\n/g, '<br>')
-      return html
+      
+      if (successfulMatch) {
+        // Add any remaining text
+        if (cursor < text.length) {
+          html += escapeHtml(text.slice(cursor)).replace(/\n/g, '<br>')
+        }
+        return html
+      }
     }
-
-    return escapeHtml(text).replace(/\n/g, '<br>')
+    
+    // Fallback: look for <<VarName>> patterns directly in the text
+    const variablePattern = /<<([^>]+)>>/g
+    let lastIndex = 0
+    let html = ''
+    let match
+    
+    while ((match = variablePattern.exec(text)) !== null) {
+      const fullMatch = match[0] // "<<VarName>>"
+      const varName = match[1] // "VarName"
+      const startIndex = match.index
+      
+      // Add text before this variable
+      html += escapeHtml(text.slice(lastIndex, startIndex)).replace(/\n/g, '<br>')
+      
+      // Add highlighted variable placeholder - always show as empty since it's a placeholder
+      html += `<mark class="var-highlight empty" data-var="${escapeHtml(varName)}">${escapeHtml(fullMatch)}</mark>`
+      
+      lastIndex = startIndex + fullMatch.length
+    }
+    
+    // Add remaining text after last variable
+    html += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>')
+    
+    return html
   }
 
   // Extract plain text from contentEditable div
@@ -84,6 +133,8 @@ const HighlightingEditor = ({
       } else if (node.nodeName === 'BR') {
         text += '\n'
       } else if (node.nodeName === 'MARK') {
+        // For highlighted variables, just extract the content as-is
+        // The highlighting system will handle the display properly
         text += node.textContent || ''
       } else if (node.nodeName === 'DIV') {
         if (text && !text.endsWith('\n')) text += '\n'
