@@ -244,18 +244,29 @@ const HighlightingEditor = ({
       lastValueRef.current = value
       const html = buildHighlightedHTML(value)
       editableRef.current.innerHTML = html
-      // Restore cursor after a microtask to let DOM settle
-      setTimeout(() => restoreCursorPosition(cursorPos), 0)
+      // Use requestAnimationFrame for smoother updates
+      requestAnimationFrame(() => {
+        restoreCursorPosition(cursorPos)
+      })
     }
   }, [value, variables, templateOriginal])
 
   // Update highlights when showHighlights toggles
   useEffect(() => {
     if (!editableRef.current) return
-    const cursorPos = saveCursorPosition()
-    const html = buildHighlightedHTML(value)
-    editableRef.current.innerHTML = html
-    setTimeout(() => restoreCursorPosition(cursorPos), 0)
+    
+    // Avoid unnecessary updates if the content hasn't changed
+    const currentHtml = editableRef.current.innerHTML
+    const newHtml = buildHighlightedHTML(value)
+    
+    if (currentHtml !== newHtml) {
+      const cursorPos = saveCursorPosition()
+      editableRef.current.innerHTML = newHtml
+      // Use requestAnimationFrame for smoother updates
+      requestAnimationFrame(() => {
+        restoreCursorPosition(cursorPos)
+      })
+    }
   }, [showHighlights])
 
   // Initial render only

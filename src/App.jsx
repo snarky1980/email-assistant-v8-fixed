@@ -588,7 +588,7 @@ function App() {
             }
           }
         }
-        if (msg.type === 'update' && (msg.variables || msg.templateId || msg.templateLanguage || msg.hasOwnProperty('focusedVar'))) {
+        if (msg.type === 'update' && (msg.variables || msg.templateId || msg.templateLanguage || msg.hasOwnProperty('focusedVar') || msg.hasOwnProperty('showHighlights'))) {
           if (msg.variables && typeof msg.variables === 'object') {
             varsRemoteUpdateRef.current = true
             setVariables(prev => ({ ...prev, ...msg.variables }))
@@ -596,9 +596,12 @@ function App() {
           if (msg.hasOwnProperty('focusedVar')) {
             setFocusedVar(msg.focusedVar)
           }
+          if (msg.hasOwnProperty('showHighlights')) {
+            setShowHighlights(msg.showHighlights)
+          }
           applyTemplateMeta(msg)
         } else if (msg.type === 'request_state') {
-          ch.postMessage({ type: 'state', variables, templateId: selectedTemplate?.id || null, templateLanguage, focusedVar, sender: varsSenderIdRef.current })
+          ch.postMessage({ type: 'state', variables, templateId: selectedTemplate?.id || null, templateLanguage, focusedVar, showHighlights, sender: varsSenderIdRef.current })
         } else if (msg.type === 'state') {
           if (msg.variables) {
             varsRemoteUpdateRef.current = true
@@ -606,6 +609,9 @@ function App() {
           }
           if (msg.hasOwnProperty('focusedVar')) {
             setFocusedVar(msg.focusedVar)
+          }
+          if (msg.hasOwnProperty('showHighlights')) {
+            setShowHighlights(msg.showHighlights)
           }
           applyTemplateMeta(msg)
         }
@@ -666,6 +672,30 @@ function App() {
     return () => clearTimeout(timeoutId)
   }, [focusedVar])
 
+  // Emit showHighlights changes for cross-window sync
+  useEffect(() => {
+    // Primary: BroadcastChannel for immediate sync
+    if (canUseBC) {
+      const ch = varsChannelRef.current
+      if (ch) {
+        try { ch.postMessage({ type: 'update', showHighlights, sender: varsSenderIdRef.current }) } catch {}
+      }
+    }
+    
+    // Fallback: localStorage with minimal delay
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem('ea_show_highlights_sync', JSON.stringify({ 
+          showHighlights, 
+          timestamp: Date.now(),
+          sender: varsSenderIdRef.current 
+        }))
+      } catch {}
+    }, 50) // Small delay to let BroadcastChannel work first
+    
+    return () => clearTimeout(timeoutId)
+  }, [showHighlights])
+
   // Listen for localStorage changes (fallback for cross-window sync)
   useEffect(() => {
     const handleStorageChange = (e) => {
@@ -675,6 +705,14 @@ function App() {
           // Only update if it's from a different sender and recent
           if (data.sender !== varsSenderIdRef.current && (Date.now() - data.timestamp) < 5000) {
             setFocusedVar(data.focusedVar)
+          }
+        } catch {}
+      } else if (e.key === 'ea_show_highlights_sync' && e.newValue) {
+        try {
+          const data = JSON.parse(e.newValue)
+          // Only update if it's from a different sender and recent
+          if (data.sender !== varsSenderIdRef.current && (Date.now() - data.timestamp) < 5000) {
+            setShowHighlights(data.showHighlights)
           }
         } catch {}
       }
