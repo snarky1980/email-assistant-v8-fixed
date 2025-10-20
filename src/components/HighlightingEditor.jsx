@@ -12,6 +12,8 @@ const HighlightingEditor = ({
   const editableRef = useRef(null)
   const lastValueRef = useRef(value)
   const isInternalUpdateRef = useRef(false)
+  const updateTimeoutRef = useRef(null)
+  const hasInitializedRef = useRef(false)
 
   const escapeHtml = (s = '') =>
     s.replace(/&/g, '&amp;')
@@ -284,115 +286,46 @@ const HighlightingEditor = ({
     }
   }
 
-  // Combined effect for content updates and highlighting
+  // Update content and apply highlighting
   useEffect(() => {
     if (!editableRef.current) return
     
-    // Skip if this is an internal update (to avoid loops)
-    if (isInternalUpdateRef.current) {
-      isInternalUpdateRef.current = false
-      return
-    }
+    // Skip if this is from user typing (internal update)
+    if (isInternalUpdateRef.current) return
     
-    // Clear any pending update
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current)
-    }
+    const currentText = extractText(editableRef.current)
+    const textToRender = value || ''
     
-    // Debounce updates to prevent BroadcastChannel interference
-    updateTimeoutRef.current = setTimeout(() => {
-      if (!editableRef.current) return
-      
-      const currentText = extractText(editableRef.current)
-      
-      // Determine what text to render
-      let textToRender = value
-      
-      // If we have current content that differs from the prop value, use current content
-      // unless the prop value has genuinely changed
-      if (currentText && currentText !== value) {
-        const normalizedCurrent = currentText.replace(/\s+/g, ' ').trim()
-        const normalizedValue = (value || '').replace(/\s+/g, ' ').trim()
-        
-        // Use current text if it's just formatting differences, otherwise use prop value
-        if (normalizedCurrent === normalizedValue) {
-          textToRender = currentText
-        } else if (lastValueRef.current === value) {
-          // Value hasn't changed from parent, keep current text
-          textToRender = currentText
-        }
-      }
-      
-      // Generate the HTML with highlighting
+    // Only update if the value actually changed from outside
+    if (textToRender !== currentText) {
+      const cursorPos = saveCursorPosition()
       const newHtml = buildHighlightedHTML(textToRender)
+      editableRef.current.innerHTML = newHtml
+      lastValueRef.current = textToRender
       
-      // Force update if showHighlights changed to ensure highlighting is applied
-      const showHighlightsChanged = lastShowHighlightsRef.current !== showHighlights
-      if (showHighlightsChanged) {
-        lastShowHighlightsRef.current = showHighlights
-      }
-      
-      // Update if content changed, highlighting changed, or not initialized
-      const shouldUpdate = editableRef.current.innerHTML !== newHtml || 
-                          showHighlightsChanged || 
-                          !hasInitializedRef.current
-      
-      if (shouldUpdate) {
-        hasInitializedRef.current = true
-        const cursorPos = saveCursorPosition()
-        lastValueRef.current = textToRender
-        editableRef.current.innerHTML = newHtml
-        
-        // Update parent if text differs from prop
-        if (textToRender !== value && onChange) {
-          // Temporarily set flag to prevent recursive updates
-          setTimeout(() => {
-            onChange({ target: { value: textToRender } })
-          }, 0)
-        }
-        
-        // Restore cursor position
-        requestAnimationFrame(() => {
-          restoreCursorPosition(cursorPos)
-        })
-      }
-    }, 10) // Small debounce to prevent rapid updates from BroadcastChannel
-    
-    // Cleanup timeout on unmount or dependency change
-    return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current)
-      }
+      // Restore cursor position after render
+      requestAnimationFrame(() => {
+        restoreCursorPosition(cursorPos)
+      })
     }
-  }, [value, showHighlights, variables, templateOriginal])
+  }, [value])
 
-  // Force re-highlighting when window focus changes (popout opens/closes)
+  // Apply highlighting when variables change
   useEffect(() => {
-    const handleFocusChange = () => {
-      // Small delay to let any state changes settle
-      setTimeout(() => {
-        if (editableRef.current && showHighlights) {
-          const currentText = extractText(editableRef.current)
-          const newHtml = buildHighlightedHTML(currentText)
-          if (editableRef.current.innerHTML !== newHtml) {
-            const cursorPos = saveCursorPosition()
-            editableRef.current.innerHTML = newHtml
-            requestAnimationFrame(() => {
-              restoreCursorPosition(cursorPos)
-            })
-          }
-        }
-      }, 100)
-    }
-
-    window.addEventListener('focus', handleFocusChange)
-    window.addEventListener('blur', handleFocusChange)
+    if (!editableRef.current) return
     
-    return () => {
-      window.removeEventListener('focus', handleFocusChange)
-      window.removeEventListener('blur', handleFocusChange)
+    const currentText = extractText(editableRef.current)
+    const newHtml = buildHighlightedHTML(currentText)
+    
+    if (editableRef.current.innerHTML !== newHtml) {
+      const cursorPos = saveCursorPosition()
+      editableRef.current.innerHTML = newHtml
+      
+      requestAnimationFrame(() => {
+        restoreCursorPosition(cursorPos)
+      })
     }
-  }, [showHighlights, variables, templateOriginal])
+  }, [variables, templateOriginal])
 
   return (
     <div
