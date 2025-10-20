@@ -2052,19 +2052,7 @@ function App() {
 	                          <Settings className="h-4 w-4 mr-2" />
 	                          {t.variables}
 	                        </Button>
-                            {/* Toggle highlight visibility */}
-                            <Button
-                              onClick={() => setShowHighlights(v => !v)}
-                              variant="outline"
-                              className="transition-all duration-200 font-medium text-sm px-2.5"
-                              style={{ borderRadius: '10px', background: '#fff', color: '#145a64', borderColor: 'rgba(20,90,100,0.35)' }}
-                              size="sm"
-                              title={showHighlights ? 'Vue simplifiée (masquer surlignages)' : 'Vue avec surlignages'}
-                              aria-label={showHighlights ? 'Hide highlights' : 'Show highlights'}
-                            >
-                              {showHighlights ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" stroke="currentColor" strokeWidth="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/></svg>
-                              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.5"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c2.06 0 4 .62 5.6 1.68M21.542 12c-.408 1.299-1.085 2.48-1.962 3.466" stroke="currentColor" strokeWidth="1.5"/></svg>}
-                            </Button>
+                            {/* Toggle removed for stability - highlighting always enabled */}
                           </>
 	                      )}
                         {/* IA trigger: opens hidden AI panel - Sage accent */}
@@ -2098,7 +2086,7 @@ function App() {
                         placeholder={t.subject}
                         minHeight="60px"
                         templateOriginal={selectedTemplate?.subject?.[templateLanguage] || ''}
-                        showHighlights={showHighlights}
+                        showHighlights={true}
                       />
 
                     </div>
@@ -2116,7 +2104,7 @@ function App() {
                         placeholder={t.body}
                         minHeight="250px"
                         templateOriginal={selectedTemplate?.body?.[templateLanguage] || ''}
-                        showHighlights={showHighlights}
+                        showHighlights={true}
                       />
 
                     </div>
