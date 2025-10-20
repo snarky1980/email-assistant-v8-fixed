@@ -9,6 +9,8 @@ const HighlightingEditor = ({
   templateOriginal = '',
   showHighlights = true
 }) => {
+  console.log('🚀 HighlightingEditor render:', { value: value?.substring(0, 50), showHighlights, hasVariables: Object.keys(variables).length > 0 })
+  
   const editableRef = useRef(null)
   const lastValueRef = useRef(value)
   const isInternalUpdateRef = useRef(false)
@@ -147,7 +149,9 @@ const HighlightingEditor = ({
   const buildHighlightedHTML = (text) => {
     if (!text) return ''
     
-    // Strategy 1: Look for <<VarName>> patterns
+    console.log('🔍 buildHighlightedHTML called with text:', text.substring(0, 50))
+    
+    // Strategy 1: Look for <<VarName>> patterns (unfilled templates)
     const variablePattern = /<<([^>]+)>>/g
     const foundPlaceholders = []
     let match
@@ -162,13 +166,19 @@ const HighlightingEditor = ({
       })
     }
     
+    console.log('🔍 Found placeholders:', foundPlaceholders)
+    
     // Strategy 2: If no placeholders but we have variables, try filled variables  
     if (foundPlaceholders.length === 0 && Object.keys(variables).length > 0 && templateOriginal) {
-      return highlightFilledVariables(text, templateOriginal)
+      console.log('🔍 Using filled variables strategy')
+      const result = highlightFilledVariables(text, templateOriginal)
+      console.log('🔍 Filled variables result:', result.substring(0, 200) + (result.length > 200 ? '...' : ''))
+      return result
     }
     
     // Strategy 3: Highlight found placeholders
     if (foundPlaceholders.length > 0) {
+      console.log('🔍 Using placeholder highlighting strategy')
       let html = ''
       let lastIndex = 0
       
@@ -186,10 +196,12 @@ const HighlightingEditor = ({
       }
       
       html += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>')
+      console.log('🔍 Placeholder highlight result:', html.substring(0, 200) + (html.length > 200 ? '...' : ''))
       return html
     }
     
     // Fallback: return plain text
+    console.log('🔍 Using fallback - no highlighting applied')
     return escapeHtml(text).replace(/\n/g, '<br>')
   }
 
