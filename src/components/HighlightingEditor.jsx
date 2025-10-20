@@ -42,44 +42,75 @@ const HighlightingEditor = ({
     // Look for known variable values that were filled in
     const highlights = []
     
-    for (const templateVar of templateVars) {
-      const varValue = variables[templateVar.name]
-      if (varValue && varValue.trim()) {
-        // Look for this variable's value in the text
-        let searchStart = 0
-        let foundIndex
+    // Sort variables by value length (longest first) to avoid partial matches
+    const sortedVars = templateVars
+      .map(tv => ({ ...tv, value: variables[tv.name] || '' }))
+      .filter(tv => tv.value && tv.value.trim())
+      .sort((a, b) => b.value.length - a.value.length)
+    
+    for (const templateVar of sortedVars) {
+      const varValue = templateVar.value
+      
+      // Use a more robust search that escapes special regex characters
+      const escapedValue = varValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      
+      // Find all occurrences of this value
+      let searchStart = 0
+      let foundIndex
+      
+      while ((foundIndex = text.indexOf(varValue, searchStart)) !== -1) {
+        const potentialEnd = foundIndex + varValue.length
         
-        while ((foundIndex = text.indexOf(varValue, searchStart)) !== -1) {
-          // Check if this position makes sense (not overlapping with other highlights)
-          const isOverlapping = highlights.some(h => 
-            (foundIndex >= h.start && foundIndex < h.end) ||
-            (foundIndex + varValue.length > h.start && foundIndex + varValue.length <= h.end)
-          )
+        // Check if this position overlaps with existing highlights
+        const isOverlapping = highlights.some(h => 
+          (foundIndex < h.end && potentialEnd > h.start)
+        )
+        
+        if (!isOverlapping) {
+          highlights.push({
+            start: foundIndex,
+            end: potentialEnd,
+            varName: templateVar.name,
+            content: varValue,
+            filled: true
+          })
           
-          if (!isOverlapping) {
-            highlights.push({
-              start: foundIndex,
-              end: foundIndex + varValue.length,
-              varName: templateVar.name,
-              content: varValue,
-              filled: true
-            })
-            break // Only highlight first occurrence of each variable
-          }
-          
+          // Move search start to after this match to find additional occurrences
+          searchStart = potentialEnd
+        } else {
+          // Move search start by just 1 character to check for other positions
           searchStart = foundIndex + 1
         }
+        
+        // Prevent infinite loops
+        if (searchStart >= text.length) break
       }
     }
     
     // Sort highlights by position
     highlights.sort((a, b) => a.start - b.start)
     
+    // Merge any adjacent or overlapping highlights of the same variable
+    const mergedHighlights = []
+    for (const highlight of highlights) {
+      const lastMerged = mergedHighlights[mergedHighlights.length - 1]
+      
+      if (lastMerged && 
+          lastMerged.varName === highlight.varName && 
+          lastMerged.end >= highlight.start) {
+        // Extend the previous highlight
+        lastMerged.end = Math.max(lastMerged.end, highlight.end)
+        lastMerged.content = text.slice(lastMerged.start, lastMerged.end)
+      } else {
+        mergedHighlights.push(highlight)
+      }
+    }
+    
     // Build HTML with highlights
     let html = ''
     let lastIndex = 0
     
-    for (const highlight of highlights) {
+    for (const highlight of mergedHighlights) {
       // Add text before this highlight
       html += escapeHtml(text.slice(lastIndex, highlight.start)).replace(/\n/g, '<br>')
       
