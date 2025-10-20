@@ -2341,7 +2341,14 @@ function App() {
                 <div className="flex items-center space-x-2">
                   {!varsOnlyMode && (
                     <Button
-                      onClick={() => {
+                      onClick={(e) => {
+                        if (e.shiftKey) {
+                          // Shift+click toggles preference
+                          setPreferPopout(v => !v)
+                          return
+                        }
+                        
+                        // Normal click opens popout
                         const url = new URL(window.location.href)
                         url.searchParams.set('varsOnly', '1')
                         if (selectedTemplate?.id) url.searchParams.set('id', selectedTemplate.id)
@@ -2374,8 +2381,12 @@ function App() {
                       variant="outline"
                       size="sm"
                       className="border-2 text-white"
-                      style={{ borderColor: 'rgba(255,255,255,0.5)', borderRadius: 10, background: 'transparent' }}
-                      title={interfaceLanguage==='fr'?'Détacher dans une nouvelle fenêtre\n• Déplacer sur un autre écran\n• Redimensionner librement\n• Ferme automatiquement cette popup':'Detach to new window\n• Move to another screen\n• Resize freely\n• Auto-closes this popup'}
+                      style={{ 
+                        borderColor: preferPopout ? 'rgba(139, 195, 74, 0.8)' : 'rgba(255,255,255,0.5)', 
+                        borderRadius: 10, 
+                        background: preferPopout ? 'rgba(139, 195, 74, 0.1)' : 'transparent' 
+                      }}
+                      title={interfaceLanguage==='fr'?`Détacher dans une nouvelle fenêtre${preferPopout ? ' (préféré)' : ''}\n• Déplacer sur un autre écran\n• Redimensionner librement\n• Ferme automatiquement cette popup\n\nShift+clic pour basculer la préférence`:`Detach to new window${preferPopout ? ' (preferred)' : ''}\n• Move to another screen\n• Resize freely\n• Auto-closes this popup\n\nShift+click to toggle preference`}
                       onMouseDown={(e)=> e.stopPropagation()}
                     >
                       <ExternalLink className="h-4 w-4" />
@@ -2405,23 +2416,6 @@ function App() {
                   >
                     {varsPinned ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
                   </Button>
-                  {!varsOnlyMode && (
-                    <Button
-                      onClick={() => setPreferPopout(v => !v)}
-                      variant="outline"
-                      size="sm"
-                      className="border-2 text-white"
-                      style={{ 
-                        borderColor: preferPopout ? 'rgba(34, 197, 94, 0.8)' : 'rgba(255,255,255,0.5)', 
-                        borderRadius: 10, 
-                        background: preferPopout ? 'rgba(34, 197, 94, 0.2)' : 'transparent' 
-                      }}
-                      title={interfaceLanguage==='fr'?(preferPopout?'Mode détaché activé (les variables s\'ouvriront dans une nouvelle fenêtre)':'Mode popup (cliquer pour activer le mode détaché)'):(preferPopout?'Popout mode enabled (variables will open in new window)':'Popup mode (click to enable popout mode)')}
-                      onMouseDown={(e)=> e.stopPropagation()}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  )}
                   <Button
                     onClick={() => {
                       if (!selectedTemplate || !templatesData || !templatesData.variables) return
