@@ -22,106 +22,123 @@ const HighlightingEditor = ({
 
   // Helper function to highlight variables that have been filled with values
   const highlightFilledVariables = (text, templateOriginal) => {
-    // Parse template to understand structure, but be more flexible with matching
-    const templateVars = []
+    // Parse template to understand the expected structure
+    const templateSegments = []
     const varPattern = /<<([^>]+)>>/g
-    let templateMatch
+    let lastIndex = 0
+    let match
     
-    while ((templateMatch = varPattern.exec(templateOriginal)) !== null) {
-      templateVars.push({
-        name: templateMatch[1],
-        placeholder: templateMatch[0]
+    while ((match = varPattern.exec(templateOriginal)) !== null) {
+      // Add the literal text before this variable
+      if (match.index > lastIndex) {
+        templateSegments.push({
+          type: 'literal',
+          content: templateOriginal.slice(lastIndex, match.index)
+        })
+      }
+      
+      // Add the variable placeholder
+      templateSegments.push({
+        type: 'variable',
+        name: match[1],
+        placeholder: match[0]
+      })
+      
+      lastIndex = match.index + match[0].length
+    }
+    
+    // Add any remaining literal text
+    if (lastIndex < templateOriginal.length) {
+      templateSegments.push({
+        type: 'literal',
+        content: templateOriginal.slice(lastIndex)
       })
     }
     
-    if (templateVars.length === 0) {
+    if (templateSegments.length === 0) {
       return escapeHtml(text).replace(/\n/g, '<br>')
     }
     
-    // Try to find variable values in the current text
-    // Look for known variable values that were filled in
-    const highlights = []
+    // Now try to match the current text against this structure
+    let textCursor = 0
+    let html = ''
+    let matchedSuccessfully = true
     
-    // Sort variables by value length (longest first) to avoid partial matches
-    const sortedVars = templateVars
-      .map(tv => ({ ...tv, value: variables[tv.name] || '' }))
-      .filter(tv => tv.value && tv.value.trim())
-      .sort((a, b) => b.value.length - a.value.length)
-    
-    for (const templateVar of sortedVars) {
-      const varValue = templateVar.value
+    for (let i = 0; i < templateSegments.length; i++) {
+      const segment = templateSegments[i]
       
-      // Use a more robust search that escapes special regex characters
-      const escapedValue = varValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      
-      // Find all occurrences of this value
-      let searchStart = 0
-      let foundIndex
-      
-      while ((foundIndex = text.indexOf(varValue, searchStart)) !== -1) {
-        const potentialEnd = foundIndex + varValue.length
+      if (segment.type === 'literal') {
+        // For literal segments, try to find them in the current text
+        const literalText = segment.content
         
-        // Check if this position overlaps with existing highlights
-        const isOverlapping = highlights.some(h => 
-          (foundIndex < h.end && potentialEnd > h.start)
-        )
-        
-        if (!isOverlapping) {
-          highlights.push({
-            start: foundIndex,
-            end: potentialEnd,
-            varName: templateVar.name,
-            content: varValue,
-            filled: true
-          })
+        if (literalText.trim()) {
+          // Look for this literal text
+          const foundIndex = text.indexOf(literalText, textCursor)
           
-          // Move search start to after this match to find additional occurrences
-          searchStart = potentialEnd
+          if (foundIndex !== -1) {
+            // Add any text before this literal (could be from previous variable)
+            if (foundIndex > textCursor) {
+              const beforeText = text.slice(textCursor, foundIndex)
+              html += escapeHtml(beforeText).replace(/\n/g, '<br>')
+            }
+            
+            // Add the literal text
+            html += escapeHtml(literalText).replace(/\n/g, '<br>')
+            textCursor = foundIndex + literalText.length
+          } else {
+            // Literal text not found - structure has changed too much
+            matchedSuccessfully = false
+            break
+          }
+        }
+      } else if (segment.type === 'variable') {
+        // For variables, find where this variable's content should be
+        const varName = segment.name
+        const varValue = variables[varName] || ''
+        
+        // Find the next literal segment to know where this variable should end
+        const nextSegment = templateSegments[i + 1]
+        let variableEndPos
+        
+        if (nextSegment && nextSegment.type === 'literal' && nextSegment.content.trim()) {
+          // Look for the next literal text to determine variable boundaries
+          variableEndPos = text.indexOf(nextSegment.content, textCursor)
+          if (variableEndPos === -1) {
+            // Can't find next literal - structure changed too much
+            matchedSuccessfully = false
+            break
+          }
         } else {
-          // Move search start by just 1 character to check for other positions
-          searchStart = foundIndex + 1
+          // This is the last variable or no clear boundary
+          variableEndPos = text.length
         }
         
-        // Prevent infinite loops
-        if (searchStart >= text.length) break
+        // Extract what should be the variable content
+        const actualVariableContent = text.slice(textCursor, variableEndPos)
+        
+        if (actualVariableContent) {
+          // Highlight this as the variable content
+          const isEmpty = !actualVariableContent.trim() || actualVariableContent === segment.placeholder
+          html += `<mark class="var-highlight ${isEmpty ? 'empty' : 'filled'}" data-var="${escapeHtml(varName)}">${escapeHtml(actualVariableContent)}</mark>`
+        } else {
+          // Empty variable - show placeholder
+          html += `<mark class="var-highlight empty" data-var="${escapeHtml(varName)}">${escapeHtml(segment.placeholder)}</mark>`
+        }
+        
+        textCursor = variableEndPos
       }
     }
     
-    // Sort highlights by position
-    highlights.sort((a, b) => a.start - b.start)
-    
-    // Merge any adjacent or overlapping highlights of the same variable
-    const mergedHighlights = []
-    for (const highlight of highlights) {
-      const lastMerged = mergedHighlights[mergedHighlights.length - 1]
-      
-      if (lastMerged && 
-          lastMerged.varName === highlight.varName && 
-          lastMerged.end >= highlight.start) {
-        // Extend the previous highlight
-        lastMerged.end = Math.max(lastMerged.end, highlight.end)
-        lastMerged.content = text.slice(lastMerged.start, lastMerged.end)
-      } else {
-        mergedHighlights.push(highlight)
-      }
+    // Add any remaining text
+    if (textCursor < text.length && matchedSuccessfully) {
+      html += escapeHtml(text.slice(textCursor)).replace(/\n/g, '<br>')
     }
     
-    // Build HTML with highlights
-    let html = ''
-    let lastIndex = 0
-    
-    for (const highlight of mergedHighlights) {
-      // Add text before this highlight
-      html += escapeHtml(text.slice(lastIndex, highlight.start)).replace(/\n/g, '<br>')
-      
-      // Add highlighted variable
-      html += `<mark class="var-highlight filled" data-var="${escapeHtml(highlight.varName)}">${escapeHtml(highlight.content)}</mark>`
-      
-      lastIndex = highlight.end
+    // If we couldn't match the structure, fall back to simple approach
+    if (!matchedSuccessfully) {
+      // Just look for remaining <<VarName>> patterns
+      return escapeHtml(text).replace(/\n/g, '<br>')
     }
-    
-    // Add remaining text
-    html += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>')
     
     return html
   }
