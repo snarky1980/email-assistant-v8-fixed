@@ -216,6 +216,16 @@ mark.var-highlight.empty {
   font-style: italic;
 }
 
+/* Clean view mode - hide highlighting visually but keep markup intact */
+mark.var-highlight.highlight-hidden {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-weight: inherit !important;
+  color: inherit !important;
+  font-style: inherit !important;
+}
+
 .editor-textarea {
   position: relative;
   z-index: 2;

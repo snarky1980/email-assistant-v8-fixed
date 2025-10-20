@@ -122,10 +122,12 @@ const HighlightingEditor = ({
         if (actualVariableContent) {
           // Highlight this as the variable content
           const isEmpty = !actualVariableContent.trim() || actualVariableContent === segment.placeholder
-          html += `<mark class="var-highlight ${isEmpty ? 'empty' : 'filled'}" data-var="${escapeHtml(varName)}">${escapeHtml(actualVariableContent)}</mark>`
+          const visibilityClass = showHighlights ? '' : ' highlight-hidden'
+          html += `<mark class="var-highlight ${isEmpty ? 'empty' : 'filled'}${visibilityClass}" data-var="${escapeHtml(varName)}">${escapeHtml(actualVariableContent)}</mark>`
         } else {
           // Empty variable - show placeholder
-          html += `<mark class="var-highlight empty" data-var="${escapeHtml(varName)}">${escapeHtml(segment.placeholder)}</mark>`
+          const visibilityClass = showHighlights ? '' : ' highlight-hidden'
+          html += `<mark class="var-highlight empty${visibilityClass}" data-var="${escapeHtml(varName)}">${escapeHtml(segment.placeholder)}</mark>`
         }
         
         textCursor = variableEndPos
@@ -150,9 +152,8 @@ const HighlightingEditor = ({
   const buildHighlightedHTML = (text) => {
     if (!text) return ''
     
-    // showHighlights determines the highlighting mode:
-    // - true: Edit mode - highlight <<Variable>> placeholders and filled variables
-    // - false: Preview mode - only show filled variables without placeholder highlighting
+    // Simple approach: Always detect and highlight variables
+    // showHighlights only controls visual display (via CSS class)
     
     // Strategy 1: Look for existing <<VarName>> patterns in the current text
     const variablePattern = /<<([^>]+)>>/g
@@ -175,36 +176,31 @@ const HighlightingEditor = ({
       return highlightFilledVariables(text, templateOriginal)
     }
     
-    // Strategy 3: Handle found placeholders
+    // Strategy 3: Handle found placeholders - always highlight them
     if (foundPlaceholders.length > 0) {
-      // In showHighlights mode, highlight the placeholders
-      if (showHighlights) {
-        let html = ''
-        let lastIndex = 0
+      let html = ''
+      let lastIndex = 0
+      
+      for (const placeholder of foundPlaceholders) {
+        // Add text before this variable
+        html += escapeHtml(text.slice(lastIndex, placeholder.start)).replace(/\n/g, '<br>')
         
-        for (const placeholder of foundPlaceholders) {
-          // Add text before this variable
-          html += escapeHtml(text.slice(lastIndex, placeholder.start)).replace(/\n/g, '<br>')
-          
-          // Add highlighted variable placeholder
-          const varName = placeholder.varName
-          const varValue = variables[varName] || ''
-          const filled = varValue.trim().length > 0
-          const displayText = filled ? varValue : placeholder.placeholder
-          
-          html += `<mark class="var-highlight ${filled ? 'filled' : 'empty'}" data-var="${escapeHtml(varName)}">${escapeHtml(displayText)}</mark>`
-          
-          lastIndex = placeholder.end
-        }
+        // Add highlighted variable placeholder - always add highlighting markup
+        const varName = placeholder.varName
+        const varValue = variables[varName] || ''
+        const filled = varValue.trim().length > 0
+        const displayText = filled ? varValue : placeholder.placeholder
         
-        // Add remaining text after last variable
-        html += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>')
-        return html
-      } else {
-        // In preview mode, just return the text without placeholder highlighting
-        // but still try to highlight filled variables if we can detect them
-        return highlightFilledVariables(text, templateOriginal)
+        // Add CSS class based on showHighlights for visibility control
+        const visibilityClass = showHighlights ? '' : ' highlight-hidden'
+        html += `<mark class="var-highlight ${filled ? 'filled' : 'empty'}${visibilityClass}" data-var="${escapeHtml(varName)}">${escapeHtml(displayText)}</mark>`
+        
+        lastIndex = placeholder.end
       }
+      
+      // Add remaining text after last variable
+      html += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>')
+      return html
     }
     
     // Fallback: return plain text if no highlighting possible

@@ -2059,7 +2059,7 @@ function App() {
                               className="transition-all duration-200 font-medium text-sm px-2.5"
                               style={{ borderRadius: '10px', background: '#fff', color: '#145a64', borderColor: 'rgba(20,90,100,0.35)' }}
                               size="sm"
-                              title={showHighlights ? 'Masquer les surlignages' : 'Afficher les surlignages'}
+                              title={showHighlights ? 'Vue simplifiée (masquer surlignages)' : 'Vue avec surlignages'}
                               aria-label={showHighlights ? 'Hide highlights' : 'Show highlights'}
                             >
                               {showHighlights ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" stroke="currentColor" strokeWidth="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/></svg>
