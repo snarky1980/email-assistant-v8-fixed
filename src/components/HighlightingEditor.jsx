@@ -341,6 +341,8 @@ const HighlightingEditor = ({
       // Generate the HTML with highlighting
       const newHtml = buildHighlightedHTML(textToRender)
       
+
+      
       // Update if content or highlighting changed
       if (editableRef.current.innerHTML !== newHtml) {
         const cursorPos = saveCursorPosition()

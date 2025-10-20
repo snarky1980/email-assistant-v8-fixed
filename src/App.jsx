@@ -588,7 +588,7 @@ function App() {
             }
           }
         }
-        if (msg.type === 'update' && (msg.variables || msg.templateId || msg.templateLanguage || msg.hasOwnProperty('focusedVar') || msg.hasOwnProperty('showHighlights'))) {
+        if (msg.type === 'update' && (msg.variables || msg.templateId || msg.templateLanguage || msg.hasOwnProperty('focusedVar'))) {
           if (msg.variables && typeof msg.variables === 'object') {
             varsRemoteUpdateRef.current = true
             setVariables(prev => ({ ...prev, ...msg.variables }))
@@ -596,13 +596,11 @@ function App() {
           if (msg.hasOwnProperty('focusedVar')) {
             setFocusedVar(msg.focusedVar)
           }
-          if (msg.hasOwnProperty('showHighlights')) {
-            // Only update if the value actually changed to prevent unnecessary re-renders
-            setShowHighlights(current => current === msg.showHighlights ? current : msg.showHighlights)
-          }
+          // Skip showHighlights sync via BroadcastChannel to prevent interference
+          // showHighlights will be synced only via localStorage fallback
           applyTemplateMeta(msg)
         } else if (msg.type === 'request_state') {
-          ch.postMessage({ type: 'state', variables, templateId: selectedTemplate?.id || null, templateLanguage, focusedVar, showHighlights, sender: varsSenderIdRef.current })
+          ch.postMessage({ type: 'state', variables, templateId: selectedTemplate?.id || null, templateLanguage, focusedVar, sender: varsSenderIdRef.current })
         } else if (msg.type === 'state') {
           if (msg.variables) {
             varsRemoteUpdateRef.current = true
@@ -611,10 +609,8 @@ function App() {
           if (msg.hasOwnProperty('focusedVar')) {
             setFocusedVar(msg.focusedVar)
           }
-          if (msg.hasOwnProperty('showHighlights')) {
-            // Only update if the value actually changed to prevent unnecessary re-renders
-            setShowHighlights(current => current === msg.showHighlights ? current : msg.showHighlights)
-          }
+          // Skip showHighlights sync via BroadcastChannel to prevent interference
+          // showHighlights will be synced only via localStorage fallback
           applyTemplateMeta(msg)
         }
       }
@@ -680,7 +676,7 @@ function App() {
     if (canUseBC) {
       const ch = varsChannelRef.current
       if (ch) {
-        try { ch.postMessage({ type: 'update', showHighlights, sender: varsSenderIdRef.current }) } catch {}
+        // showHighlights sync disabled via BroadcastChannel - using localStorage only
       }
     }
     
