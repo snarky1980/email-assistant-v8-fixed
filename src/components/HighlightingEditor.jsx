@@ -20,6 +20,81 @@ const HighlightingEditor = ({
      .replace(/"/g, '&quot;')
      .replace(/'/g, '&#x27;')
 
+  // Helper function to highlight variables that have been filled with values
+  const highlightFilledVariables = (text, templateOriginal) => {
+    // Parse template to understand structure, but be more flexible with matching
+    const templateVars = []
+    const varPattern = /<<([^>]+)>>/g
+    let templateMatch
+    
+    while ((templateMatch = varPattern.exec(templateOriginal)) !== null) {
+      templateVars.push({
+        name: templateMatch[1],
+        placeholder: templateMatch[0]
+      })
+    }
+    
+    if (templateVars.length === 0) {
+      return escapeHtml(text).replace(/\n/g, '<br>')
+    }
+    
+    // Try to find variable values in the current text
+    // Look for known variable values that were filled in
+    const highlights = []
+    
+    for (const templateVar of templateVars) {
+      const varValue = variables[templateVar.name]
+      if (varValue && varValue.trim()) {
+        // Look for this variable's value in the text
+        let searchStart = 0
+        let foundIndex
+        
+        while ((foundIndex = text.indexOf(varValue, searchStart)) !== -1) {
+          // Check if this position makes sense (not overlapping with other highlights)
+          const isOverlapping = highlights.some(h => 
+            (foundIndex >= h.start && foundIndex < h.end) ||
+            (foundIndex + varValue.length > h.start && foundIndex + varValue.length <= h.end)
+          )
+          
+          if (!isOverlapping) {
+            highlights.push({
+              start: foundIndex,
+              end: foundIndex + varValue.length,
+              varName: templateVar.name,
+              content: varValue,
+              filled: true
+            })
+            break // Only highlight first occurrence of each variable
+          }
+          
+          searchStart = foundIndex + 1
+        }
+      }
+    }
+    
+    // Sort highlights by position
+    highlights.sort((a, b) => a.start - b.start)
+    
+    // Build HTML with highlights
+    let html = ''
+    let lastIndex = 0
+    
+    for (const highlight of highlights) {
+      // Add text before this highlight
+      html += escapeHtml(text.slice(lastIndex, highlight.start)).replace(/\n/g, '<br>')
+      
+      // Add highlighted variable
+      html += `<mark class="var-highlight filled" data-var="${escapeHtml(highlight.varName)}">${escapeHtml(highlight.content)}</mark>`
+      
+      lastIndex = highlight.end
+    }
+    
+    // Add remaining text
+    html += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>')
+    
+    return html
+  }
+
   // Build HTML with highlighted variable spans
   const buildHighlightedHTML = (text) => {
     if (!text) return ''
@@ -29,98 +104,55 @@ const HighlightingEditor = ({
       return escapeHtml(text).replace(/\n/g, '<br>')
     }
     
-    // Try to use templateOriginal structure to identify where variables should be highlighted
-    if (templateOriginal && templateOriginal.includes('<<')) {
-      // Parse the template structure to find variable positions
-      const parts = []
-      const tokenNames = []
-      const re = /<<([^>]+)>>/g
-      let lastIdx = 0
-      let match
-      
-      while ((match = re.exec(templateOriginal)) !== null) {
-        parts.push(templateOriginal.slice(lastIdx, match.index))
-        tokenNames.push(match[1])
-        lastIdx = match.index + match[0].length
-      }
-      parts.push(templateOriginal.slice(lastIdx))
-
-      // Try to match the current text against this structure
-      let cursor = 0
-      let html = ''
-      let successfulMatch = true
-      
-      for (let i = 0; i < parts.length; i++) {
-        const literalPart = parts[i]
-        
-        // Look for literal part in current text
-        if (literalPart) {
-          const foundIndex = text.indexOf(literalPart, cursor)
-          if (foundIndex === -1) {
-            // Structure doesn't match, fall back to simple approach
-            successfulMatch = false
-            break
-          }
-          // Add any text before this literal part (could be from previous variables)
-          html += escapeHtml(text.slice(cursor, foundIndex + literalPart.length)).replace(/\n/g, '<br>')
-          cursor = foundIndex + literalPart.length
-        }
-        
-        // If there's a variable at this position
-        if (i < tokenNames.length) {
-          const varName = tokenNames[i]
-          const nextLiteralPart = parts[i + 1] || ''
-          
-          // Find where this variable content ends
-          let variableEndPos
-          if (nextLiteralPart) {
-            variableEndPos = text.indexOf(nextLiteralPart, cursor)
-            if (variableEndPos === -1) variableEndPos = text.length
-          } else {
-            variableEndPos = text.length
-          }
-          
-          const variableContent = text.slice(cursor, variableEndPos)
-          const isEmpty = !variableContent.trim() || variableContent === `<<${varName}>>`
-          
-          html += `<mark class="var-highlight ${isEmpty ? 'empty' : 'filled'}" data-var="${escapeHtml(varName)}">${escapeHtml(variableContent) || '&nbsp;'}</mark>`
-          cursor = variableEndPos
-        }
-      }
-      
-      if (successfulMatch) {
-        // Add any remaining text
-        if (cursor < text.length) {
-          html += escapeHtml(text.slice(cursor)).replace(/\n/g, '<br>')
-        }
-        return html
-      }
-    }
-    
-    // Fallback: look for <<VarName>> patterns directly in the text
+    // Strategy 1: Look for existing <<VarName>> patterns in the current text
     const variablePattern = /<<([^>]+)>>/g
-    let lastIndex = 0
-    let html = ''
+    const foundPlaceholders = []
     let match
     
+    // Reset regex state
+    variablePattern.lastIndex = 0
     while ((match = variablePattern.exec(text)) !== null) {
-      const fullMatch = match[0] // "<<VarName>>"
-      const varName = match[1] // "VarName"
-      const startIndex = match.index
-      
-      // Add text before this variable
-      html += escapeHtml(text.slice(lastIndex, startIndex)).replace(/\n/g, '<br>')
-      
-      // Add highlighted variable placeholder - always show as empty since it's a placeholder
-      html += `<mark class="var-highlight empty" data-var="${escapeHtml(varName)}">${escapeHtml(fullMatch)}</mark>`
-      
-      lastIndex = startIndex + fullMatch.length
+      foundPlaceholders.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        varName: match[1],
+        placeholder: match[0]
+      })
     }
     
-    // Add remaining text after last variable
-    html += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>')
+    // Strategy 2: If we have variables but no placeholders found, try to identify filled variables
+    // This handles the case where variables have been replaced with actual values
+    if (foundPlaceholders.length === 0 && Object.keys(variables).length > 0 && templateOriginal) {
+      return highlightFilledVariables(text, templateOriginal)
+    }
     
-    return html
+    // Strategy 3: Highlight the found placeholders
+    if (foundPlaceholders.length > 0) {
+      let html = ''
+      let lastIndex = 0
+      
+      for (const placeholder of foundPlaceholders) {
+        // Add text before this variable
+        html += escapeHtml(text.slice(lastIndex, placeholder.start)).replace(/\n/g, '<br>')
+        
+        // Add highlighted variable placeholder
+        const varName = placeholder.varName
+        const varValue = variables[varName] || ''
+        const filled = varValue.trim().length > 0
+        const displayText = filled ? varValue : placeholder.placeholder
+        
+        html += `<mark class="var-highlight ${filled ? 'filled' : 'empty'}" data-var="${escapeHtml(varName)}">${escapeHtml(displayText)}</mark>`
+        
+        lastIndex = placeholder.end
+      }
+      
+      // Add remaining text after last variable
+      html += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>')
+      return html
+    }
+    
+    // Fallback: return plain text if no highlighting possible
+    return escapeHtml(text).replace(/\n/g, '<br>')
   }
 
   // Extract plain text from contentEditable div
