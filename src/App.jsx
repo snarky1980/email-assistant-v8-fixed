@@ -553,6 +553,11 @@ function App() {
       
       const win = window.open(url.toString(), '_blank', features)
       if (win && win.focus) win.focus()
+      
+      // Auto-close the popup when popout opens successfully
+      if (win) {
+        setShowVariablePopup(false)
+      }
     } else {
       // Open popup
       setShowVariablePopup(true)
