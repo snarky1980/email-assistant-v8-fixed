@@ -1,5 +1,5 @@
 /* DEPLOY: 2025-10-15 07:40 - FIXED: Function hoisting error resolved */
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
