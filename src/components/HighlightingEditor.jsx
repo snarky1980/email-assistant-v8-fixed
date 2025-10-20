@@ -12,6 +12,7 @@ const HighlightingEditor = ({
   const editableRef = useRef(null)
   const lastValueRef = useRef(value)
   const isInternalUpdateRef = useRef(false)
+  const updateTimeoutRef = useRef(null)
 
   const escapeHtml = (s = '') =>
     s.replace(/&/g, '&amp;')
@@ -308,47 +309,64 @@ const HighlightingEditor = ({
       return
     }
     
-    const currentText = extractText(editableRef.current)
-    
-    // Determine what text to render
-    let textToRender = value
-    
-    // If we have current content that differs from the prop value, use current content
-    // unless the prop value has genuinely changed
-    if (currentText && currentText !== value) {
-      const normalizedCurrent = currentText.replace(/\s+/g, ' ').trim()
-      const normalizedValue = (value || '').replace(/\s+/g, ' ').trim()
-      
-      // Use current text if it's just formatting differences, otherwise use prop value
-      if (normalizedCurrent === normalizedValue) {
-        textToRender = currentText
-      } else if (lastValueRef.current === value) {
-        // Value hasn't changed from parent, keep current text
-        textToRender = currentText
-      }
+    // Clear any pending update
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current)
     }
     
-    // Generate the HTML with highlighting
-    const newHtml = buildHighlightedHTML(textToRender)
-    
-    // Update if content or highlighting changed
-    if (editableRef.current.innerHTML !== newHtml) {
-      const cursorPos = saveCursorPosition()
-      lastValueRef.current = textToRender
-      editableRef.current.innerHTML = newHtml
+    // Debounce updates to prevent BroadcastChannel interference
+    updateTimeoutRef.current = setTimeout(() => {
+      if (!editableRef.current) return
       
-      // Update parent if text differs from prop
-      if (textToRender !== value && onChange) {
-        // Temporarily set flag to prevent recursive updates
-        setTimeout(() => {
-          onChange({ target: { value: textToRender } })
-        }, 0)
+      const currentText = extractText(editableRef.current)
+      
+      // Determine what text to render
+      let textToRender = value
+      
+      // If we have current content that differs from the prop value, use current content
+      // unless the prop value has genuinely changed
+      if (currentText && currentText !== value) {
+        const normalizedCurrent = currentText.replace(/\s+/g, ' ').trim()
+        const normalizedValue = (value || '').replace(/\s+/g, ' ').trim()
+        
+        // Use current text if it's just formatting differences, otherwise use prop value
+        if (normalizedCurrent === normalizedValue) {
+          textToRender = currentText
+        } else if (lastValueRef.current === value) {
+          // Value hasn't changed from parent, keep current text
+          textToRender = currentText
+        }
       }
       
-      // Restore cursor position
-      requestAnimationFrame(() => {
-        restoreCursorPosition(cursorPos)
-      })
+      // Generate the HTML with highlighting
+      const newHtml = buildHighlightedHTML(textToRender)
+      
+      // Update if content or highlighting changed
+      if (editableRef.current.innerHTML !== newHtml) {
+        const cursorPos = saveCursorPosition()
+        lastValueRef.current = textToRender
+        editableRef.current.innerHTML = newHtml
+        
+        // Update parent if text differs from prop
+        if (textToRender !== value && onChange) {
+          // Temporarily set flag to prevent recursive updates
+          setTimeout(() => {
+            onChange({ target: { value: textToRender } })
+          }, 0)
+        }
+        
+        // Restore cursor position
+        requestAnimationFrame(() => {
+          restoreCursorPosition(cursorPos)
+        })
+      }
+    }, 10) // Small debounce to prevent rapid updates from BroadcastChannel
+    
+    // Cleanup timeout on unmount or dependency change
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current)
+      }
     }
   }, [value, showHighlights, variables, templateOriginal])
 

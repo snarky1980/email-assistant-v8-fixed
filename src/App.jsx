@@ -597,7 +597,8 @@ function App() {
             setFocusedVar(msg.focusedVar)
           }
           if (msg.hasOwnProperty('showHighlights')) {
-            setShowHighlights(msg.showHighlights)
+            // Only update if the value actually changed to prevent unnecessary re-renders
+            setShowHighlights(current => current === msg.showHighlights ? current : msg.showHighlights)
           }
           applyTemplateMeta(msg)
         } else if (msg.type === 'request_state') {
@@ -611,7 +612,8 @@ function App() {
             setFocusedVar(msg.focusedVar)
           }
           if (msg.hasOwnProperty('showHighlights')) {
-            setShowHighlights(msg.showHighlights)
+            // Only update if the value actually changed to prevent unnecessary re-renders
+            setShowHighlights(current => current === msg.showHighlights ? current : msg.showHighlights)
           }
           applyTemplateMeta(msg)
         }
