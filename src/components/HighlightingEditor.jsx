@@ -336,7 +336,7 @@ const HighlightingEditor = ({
     
     // Update the parent component with current content if it differs
     if (textToProcess !== value && onChange) {
-      onChange(textToProcess)
+      onChange({ target: { value: textToProcess } })
     }
     
     // Use requestAnimationFrame for smoother updates
