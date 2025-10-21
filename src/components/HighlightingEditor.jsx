@@ -241,7 +241,7 @@ const HighlightingEditor = ({
     return text
   }
 
-  // Handle input changes
+  // Handle input changes - reapply highlighting after user input
   const handleInput = () => {
     if (!editableRef.current) return
     isInternalUpdateRef.current = true
@@ -249,6 +249,18 @@ const HighlightingEditor = ({
     if (newText !== lastValueRef.current) {
       lastValueRef.current = newText
       onChange({ target: { value: newText } })
+      
+      // Reapply highlighting after a short delay to avoid interfering with typing
+      setTimeout(() => {
+        if (!editableRef.current) return
+        console.log('🔧 Reapplying highlighting after user input')
+        const cursorPos = saveCursorPosition()
+        const newHtml = buildHighlightedHTML(newText)
+        editableRef.current.innerHTML = newHtml
+        requestAnimationFrame(() => {
+          restoreCursorPosition(cursorPos)
+        })
+      }, 100)
     }
     isInternalUpdateRef.current = false
   }

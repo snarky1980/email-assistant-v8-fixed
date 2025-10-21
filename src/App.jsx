@@ -353,6 +353,7 @@ function App() {
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [searchQuery, setSearchQuery] = useState(savedState.searchQuery || '')
   const [selectedCategory, setSelectedCategory] = useState(savedState.selectedCategory || 'all')
+  
   const [finalSubject, setFinalSubject] = useState('') // Final editable version
   const [finalBody, setFinalBody] = useState('') // Final editable version
   const [variables, setVariables] = useState(savedState.variables || {})
@@ -858,6 +859,20 @@ function App() {
 
   const t = interfaceTexts[interfaceLanguage]
 
+  // Get interface-specific placeholder text
+  const getPlaceholderText = () => {
+    return interfaceLanguage === 'fr' ? 'Sélectionnez un modèle' : 'Select a template'
+  }
+
+  // Set initial placeholder text
+  useEffect(() => {
+    if (!selectedTemplate) {
+      const placeholder = getPlaceholderText()
+      setFinalSubject(placeholder)
+      setFinalBody(placeholder)
+    }
+  }, [interfaceLanguage]) // Update when interface language changes
+
   // Load template data on startup
   useEffect(() => {
     const loadTemplatesData = async () => {
@@ -1326,8 +1341,14 @@ function App() {
       const bodyWithVars = replaceVariables(selectedTemplate.body[templateLanguage] || '')
       setFinalSubject(subjectWithVars)
       setFinalBody(bodyWithVars)
+    } else {
+      // No template selected - show placeholder
+      const placeholder = getPlaceholderText()
+      setFinalSubject(placeholder)
+      setFinalBody(placeholder)
+      setVariables({})
     }
-  }, [selectedTemplate, templateLanguage])
+  }, [selectedTemplate, templateLanguage, interfaceLanguage])
 
   // Update final versions when variables change
   useEffect(() => {
