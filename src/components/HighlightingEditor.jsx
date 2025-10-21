@@ -339,6 +339,79 @@ const HighlightingEditor = ({
     }
   }, [variables, templateOriginal])
 
+  // Re-apply highlighting when window focus changes (popout opens/closes)
+  useEffect(() => {
+    const handleFocusChange = () => {
+      console.log('🔄 Focus change detected - re-applying highlights')
+      
+      // Small delay to let any state changes settle
+      setTimeout(() => {
+        if (!editableRef.current) return
+        
+        const currentText = extractText(editableRef.current)
+        const newHtml = buildHighlightedHTML(currentText)
+        
+        if (editableRef.current.innerHTML !== newHtml) {
+          console.log('🔄 Re-applying highlights after focus change')
+          const cursorPos = saveCursorPosition()
+          editableRef.current.innerHTML = newHtml
+          
+          requestAnimationFrame(() => {
+            restoreCursorPosition(cursorPos)
+          })
+        }
+      }, 100)
+    }
+
+    window.addEventListener('focus', handleFocusChange)
+    window.addEventListener('blur', handleFocusChange)
+    
+    // Also listen for visibility change (when popouts are opened)
+    document.addEventListener('visibilitychange', handleFocusChange)
+    
+    return () => {
+      window.removeEventListener('focus', handleFocusChange)
+      window.removeEventListener('blur', handleFocusChange)
+      document.removeEventListener('visibilitychange', handleFocusChange)
+    }
+  }, [variables, templateOriginal])
+
+  // Listen for popout state changes via BroadcastChannel
+  useEffect(() => {
+    const channel = new BroadcastChannel('email-assistant-sync')
+    
+    const handleMessage = (event) => {
+      console.log('🔄 BroadcastChannel message received:', event.data)
+      
+      if (event.data.type === 'popoutOpened' || event.data.type === 'popoutClosed') {
+        // Re-apply highlighting when popout state changes
+        setTimeout(() => {
+          if (!editableRef.current) return
+          
+          const currentText = extractText(editableRef.current)
+          const newHtml = buildHighlightedHTML(currentText)
+          
+          if (editableRef.current.innerHTML !== newHtml) {
+            console.log('🔄 Re-applying highlights after popout state change')
+            const cursorPos = saveCursorPosition()
+            editableRef.current.innerHTML = newHtml
+            
+            requestAnimationFrame(() => {
+              restoreCursorPosition(cursorPos)
+            })
+          }
+        }, 150)
+      }
+    }
+
+    channel.addEventListener('message', handleMessage)
+    
+    return () => {
+      channel.removeEventListener('message', handleMessage)
+      channel.close()
+    }
+  }, [variables, templateOriginal])
+
   return (
     <div
       ref={editableRef}

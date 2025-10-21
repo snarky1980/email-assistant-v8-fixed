@@ -557,6 +557,34 @@ function App() {
       // Auto-close the popup when popout opens successfully
       if (win) {
         setShowVariablePopup(false)
+        
+        // Notify other components that popout opened
+        if (canUseBC) {
+          try {
+            const channel = new BroadcastChannel('email-assistant-sync')
+            channel.postMessage({ type: 'popoutOpened', timestamp: Date.now() })
+            channel.close()
+          } catch (e) {
+            console.log('BroadcastChannel not available for popout sync')
+          }
+        }
+        
+        // Listen for when popout window closes
+        const checkClosed = setInterval(() => {
+          if (win.closed) {
+            clearInterval(checkClosed)
+            // Notify that popout closed
+            if (canUseBC) {
+              try {
+                const channel = new BroadcastChannel('email-assistant-sync')
+                channel.postMessage({ type: 'popoutClosed', timestamp: Date.now() })
+                channel.close()
+              } catch (e) {
+                console.log('BroadcastChannel not available for popout close sync')
+              }
+            }
+          }
+        }, 1000)
       }
     } else {
       // Open popup
