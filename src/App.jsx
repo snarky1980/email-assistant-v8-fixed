@@ -864,12 +864,11 @@ function App() {
     return interfaceLanguage === 'fr' ? 'Sélectionnez un modèle' : 'Select a template'
   }
 
-  // Set initial placeholder text
+  // Set initial empty editors so contentEditable placeholder shows
   useEffect(() => {
     if (!selectedTemplate) {
-      const placeholder = getPlaceholderText()
-      setFinalSubject(placeholder)
-      setFinalBody(placeholder)
+      setFinalSubject('')
+      setFinalBody('')
     }
   }, [interfaceLanguage]) // Update when interface language changes
 
@@ -917,11 +916,10 @@ function App() {
     loadTemplatesData()
   }, [])
 
-  // Auto-select first template once data is available
+  // Do NOT auto-select a template once data is available; wait for user selection
   useEffect(() => {
-    if (!loading && templatesData && !selectedTemplate && Array.isArray(templatesData.templates) && templatesData.templates.length > 0) {
-      if (debug) console.log('[EA][Debug] Auto-selecting first template')
-      setSelectedTemplate(templatesData.templates[0])
+    if (!loading && templatesData && !selectedTemplate && Array.isArray(templatesData.templates)) {
+      if (debug) console.log('[EA][Debug] Templates loaded; no auto-selection')
     }
   }, [loading, templatesData, selectedTemplate, debug])
 
@@ -1342,10 +1340,9 @@ function App() {
       setFinalSubject(subjectWithVars)
       setFinalBody(bodyWithVars)
     } else {
-      // No template selected - show placeholder
-      const placeholder = getPlaceholderText()
-      setFinalSubject(placeholder)
-      setFinalBody(placeholder)
+      // No template selected - clear editors; placeholder text shown via UI
+      setFinalSubject('')
+      setFinalBody('')
       setVariables({})
     }
   }, [selectedTemplate, templateLanguage, interfaceLanguage])
@@ -2165,7 +2162,7 @@ function App() {
                         value={finalSubject}
                         onChange={(e) => setFinalSubject(e.target.value)}
                         variables={variables}
-                        placeholder={t.subject}
+                        placeholder={getPlaceholderText()}
                         minHeight="60px"
                         templateOriginal={selectedTemplate?.subject?.[templateLanguage] || ''}
                         showHighlights={true}
@@ -2183,7 +2180,7 @@ function App() {
                         value={finalBody}
                         onChange={(e) => setFinalBody(e.target.value)}
                         variables={variables}
-                        placeholder={t.body}
+                        placeholder={getPlaceholderText()}
                         minHeight="250px"
                         templateOriginal={selectedTemplate?.body?.[templateLanguage] || ''}
                         showHighlights={true}

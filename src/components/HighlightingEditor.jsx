@@ -265,6 +265,23 @@ const HighlightingEditor = ({
     isInternalUpdateRef.current = false
   }
 
+  // On focus, reapply highlighting to prevent browser normalizing innerHTML
+  const handleFocus = () => {
+    if (!editableRef.current) return
+    const currentText = extractText(editableRef.current)
+    const cursorPos = saveCursorPosition()
+    const newHtml = buildHighlightedHTML(currentText)
+    editableRef.current.innerHTML = newHtml
+    requestAnimationFrame(() => restoreCursorPosition(cursorPos))
+  }
+
+  // Before input, snapshot cursor and re-render after
+  const handleBeforeInput = () => {
+    if (!editableRef.current) return
+    const pos = saveCursorPosition()
+    setTimeout(() => restoreCursorPosition(pos), 0)
+  }
+
   // Save and restore cursor position
   const saveCursorPosition = () => {
     const sel = window.getSelection()
@@ -419,6 +436,8 @@ const HighlightingEditor = ({
       ref={editableRef}
       contentEditable
       onInput={handleInput}
+      onFocus={handleFocus}
+      onBeforeInput={handleBeforeInput}
       suppressContentEditableWarning
   className="border-2 border-[#bfe7e3] focus:border-[#7bd1ca] focus:outline-none focus:ring-2 focus:ring-[#7bd1ca]/30 transition-all duration-200 rounded-[12px] px-4 py-4 text-[16px] leading-[1.7] tracking-[0.01em] bg-[#f9fdfd] resize-none overflow-auto"
   style={{ minHeight, fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" }}

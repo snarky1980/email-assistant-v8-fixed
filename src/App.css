@@ -236,6 +236,13 @@ mark.var-highlight.highlight-hidden {
   letter-spacing: 0.01em;
 }
 
+/* Placeholder for contentEditable editors when empty */
+[contenteditable][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8; /* slate-400 */
+  pointer-events: none;
+}
+
 /* Amélioration des scrollbars */
 [data-slot="scroll-area-scrollbar"] {
   opacity: 1 !important;
