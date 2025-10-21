@@ -1872,19 +1872,28 @@ function App() {
               const topPad = start * ITEM_H
               const bottomPad = (count - end) * ITEM_H
               return (
-                <div className="p-2" style={{ minHeight: count * ITEM_H }}>
+                <div className="p-2" style={{ minHeight: (count + 1) * ITEM_H }}>
                   <div style={{ height: topPad }} />
                   <div className="space-y-3">
-                    {/* Placeholder option when no template is selected */}
-                    {!selectedTemplate && start === 0 && (
+                    {/* Hardcoded "Choose Template" placeholder - always appears first */}
+                    {start === 0 && (
                       <div
                         onClick={() => setSelectedTemplate(null)}
-                        className="w-full p-4 border-2 border-dashed border-[#7bd1ca] bg-gradient-to-r from-[#f0fffe] to-[#e6f9f8] rounded-[14px] cursor-pointer transition-all duration-150 hover:border-[#1f8a99] hover:shadow-md"
+                        className={`w-full p-4 border-2 cursor-pointer transition-all duration-150 ${
+                          !selectedTemplate
+                            ? 'border-[#1f8a99] bg-gradient-to-r from-[#e6f0ff] to-[#f0fffe] shadow-lg'
+                            : 'border-dashed border-[#7bd1ca] bg-gradient-to-r from-[#f0fffe] to-[#e6f9f8] hover:border-[#1f8a99] hover:shadow-md'
+                        }`}
+                        style={{ borderRadius: '14px' }}
                       >
                         <div className="text-center py-2">
                           <FileText className="h-8 w-8 text-[#1f8a99] mx-auto mb-2 opacity-60" />
-                          <p className="text-[#1f8a99] font-semibold text-lg">{t.selectTemplate}</p>
-                          <p className="text-[#145a64] text-sm opacity-80 mt-1">{t.noTemplate}</p>
+                          <p className="text-[#1f8a99] font-semibold text-lg">
+                            {interfaceLanguage === 'fr' ? 'Sélectionnez un modèle' : 'Select a template'}
+                          </p>
+                          <p className="text-[#145a64] text-sm opacity-80 mt-1">
+                            {interfaceLanguage === 'fr' ? 'Choisissez un modèle pour commencer' : 'Choose a template to get started'}
+                          </p>
                         </div>
                       </div>
                     )}

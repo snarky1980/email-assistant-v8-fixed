@@ -298,72 +298,33 @@ const HighlightingEditor = ({
     }
   }
 
-  // Update content and apply highlighting
+  // Simple, bulletproof highlighting effect
   useEffect(() => {
     if (!editableRef.current) return
     
-    // Skip if this is from user typing (internal update)
+    // Skip if this is from user typing
     if (isInternalUpdateRef.current) return
     
-    const currentText = extractText(editableRef.current)
-    const textToRender = value || ''
+    console.log('🔧 Highlighting effect triggered:', { 
+      hasValue: !!value, 
+      hasVariables: Object.keys(variables).length > 0,
+      hasTemplate: !!templateOriginal 
+    })
     
-    // Always apply highlighting when value changes
-    const cursorPos = saveCursorPosition()
+    const textToRender = value || ''
     const newHtml = buildHighlightedHTML(textToRender)
+    
+    console.log('🔧 Generated HTML:', newHtml.substring(0, 100) + (newHtml.length > 100 ? '...' : ''))
+    
+    const cursorPos = saveCursorPosition()
     editableRef.current.innerHTML = newHtml
     lastValueRef.current = textToRender
     
-    // Restore cursor position after render
+    // Restore cursor position
     requestAnimationFrame(() => {
       restoreCursorPosition(cursorPos)
     })
-  }, [value])
-
-  // Apply highlighting when variables change
-  useEffect(() => {
-    if (!editableRef.current) return
-    
-    const currentText = extractText(editableRef.current)
-    const newHtml = buildHighlightedHTML(currentText)
-    
-    const cursorPos = saveCursorPosition()
-    editableRef.current.innerHTML = newHtml
-    
-    requestAnimationFrame(() => {
-      restoreCursorPosition(cursorPos)
-    })
-  }, [variables, templateOriginal])
-
-  // Force highlighting on mount and when DOM is ready
-  useEffect(() => {
-    const applyInitialHighlighting = () => {
-      if (!editableRef.current) return
-      
-      console.log('🔧 Applying initial highlighting on mount')
-      
-      const currentText = extractText(editableRef.current) || value || ''
-      const newHtml = buildHighlightedHTML(currentText)
-      
-      console.log('🔧 Initial highlighting:', { currentText: currentText.substring(0, 50), hasVariables: Object.keys(variables).length > 0, hasTemplateOriginal: !!templateOriginal })
-      
-      const cursorPos = saveCursorPosition()
-      editableRef.current.innerHTML = newHtml
-      lastValueRef.current = currentText
-      
-      requestAnimationFrame(() => {
-        restoreCursorPosition(cursorPos)
-      })
-    }
-
-    // Try immediately
-    applyInitialHighlighting()
-    
-    // Also try after a short delay to ensure DOM is ready
-    const timer = setTimeout(applyInitialHighlighting, 100)
-    
-    return () => clearTimeout(timer)
-  }, []) // Run once on mount
+  }, [value, variables, templateOriginal]) // React to any change
 
   // Re-apply highlighting when window focus changes (popout opens/closes)
   useEffect(() => {
