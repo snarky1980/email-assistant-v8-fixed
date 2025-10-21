@@ -589,6 +589,17 @@ function App() {
     } else {
       // Open popup
       setShowVariablePopup(true)
+      
+      // Notify that variables popup opened
+      if (canUseBC) {
+        try {
+          const channel = new BroadcastChannel('email-assistant-sync')
+          channel.postMessage({ type: 'variablesPopupOpened', timestamp: Date.now() })
+          channel.close()
+        } catch (e) {
+          console.log('BroadcastChannel not available for popup sync')
+        }
+      }
     }
   }, [preferPopout, selectedTemplate, templateLanguage])
 
@@ -1864,6 +1875,19 @@ function App() {
                 <div className="p-2" style={{ minHeight: count * ITEM_H }}>
                   <div style={{ height: topPad }} />
                   <div className="space-y-3">
+                    {/* Placeholder option when no template is selected */}
+                    {!selectedTemplate && start === 0 && (
+                      <div
+                        onClick={() => setSelectedTemplate(null)}
+                        className="w-full p-4 border-2 border-dashed border-[#7bd1ca] bg-gradient-to-r from-[#f0fffe] to-[#e6f9f8] rounded-[14px] cursor-pointer transition-all duration-150 hover:border-[#1f8a99] hover:shadow-md"
+                      >
+                        <div className="text-center py-2">
+                          <FileText className="h-8 w-8 text-[#1f8a99] mx-auto mb-2 opacity-60" />
+                          <p className="text-[#1f8a99] font-semibold text-lg">{t.selectTemplate}</p>
+                          <p className="text-[#145a64] text-sm opacity-80 mt-1">{t.noTemplate}</p>
+                        </div>
+                      </div>
+                    )}
                     {filteredTemplates.slice(start, end).map((template) => (
                       <div
                         key={template.id}
@@ -2528,6 +2552,17 @@ function App() {
                         window.close()
                       } else {
                         setShowVariablePopup(false)
+                        
+                        // Notify that variables popup closed
+                        if (canUseBC) {
+                          try {
+                            const channel = new BroadcastChannel('email-assistant-sync')
+                            channel.postMessage({ type: 'variablesPopupClosed', timestamp: Date.now() })
+                            channel.close()
+                          } catch (e) {
+                            console.log('BroadcastChannel not available for popup close sync')
+                          }
+                        }
                       }
                     }}
                     variant="ghost"
