@@ -85,6 +85,7 @@ html, body { background: var(--background); color: var(--foreground); }
 }
 .chip-toggle { 
   cursor: pointer; 
+  -webkit-user-select: none;
   user-select: none; 
 }
 .chip-toggle:hover { 
