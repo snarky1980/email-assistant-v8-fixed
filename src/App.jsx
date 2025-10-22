@@ -557,6 +557,8 @@ function App() {
       
       // Auto-close the popup when popout opens successfully
       if (win) {
+        setVarsMinimized(false)
+        setVarsPinned(false)
         setShowVariablePopup(false)
         
         // Notify other components that popout opened
@@ -2465,6 +2467,8 @@ function App() {
                         
                         // Auto-close the popup when popout opens successfully
                         if (win) {
+                          setVarsMinimized(false)
+                          setVarsPinned(false)
                           setShowVariablePopup(false)
                         }
                       }}

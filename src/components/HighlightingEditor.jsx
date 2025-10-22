@@ -14,8 +14,7 @@ const HighlightingEditor = ({
   const editableRef = useRef(null)
   const lastValueRef = useRef(value)
   const isInternalUpdateRef = useRef(false)
-  const updateTimeoutRef = useRef(null)
-  const hasInitializedRef = useRef(false)
+  const isUserTypingRef = useRef(false)
 
   const escapeHtml = (s = '') =>
     s.replace(/&/g, '&amp;')
@@ -258,7 +257,7 @@ const HighlightingEditor = ({
     return text
   }
 
-  // Handle input changes - reapply highlighting after user input
+  // Handle input changes - allow normal editing, sync back to parent
   const handleInput = () => {
     if (!editableRef.current) return
     
@@ -271,31 +270,21 @@ const HighlightingEditor = ({
     const newText = extractText(editableRef.current)
     if (newText !== lastValueRef.current) {
       lastValueRef.current = newText
-      onChange({ target: { value: newText } })
+      isUserTypingRef.current = true
       
-      // Reapply highlighting after a short delay to avoid interfering with typing
-      setTimeout(() => {
-        if (!editableRef.current) return
-        console.log('🔧 Reapplying highlighting after user input')
-        isInternalUpdateRef.current = true
-        const cursorPos = saveCursorPosition()
-        const newHtml = buildHighlightedHTML(newText)
-        editableRef.current.innerHTML = newHtml
-        requestAnimationFrame(() => {
-          restoreCursorPosition(cursorPos)
-          setTimeout(() => {
-            isInternalUpdateRef.current = false
-          }, 50)
-        })
-      }, 100)
+      // Immediately call onChange - this is normal editing behavior
+      onChange({ target: { value: newText } })
     }
   }
 
-  // Before input, snapshot cursor and re-render after
+  // Handle before input normally
   const handleBeforeInput = () => {
-    if (!editableRef.current) return
-    const pos = saveCursorPosition()
-    setTimeout(() => restoreCursorPosition(pos), 0)
+    // Allow normal text input
+  }
+
+  // Handle key down normally  
+  const handleKeyDown = () => {
+    // Allow all normal typing
   }
 
   // Save and restore cursor position
@@ -350,6 +339,13 @@ const HighlightingEditor = ({
     // Skip if this is from user typing
     if (isInternalUpdateRef.current) return
     
+    if (isUserTypingRef.current) {
+      // User is actively editing; keep existing DOM highlights intact
+      lastValueRef.current = value
+      isUserTypingRef.current = false
+      return
+    }
+
     const hasVars = Object.keys(variables).length > 0
     const hasTemplate = !!templateOriginal
     
@@ -361,14 +357,27 @@ const HighlightingEditor = ({
       variablesCount: Object.keys(variables).length
     })
     
-    // Don't render if we have a template but no variables yet (state still syncing)
-    if (hasTemplate && !hasVars && value) {
-      console.log('⏳ Skipping render - waiting for variables to sync')
+    // Only apply highlighting if we have both template AND variables
+    // This prevents highlighting plain edited text that no longer matches template
+    if (!hasTemplate || !hasVars) {
+      console.log('⏳ No highlighting - missing template or variables')
+      // Just show plain text
+      const textToRender = value || ''
+      const plainHtml = escapeHtml(textToRender).replace(/\n/g, '<br>')
+      if (editableRef.current.innerHTML !== plainHtml) {
+        editableRef.current.innerHTML = plainHtml
+      }
       return
     }
     
     const textToRender = value || ''
     const newHtml = buildHighlightedHTML(textToRender)
+    
+    const currentHtml = editableRef.current.innerHTML
+    if (currentHtml === newHtml) {
+      lastValueRef.current = textToRender
+      return
+    }
     
     console.log('🔧 Generated HTML:', newHtml.substring(0, 100) + (newHtml.length > 100 ? '...' : ''))
     
@@ -487,10 +496,12 @@ const HighlightingEditor = ({
     
     // Only re-apply if the content has actually changed from what we expect
     const currentHtml = editableRef.current.innerHTML
+    const hasMarks = currentHtml.includes('<mark')
     const expectedHtml = buildHighlightedHTML(value || '')
+    const expectedHasMarks = expectedHtml.includes('<mark')
     
-    if (currentHtml !== expectedHtml) {
-      console.log('🔄 Mouse up - content changed, reapplying highlights')
+    if (!hasMarks && expectedHasMarks) {
+      console.log('🔄 Mouse up - highlights missing, restoring expected highlights')
       const cursorPos = saveCursorPosition()
       isInternalUpdateRef.current = true
       editableRef.current.innerHTML = expectedHtml
@@ -500,8 +511,6 @@ const HighlightingEditor = ({
           isInternalUpdateRef.current = false
         }, 50)
       })
-    } else {
-      console.log('🔄 Mouse up - content unchanged, keeping highlights')
     }
   }
 
@@ -509,12 +518,13 @@ const HighlightingEditor = ({
     <div
       ref={editableRef}
       contentEditable
-  onInput={handleInput}
+      onInput={handleInput}
       onBeforeInput={handleBeforeInput}
-  onMouseUp={handleMouseUp}
+      onKeyDown={handleKeyDown}
+      onMouseUp={handleMouseUp}
       suppressContentEditableWarning
-  className="border-2 border-[#bfe7e3] focus:border-[#7bd1ca] focus:outline-none focus:ring-2 focus:ring-[#7bd1ca]/30 transition-all duration-200 rounded-[12px] px-4 py-4 text-[16px] leading-[1.7] tracking-[0.01em] bg-[#f9fdfd] resize-none overflow-auto"
-  style={{ minHeight, fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" }}
+      className="border-2 border-[#bfe7e3] focus:border-[#7bd1ca] focus:outline-none focus:ring-2 focus:ring-[#7bd1ca]/30 transition-all duration-200 rounded-[12px] px-4 py-4 text-[16px] leading-[1.7] tracking-[0.01em] bg-[#f9fdfd] resize-none overflow-auto"
+      style={{ minHeight, fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" }}
       data-placeholder={placeholder}
     />
   )
