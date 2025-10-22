@@ -26,6 +26,11 @@ const HighlightingEditor = ({
 
   // Helper function to highlight variables that have been filled with values
   const highlightFilledVariables = (text, templateOriginal) => {
+    console.log('🔧 highlightFilledVariables called:', {
+      textPreview: text.substring(0, 80),
+      templatePreview: templateOriginal.substring(0, 80)
+    })
+    
     // Parse template to understand the expected structure
     const templateSegments = []
     const varPattern = /<<([^>]+)>>/g
@@ -59,7 +64,13 @@ const HighlightingEditor = ({
       })
     }
     
+    console.log('🔧 Template segments:', templateSegments.length, templateSegments.map(s => ({
+      type: s.type,
+      content: s.type === 'literal' ? s.content.substring(0, 20) : s.name
+    })))
+    
     if (templateSegments.length === 0) {
+      console.log('🔧 No template segments - returning plain text')
       return escapeHtml(text).replace(/\n/g, '<br>')
     }
     
@@ -149,7 +160,13 @@ const HighlightingEditor = ({
   const buildHighlightedHTML = (text) => {
     if (!text) return ''
     
-    console.log('🔍 buildHighlightedHTML called with text:', text.substring(0, 50))
+    console.log('🔍 buildHighlightedHTML called:', {
+      textPreview: text.substring(0, 80),
+      variablesCount: Object.keys(variables).length,
+      variablesList: Object.keys(variables).join(', '),
+      hasTemplate: !!templateOriginal,
+      templatePreview: templateOriginal?.substring(0, 50)
+    })
     
     // Strategy 1: Look for <<VarName>> patterns (unfilled templates)
     const variablePattern = /<<([^>]+)>>/g
@@ -166,7 +183,7 @@ const HighlightingEditor = ({
       })
     }
     
-    console.log('🔍 Found placeholders:', foundPlaceholders)
+    console.log('🔍 Found <<VarName>> patterns:', foundPlaceholders.length, foundPlaceholders)
     
     // Strategy 2: If no placeholders but we have variables, try filled variables  
     if (foundPlaceholders.length === 0 && Object.keys(variables).length > 0 && templateOriginal) {
@@ -244,7 +261,13 @@ const HighlightingEditor = ({
   // Handle input changes - reapply highlighting after user input
   const handleInput = () => {
     if (!editableRef.current) return
-    isInternalUpdateRef.current = true
+    
+    // Skip if this is from our programmatic innerHTML update
+    if (isInternalUpdateRef.current) {
+      console.log('🔧 Skipping handleInput - internal update in progress')
+      return
+    }
+    
     const newText = extractText(editableRef.current)
     if (newText !== lastValueRef.current) {
       lastValueRef.current = newText
@@ -254,15 +277,18 @@ const HighlightingEditor = ({
       setTimeout(() => {
         if (!editableRef.current) return
         console.log('🔧 Reapplying highlighting after user input')
+        isInternalUpdateRef.current = true
         const cursorPos = saveCursorPosition()
         const newHtml = buildHighlightedHTML(newText)
         editableRef.current.innerHTML = newHtml
         requestAnimationFrame(() => {
           restoreCursorPosition(cursorPos)
+          setTimeout(() => {
+            isInternalUpdateRef.current = false
+          }, 50)
         })
       }, 100)
     }
-    isInternalUpdateRef.current = false
   }
 
   // Before input, snapshot cursor and re-render after
@@ -270,18 +296,6 @@ const HighlightingEditor = ({
     if (!editableRef.current) return
     const pos = saveCursorPosition()
     setTimeout(() => restoreCursorPosition(pos), 0)
-  }
-
-  // On mouse up inside editor, re-apply highlights (Chrome sometimes normalizes)
-  const handleMouseUp = () => {
-    if (!editableRef.current) return
-    const currentText = extractText(editableRef.current)
-    const cursorPos = saveCursorPosition()
-    const newHtml = buildHighlightedHTML(currentText)
-    if (editableRef.current.innerHTML !== newHtml) {
-      editableRef.current.innerHTML = newHtml
-      requestAnimationFrame(() => restoreCursorPosition(cursorPos))
-    }
   }
 
   // Save and restore cursor position
@@ -336,44 +350,49 @@ const HighlightingEditor = ({
     // Skip if this is from user typing
     if (isInternalUpdateRef.current) return
     
+    const hasVars = Object.keys(variables).length > 0
+    const hasTemplate = !!templateOriginal
+    
     console.log('🔧 Highlighting effect triggered:', { 
       hasValue: !!value, 
-      hasVariables: Object.keys(variables).length > 0,
-      hasTemplate: !!templateOriginal,
-      valuePreview: value?.substring(0, 50)
+      hasVariables: hasVars,
+      hasTemplate: hasTemplate,
+      valuePreview: value?.substring(0, 50),
+      variablesCount: Object.keys(variables).length
     })
+    
+    // Don't render if we have a template but no variables yet (state still syncing)
+    if (hasTemplate && !hasVars && value) {
+      console.log('⏳ Skipping render - waiting for variables to sync')
+      return
+    }
     
     const textToRender = value || ''
     const newHtml = buildHighlightedHTML(textToRender)
     
     console.log('🔧 Generated HTML:', newHtml.substring(0, 100) + (newHtml.length > 100 ? '...' : ''))
     
+    // Mark as internal update to prevent handleInput from firing onChange
+    isInternalUpdateRef.current = true
+    
     const cursorPos = saveCursorPosition()
     editableRef.current.innerHTML = newHtml
     lastValueRef.current = textToRender
     
-    // Restore cursor position
+    // Restore cursor position and reset internal flag
     requestAnimationFrame(() => {
       restoreCursorPosition(cursorPos)
+      // Reset flag after a delay to ensure input event doesn't trigger
+      setTimeout(() => {
+        isInternalUpdateRef.current = false
+      }, 50)
     })
-    
-    // Force re-highlight after a tiny delay to ensure state is fully synced
-    const timer = setTimeout(() => {
-      if (!editableRef.current || isInternalUpdateRef.current) return
-      const currentText = extractText(editableRef.current)
-      const refreshedHtml = buildHighlightedHTML(currentText)
-      if (editableRef.current.innerHTML !== refreshedHtml) {
-        console.log('🔧 Applying delayed refresh highlight')
-        const pos = saveCursorPosition()
-        editableRef.current.innerHTML = refreshedHtml
-        requestAnimationFrame(() => restoreCursorPosition(pos))
-      }
-    }, 50)
-    
-    return () => clearTimeout(timer)
   }, [value, variables, templateOriginal]) // React to any change
 
   // Re-apply highlighting when window focus changes (popout opens/closes)
+  // DISABLED - causing highlighting to disappear when clicking Variables button
+  // The BroadcastChannel and mouseup handlers are sufficient
+  /*
   useEffect(() => {
     const handleFocusChange = () => {
       console.log('🔄 Focus change detected - re-applying highlights')
@@ -387,11 +406,15 @@ const HighlightingEditor = ({
         
         if (editableRef.current.innerHTML !== newHtml) {
           console.log('🔄 Re-applying highlights after focus change')
+          isInternalUpdateRef.current = true
           const cursorPos = saveCursorPosition()
           editableRef.current.innerHTML = newHtml
           
           requestAnimationFrame(() => {
             restoreCursorPosition(cursorPos)
+            setTimeout(() => {
+              isInternalUpdateRef.current = false
+            }, 50)
           })
         }
       }, 100)
@@ -409,8 +432,12 @@ const HighlightingEditor = ({
       document.removeEventListener('visibilitychange', handleFocusChange)
     }
   }, [variables, templateOriginal])
+  */
 
   // Listen for popout state changes via BroadcastChannel
+  // DISABLED - causing highlighting to disappear when Variables popup opens
+  // The main highlighting effect and mouseup handler are sufficient
+  /*
   useEffect(() => {
     const channel = new BroadcastChannel('email-assistant-sync')
     
@@ -430,11 +457,15 @@ const HighlightingEditor = ({
           
           if (editableRef.current.innerHTML !== newHtml) {
             console.log('🔄 Re-applying highlights after popup/popout state change')
+            isInternalUpdateRef.current = true
             const cursorPos = saveCursorPosition()
             editableRef.current.innerHTML = newHtml
             
             requestAnimationFrame(() => {
               restoreCursorPosition(cursorPos)
+              setTimeout(() => {
+                isInternalUpdateRef.current = false
+              }, 50)
             })
           }
         }, 150)
@@ -448,24 +479,33 @@ const HighlightingEditor = ({
       channel.close()
     }
   }, [variables, templateOriginal])
+  */
 
-  // Persist highlights on selection change when selection is inside the editor
-  useEffect(() => {
-    const onSelectionChange = () => {
-      const sel = document.getSelection()
-      if (!sel || !sel.anchorNode || !editableRef.current) return
-      if (!editableRef.current.contains(sel.anchorNode)) return
+  // Persist highlights on mouse up (clicking in the editor)
+  const handleMouseUp = () => {
+    if (!editableRef.current) return
+    
+    // Small delay to let any selection settle
+    setTimeout(() => {
+      if (!editableRef.current) return
+      
       const currentText = extractText(editableRef.current)
       const newHtml = buildHighlightedHTML(currentText)
+      
       if (editableRef.current.innerHTML !== newHtml) {
+        console.log('🔄 Mouse up - reapplying highlights')
         const cursorPos = saveCursorPosition()
+        isInternalUpdateRef.current = true
         editableRef.current.innerHTML = newHtml
-        requestAnimationFrame(() => restoreCursorPosition(cursorPos))
+        requestAnimationFrame(() => {
+          restoreCursorPosition(cursorPos)
+          setTimeout(() => {
+            isInternalUpdateRef.current = false
+          }, 50)
+        })
       }
-    }
-    document.addEventListener('selectionchange', onSelectionChange)
-    return () => document.removeEventListener('selectionchange', onSelectionChange)
-  }, [variables, templateOriginal])
+    }, 50)
+  }
 
   return (
     <div

@@ -1332,27 +1332,21 @@ function App() {
           initialVars[varName] = varInfo.example || ''
         }
       })
+      
+      // Set the template text with <<VarName>> placeholders
+      // The HighlightingEditor will display the filled values via highlighting
+      const subjectTemplate = selectedTemplate.subject[templateLanguage] || ''
+      const bodyTemplate = selectedTemplate.body[templateLanguage] || ''
+      
+      // Batch all state updates together - React will apply them in one render cycle
       setVariables(initialVars)
-      
-      // Update final versions with replaced variables using the NEW initialVars
-      const replaceWithVars = (text, vars) => {
-        let result = text
-        Object.entries(vars).forEach(([varName, value]) => {
-          const regex = new RegExp(`<<${varName}>>`, 'g')
-          result = result.replace(regex, value || `<<${varName}>>`)
-        })
-        return result
-      }
-      
-      const subjectWithVars = replaceWithVars(selectedTemplate.subject[templateLanguage] || '', initialVars)
-      const bodyWithVars = replaceWithVars(selectedTemplate.body[templateLanguage] || '', initialVars)
-      setFinalSubject(subjectWithVars)
-      setFinalBody(bodyWithVars)
+      setFinalSubject(subjectTemplate)
+      setFinalBody(bodyTemplate)
     } else {
       // No template selected - clear editors; placeholder text shown via UI
+      setVariables({})
       setFinalSubject('')
       setFinalBody('')
-      setVariables({})
     }
   }, [selectedTemplate, templateLanguage, interfaceLanguage])
 
@@ -2146,6 +2140,7 @@ function App() {
                         <span>{t.subject}</span>
                       </div>
                       <HighlightingEditor
+                        key={`subject-${selectedTemplate?.id}-${Object.keys(variables).length}`}
                         value={finalSubject}
                         onChange={(e) => setFinalSubject(e.target.value)}
                         variables={variables}
@@ -2164,6 +2159,7 @@ function App() {
                         <span>{t.body}</span>
                       </div>
                       <HighlightingEditor
+                        key={`body-${selectedTemplate?.id}-${Object.keys(variables).length}`}
                         value={finalBody}
                         onChange={(e) => setFinalBody(e.target.value)}
                         variables={variables}
