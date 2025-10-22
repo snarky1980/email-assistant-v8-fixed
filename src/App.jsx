@@ -1787,7 +1787,7 @@ function App() {
               <div className="h-[48px] w-full rounded-[14px] px-4 flex items-center justify-center mb-3" style={{ background: 'var(--primary)' }}>
                 <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-none whitespace-nowrap">
                   <FileText className="h-5 w-5 text-white" aria-hidden="true" />
-                  <span className="truncate">{t.selectTemplate}</span>
+                  <span className="truncate">{interfaceLanguage === 'fr' ? 'Modèles' : 'Templates'}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -2012,7 +2012,7 @@ function App() {
               <div className="h-[48px] w-full rounded-[14px] px-4 flex items-center justify-center mb-2" style={{ background: 'var(--primary)' }}>
                 <div className="text-base font-bold text-white inline-flex items-center gap-2 leading-none whitespace-nowrap">
                   <FileText className="h-5 w-5 text-white" aria-hidden="true" />
-                  <span className="truncate">{t.selectTemplate}</span>
+                  <span className="truncate">{interfaceLanguage === 'fr' ? 'Modèles' : 'Templates'}</span>
                 </div>
               </div>
               <div className="mt-2">

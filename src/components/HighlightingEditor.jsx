@@ -265,21 +265,23 @@ const HighlightingEditor = ({
     isInternalUpdateRef.current = false
   }
 
-  // On focus, reapply highlighting to prevent browser normalizing innerHTML
-  const handleFocus = () => {
-    if (!editableRef.current) return
-    const currentText = extractText(editableRef.current)
-    const cursorPos = saveCursorPosition()
-    const newHtml = buildHighlightedHTML(currentText)
-    editableRef.current.innerHTML = newHtml
-    requestAnimationFrame(() => restoreCursorPosition(cursorPos))
-  }
-
   // Before input, snapshot cursor and re-render after
   const handleBeforeInput = () => {
     if (!editableRef.current) return
     const pos = saveCursorPosition()
     setTimeout(() => restoreCursorPosition(pos), 0)
+  }
+
+  // On mouse up inside editor, re-apply highlights (Chrome sometimes normalizes)
+  const handleMouseUp = () => {
+    if (!editableRef.current) return
+    const currentText = extractText(editableRef.current)
+    const cursorPos = saveCursorPosition()
+    const newHtml = buildHighlightedHTML(currentText)
+    if (editableRef.current.innerHTML !== newHtml) {
+      editableRef.current.innerHTML = newHtml
+      requestAnimationFrame(() => restoreCursorPosition(cursorPos))
+    }
   }
 
   // Save and restore cursor position
@@ -431,13 +433,31 @@ const HighlightingEditor = ({
     }
   }, [variables, templateOriginal])
 
+  // Persist highlights on selection change when selection is inside the editor
+  useEffect(() => {
+    const onSelectionChange = () => {
+      const sel = document.getSelection()
+      if (!sel || !sel.anchorNode || !editableRef.current) return
+      if (!editableRef.current.contains(sel.anchorNode)) return
+      const currentText = extractText(editableRef.current)
+      const newHtml = buildHighlightedHTML(currentText)
+      if (editableRef.current.innerHTML !== newHtml) {
+        const cursorPos = saveCursorPosition()
+        editableRef.current.innerHTML = newHtml
+        requestAnimationFrame(() => restoreCursorPosition(cursorPos))
+      }
+    }
+    document.addEventListener('selectionchange', onSelectionChange)
+    return () => document.removeEventListener('selectionchange', onSelectionChange)
+  }, [variables, templateOriginal])
+
   return (
     <div
       ref={editableRef}
       contentEditable
-      onInput={handleInput}
-      onFocus={handleFocus}
+  onInput={handleInput}
       onBeforeInput={handleBeforeInput}
+  onMouseUp={handleMouseUp}
       suppressContentEditableWarning
   className="border-2 border-[#bfe7e3] focus:border-[#7bd1ca] focus:outline-none focus:ring-2 focus:ring-[#7bd1ca]/30 transition-all duration-200 rounded-[12px] px-4 py-4 text-[16px] leading-[1.7] tracking-[0.01em] bg-[#f9fdfd] resize-none overflow-auto"
   style={{ minHeight, fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" }}
