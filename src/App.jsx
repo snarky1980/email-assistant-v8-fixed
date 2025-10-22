@@ -1324,14 +1324,17 @@ function App() {
   // Load a selected template
   useEffect(() => {
     if (selectedTemplate) {
-      // Initialize variables as EMPTY so <<VarName>> patterns remain visible and highlighted
+      // Initialize variables with example/default values
       const initialVars = {}
       selectedTemplate.variables.forEach(varName => {
-        initialVars[varName] = ''
+        const varInfo = templatesData.variables[varName]
+        if (varInfo) {
+          initialVars[varName] = varInfo.example || ''
+        }
       })
       setVariables(initialVars)
       
-      // Update final versions with replaced variables (keeps <<VarName>> since vars are empty)
+      // Update final versions with replaced variables
       const subjectWithVars = replaceVariables(selectedTemplate.subject[templateLanguage] || '')
       const bodyWithVars = replaceVariables(selectedTemplate.body[templateLanguage] || '')
       setFinalSubject(subjectWithVars)

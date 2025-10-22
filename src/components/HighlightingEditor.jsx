@@ -339,7 +339,8 @@ const HighlightingEditor = ({
     console.log('🔧 Highlighting effect triggered:', { 
       hasValue: !!value, 
       hasVariables: Object.keys(variables).length > 0,
-      hasTemplate: !!templateOriginal 
+      hasTemplate: !!templateOriginal,
+      valuePreview: value?.substring(0, 50)
     })
     
     const textToRender = value || ''
@@ -355,6 +356,21 @@ const HighlightingEditor = ({
     requestAnimationFrame(() => {
       restoreCursorPosition(cursorPos)
     })
+    
+    // Force re-highlight after a tiny delay to ensure state is fully synced
+    const timer = setTimeout(() => {
+      if (!editableRef.current || isInternalUpdateRef.current) return
+      const currentText = extractText(editableRef.current)
+      const refreshedHtml = buildHighlightedHTML(currentText)
+      if (editableRef.current.innerHTML !== refreshedHtml) {
+        console.log('🔧 Applying delayed refresh highlight')
+        const pos = saveCursorPosition()
+        editableRef.current.innerHTML = refreshedHtml
+        requestAnimationFrame(() => restoreCursorPosition(pos))
+      }
+    }, 50)
+    
+    return () => clearTimeout(timer)
   }, [value, variables, templateOriginal]) // React to any change
 
   // Re-apply highlighting when window focus changes (popout opens/closes)
