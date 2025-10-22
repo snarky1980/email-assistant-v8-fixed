@@ -1334,9 +1334,18 @@ function App() {
       })
       setVariables(initialVars)
       
-      // Update final versions with replaced variables
-      const subjectWithVars = replaceVariables(selectedTemplate.subject[templateLanguage] || '')
-      const bodyWithVars = replaceVariables(selectedTemplate.body[templateLanguage] || '')
+      // Update final versions with replaced variables using the NEW initialVars
+      const replaceWithVars = (text, vars) => {
+        let result = text
+        Object.entries(vars).forEach(([varName, value]) => {
+          const regex = new RegExp(`<<${varName}>>`, 'g')
+          result = result.replace(regex, value || `<<${varName}>>`)
+        })
+        return result
+      }
+      
+      const subjectWithVars = replaceWithVars(selectedTemplate.subject[templateLanguage] || '', initialVars)
+      const bodyWithVars = replaceWithVars(selectedTemplate.body[templateLanguage] || '', initialVars)
       setFinalSubject(subjectWithVars)
       setFinalBody(bodyWithVars)
     } else {
