@@ -485,26 +485,24 @@ const HighlightingEditor = ({
   const handleMouseUp = () => {
     if (!editableRef.current) return
     
-    // Small delay to let any selection settle
-    setTimeout(() => {
-      if (!editableRef.current) return
-      
-      const currentText = extractText(editableRef.current)
-      const newHtml = buildHighlightedHTML(currentText)
-      
-      if (editableRef.current.innerHTML !== newHtml) {
-        console.log('🔄 Mouse up - reapplying highlights')
-        const cursorPos = saveCursorPosition()
-        isInternalUpdateRef.current = true
-        editableRef.current.innerHTML = newHtml
-        requestAnimationFrame(() => {
-          restoreCursorPosition(cursorPos)
-          setTimeout(() => {
-            isInternalUpdateRef.current = false
-          }, 50)
-        })
-      }
-    }, 50)
+    // Only re-apply if the content has actually changed from what we expect
+    const currentHtml = editableRef.current.innerHTML
+    const expectedHtml = buildHighlightedHTML(value || '')
+    
+    if (currentHtml !== expectedHtml) {
+      console.log('🔄 Mouse up - content changed, reapplying highlights')
+      const cursorPos = saveCursorPosition()
+      isInternalUpdateRef.current = true
+      editableRef.current.innerHTML = expectedHtml
+      requestAnimationFrame(() => {
+        restoreCursorPosition(cursorPos)
+        setTimeout(() => {
+          isInternalUpdateRef.current = false
+        }, 50)
+      })
+    } else {
+      console.log('🔄 Mouse up - content unchanged, keeping highlights')
+    }
   }
 
   return (
