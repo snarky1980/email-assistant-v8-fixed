@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
+import { replaceTemplateVariables, applyVariablesToText } from './utils/templateHelpers.js';
 // Deploy marker: 2025-10-16T07:31Z
 import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2, ExternalLink, Expand, Shrink, MoveRight } from 'lucide-react'
 import { Button } from './components/ui/button.jsx'
@@ -357,6 +358,7 @@ function App() {
   const [finalSubject, setFinalSubject] = useState('') // Final editable version
   const [finalBody, setFinalBody] = useState('') // Final editable version
   const [variables, setVariables] = useState(savedState.variables || {})
+  const previousVariablesRef = useRef(variables)
   const [favorites, setFavorites] = useState(savedState.favorites || [])
   const [favoritesOnly, setFavoritesOnly] = useState(savedState.favoritesOnly || false)
   const [copySuccess, setCopySuccess] = useState(false)
@@ -1313,16 +1315,6 @@ function App() {
     setFavorites(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
-  // Replace variables in text
-  const replaceVariables = (text) => {
-    let result = text
-    Object.entries(variables).forEach(([varName, value]) => {
-      const regex = new RegExp(`<<${varName}>>`, 'g')
-      result = result.replace(regex, value || `<<${varName}>>`)
-    })
-    return result
-  }
-
   // Load a selected template
   useEffect(() => {
     if (selectedTemplate) {
@@ -1334,16 +1326,16 @@ function App() {
           initialVars[varName] = varInfo.example || ''
         }
       })
-      
+
       // Set the template text with <<VarName>> placeholders
       // The HighlightingEditor will display the filled values via highlighting
       const subjectTemplate = selectedTemplate.subject[templateLanguage] || ''
       const bodyTemplate = selectedTemplate.body[templateLanguage] || ''
-      
+
       // Batch all state updates together - React will apply them in one render cycle
       setVariables(initialVars)
-      setFinalSubject(subjectTemplate)
-      setFinalBody(bodyTemplate)
+      setFinalSubject(replaceTemplateVariables(subjectTemplate, initialVars))
+      setFinalBody(replaceTemplateVariables(bodyTemplate, initialVars))
     } else {
       // No template selected - clear editors; placeholder text shown via UI
       setVariables({})
@@ -1354,12 +1346,18 @@ function App() {
 
   // Update final versions when variables change
   useEffect(() => {
-    if (selectedTemplate) {
-      const subjectWithVars = replaceVariables(selectedTemplate.subject[templateLanguage] || '')
-      const bodyWithVars = replaceVariables(selectedTemplate.body[templateLanguage] || '')
-      setFinalSubject(subjectWithVars)
-      setFinalBody(bodyWithVars)
+    if (!selectedTemplate) {
+      previousVariablesRef.current = variables
+      return
     }
+
+    const subjectTemplate = selectedTemplate.subject[templateLanguage] || ''
+    const bodyTemplate = selectedTemplate.body[templateLanguage] || ''
+
+    setFinalSubject(prev => applyVariablesToText(subjectTemplate, prev, variables, previousVariablesRef.current))
+    setFinalBody(prev => applyVariablesToText(bodyTemplate, prev, variables, previousVariablesRef.current))
+
+    previousVariablesRef.current = variables
   }, [variables, selectedTemplate, templateLanguage])
 
   /**
@@ -1571,9 +1569,9 @@ function App() {
         }
       })
       setVariables(initialVars)
-      
-      const subjectWithVars = replaceVariables(selectedTemplate.subject[templateLanguage] || '')
-      const bodyWithVars = replaceVariables(selectedTemplate.body[templateLanguage] || '')
+
+      const subjectWithVars = replaceTemplateVariables(selectedTemplate.subject[templateLanguage] || '', initialVars)
+      const bodyWithVars = replaceTemplateVariables(selectedTemplate.body[templateLanguage] || '', initialVars)
       setFinalSubject(subjectWithVars)
       setFinalBody(bodyWithVars)
     }
