@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import Fuse from 'fuse.js'
 import { loadState, saveState } from './utils/storage.js';
 // Deploy marker: 2025-10-16T07:31Z
-import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2, ExternalLink, Expand, Shrink, MoveRight } from 'lucide-react'
+import { Search, FileText, Copy, RotateCcw, Languages, Filter, Globe, Sparkles, Mail, Edit3, Link, Settings, X, Move, Send, Star, ClipboardPaste, Eraser, Pin, PinOff, Minimize2, ExternalLink, Expand, Shrink, MoveRight, RefreshCw } from 'lucide-react'
 import { Button } from './components/ui/button.jsx'
 import { Input } from './components/ui/input.jsx'
 import HighlightingEditor from './components/HighlightingEditor';
@@ -1321,6 +1321,97 @@ function App() {
       result = result.replace(regex, value || `<<${varName}>>`)
     })
     return result
+
+  // Sync from text: Extract variable values from text areas back to Variables Editor
+  const syncFromText = () => {
+    console.log('🔄 Sync from text: Starting reverse synchronization...')
+    
+    if (!selectedTemplate || !templatesData) {
+      console.log('🔄 No template selected or templates data unavailable')
+      return
+    }
+
+    const extracted = {}
+    
+    // Process subject
+    if (selectedTemplate.subject && subject) {
+      const subjectTemplate = selectedTemplate.subject
+      selectedTemplate.variables.forEach(varName => {
+        if (subjectTemplate.includes(`<<${varName}>>`)) {
+          const value = extractValueFromText(subject, subjectTemplate, varName)
+          if (value !== null) extracted[varName] = value
+        }
+      })
+    }
+    
+    // Process body  
+    if (selectedTemplate.body && body) {
+      const bodyTemplate = selectedTemplate.body
+      selectedTemplate.variables.forEach(varName => {
+        if (bodyTemplate.includes(`<<${varName}>>`)) {
+          const value = extractValueFromText(body, bodyTemplate, varName)
+          if (value !== null) extracted[varName] = value
+        }
+      })
+    }
+    
+    console.log('🔄 Extracted values:', extracted)
+    
+    // Update variables state
+    if (Object.keys(extracted).length > 0) {
+      setVariables(prev => ({ ...prev, ...extracted }))
+      console.log('🔄 Variables updated successfully')
+    } else {
+      console.log('🔄 No values extracted')
+    }
+  }
+  
+  // Helper function to extract a variable value from text
+  const extractValueFromText = (text, templateText, varName) => {
+    try {
+      const varPlaceholder = `<<${varName}>>`
+      const varIndex = templateText.indexOf(varPlaceholder)
+      
+      if (varIndex === -1) return null
+      
+      // Find literal text before the variable
+      const beforeText = templateText.substring(0, varIndex)
+      const lastNewlineIndex = beforeText.lastIndexOf('\n')
+      const beforeLiteral = lastNewlineIndex === -1 
+        ? beforeText 
+        : beforeText.substring(lastNewlineIndex + 1)
+      
+      // Find literal text after the variable  
+      const afterStart = varIndex + varPlaceholder.length
+      const afterText = templateText.substring(afterStart)
+      const nextNewlineIndex = afterText.indexOf('\n')
+      const afterLiteral = nextNewlineIndex === -1
+        ? afterText
+        : afterText.substring(0, nextNewlineIndex)
+      
+      // Find positions in actual text
+      let startPos = 0
+      if (beforeLiteral.trim()) {
+        startPos = text.indexOf(beforeLiteral)
+        if (startPos === -1) return null
+        startPos += beforeLiteral.length
+      }
+      
+      let endPos = text.length
+      if (afterLiteral.trim()) {
+        endPos = text.indexOf(afterLiteral, startPos)
+        if (endPos === -1) return null
+      }
+      
+      const extracted = text.substring(startPos, endPos).trim()
+      console.log(`🔄 Extracted ${varName}: "${extracted}"`)
+      return extracted
+      
+    } catch (error) {
+      console.warn(`Error extracting ${varName}:`, error)
+      return null
+    }
+  }
   }
 
   // Load a selected template
@@ -2528,6 +2619,20 @@ function App() {
                     onMouseDown={(e)=> e.stopPropagation()}
                   >
                     <RotateCcw className="h-4 w-4 mr-1" /> {t.reset}
+                  </Button>
+                  <Button
+                    onClick={syncFromText}
+                    variant="outline"
+                    size="sm"
+                    className="border-2 text-[#0369a1] hover:bg-[#e0f2fe]"
+                    style={{ borderColor: '#0369a1', borderRadius: 10, background: '#fff' }}
+                    title={interfaceLanguage==='fr'
+                      ? 'Synchroniser depuis le texte\n\nExtrait les valeurs des variables depuis les zones de texte modifiées et les synchronise avec les champs du Variables Editor.'
+                      : 'Sync from text\n\nExtracts variable values from the edited text areas and syncs them to the Variables Editor fields.'
+                    }
+                    onMouseDown={(e)=> e.stopPropagation()}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" /> {interfaceLanguage==='fr'?'Synchro':'Sync'}
                   </Button>
                   <Button
                     onClick={() => {

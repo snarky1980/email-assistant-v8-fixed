@@ -15,30 +15,6 @@ const HighlightingEditor = ({
   const lastValueRef = useRef(value)
   const isInternalUpdateRef = useRef(false)
   const isUserTypingRef = useRef(false)
-  const hasDeviatedFromTemplateRef = useRef(false) // Track if user has heavily edited away from template
-
-  // Check if text has deviated significantly from template structure
-  const checkTemplateDeviation = (text, template) => {
-    if (!template || !text) return false
-    
-    // Extract all literal text from template (non-variable parts)
-    const literalParts = template.split(/<<[^>]+>>/g).filter(part => part.trim().length > 10)
-    
-    if (literalParts.length === 0) return false
-    
-    // Check if at least 70% of literal parts are still present
-    const matchedParts = literalParts.filter(part => text.includes(part))
-    const matchRatio = matchedParts.length / literalParts.length
-    
-    console.log('📊 Template deviation check:', {
-      totalParts: literalParts.length,
-      matchedParts: matchedParts.length,
-      ratio: matchRatio,
-      deviated: matchRatio < 0.7
-    })
-    
-    return matchRatio < 0.7 // If less than 70% match, consider it deviated
-  }
 
   const escapeHtml = (s = '') =>
     s.replace(/&/g, '&amp;')
@@ -403,7 +379,7 @@ const HighlightingEditor = ({
     }
   }
 
-  // Improved highlighting effect with better race condition handling
+  // Persistent highlighting effect - ALWAYS highlights, never turns off
   useEffect(() => {
     if (!editableRef.current) return
     
@@ -449,25 +425,18 @@ const HighlightingEditor = ({
     const hasTemplate = !!templateOriginal
     const textToRender = value || ''
     
-    // Check if user has deviated from template
-    const deviated = hasTemplate && checkTemplateDeviation(textToRender, templateOriginal)
-    hasDeviatedFromTemplateRef.current = deviated
-    
     console.log('🔧 Highlighting effect triggered:', { 
       hasValue: !!value, 
       hasVariables: hasVars,
       hasTemplate: hasTemplate,
-      deviated: deviated,
       valuePreview: value?.substring(0, 50),
       variablesCount: Object.keys(variables).length
     })
     
-    // Don't apply highlighting if:
-    // 1. No template or variables
-    // 2. User has deviated significantly from template
-    if (!hasTemplate || !hasVars || deviated) {
-      console.log('⏳ No highlighting - missing template/variables or deviated from template')
-      // Just show plain text
+    // SPEC REQUIREMENT: Highlighting must ALWAYS remain visible
+    // Only skip if we have neither template nor variables (nothing to highlight)
+    if (!hasTemplate && !hasVars) {
+      console.log('⏳ No template or variables - plain text mode')
       const plainHtml = escapeHtml(textToRender).replace(/\n/g, '<br>')
       if (editableRef.current.innerHTML !== plainHtml) {
         isInternalUpdateRef.current = true
@@ -480,6 +449,7 @@ const HighlightingEditor = ({
       return
     }
     
+    // ALWAYS apply highlighting when we have template/variables
     const newHtml = buildHighlightedHTML(textToRender)
     
     const currentHtml = editableRef.current.innerHTML
@@ -488,7 +458,7 @@ const HighlightingEditor = ({
       return
     }
     
-    console.log('🔧 Generated HTML:', newHtml.substring(0, 100) + (newHtml.length > 100 ? '...' : ''))
+    console.log('🔧 Applying highlights (always visible per spec)')
     
     // Mark as internal update to prevent handleInput from firing onChange
     isInternalUpdateRef.current = true
@@ -506,98 +476,6 @@ const HighlightingEditor = ({
       }, 50)
     })
   }, [value, variables, templateOriginal]) // React to any change
-
-  // Re-apply highlighting when window focus changes (popout opens/closes)
-  // DISABLED - causing highlighting to disappear when clicking Variables button
-  // The BroadcastChannel and mouseup handlers are sufficient
-  /*
-  useEffect(() => {
-    const handleFocusChange = () => {
-      console.log('🔄 Focus change detected - re-applying highlights')
-      
-      // Small delay to let any state changes settle
-      setTimeout(() => {
-        if (!editableRef.current) return
-        
-        const currentText = extractText(editableRef.current)
-        const newHtml = buildHighlightedHTML(currentText)
-        
-        if (editableRef.current.innerHTML !== newHtml) {
-          console.log('🔄 Re-applying highlights after focus change')
-          isInternalUpdateRef.current = true
-          const cursorPos = saveCursorPosition()
-          editableRef.current.innerHTML = newHtml
-          
-          requestAnimationFrame(() => {
-            restoreCursorPosition(cursorPos)
-            setTimeout(() => {
-              isInternalUpdateRef.current = false
-            }, 50)
-          })
-        }
-      }, 100)
-    }
-
-    window.addEventListener('focus', handleFocusChange)
-    window.addEventListener('blur', handleFocusChange)
-    
-    // Also listen for visibility change (when popouts are opened)
-    document.addEventListener('visibilitychange', handleFocusChange)
-    
-    return () => {
-      window.removeEventListener('focus', handleFocusChange)
-      window.removeEventListener('blur', handleFocusChange)
-      document.removeEventListener('visibilitychange', handleFocusChange)
-    }
-  }, [variables, templateOriginal])
-  */
-
-  // Listen for popout state changes via BroadcastChannel
-  // DISABLED - causing highlighting to disappear when Variables popup opens
-  // The main highlighting effect and mouseup handler are sufficient
-  /*
-  useEffect(() => {
-    const channel = new BroadcastChannel('email-assistant-sync')
-    
-    const handleMessage = (event) => {
-      console.log('🔄 BroadcastChannel message received:', event.data)
-      
-      if (event.data.type === 'popoutOpened' || 
-          event.data.type === 'popoutClosed' ||
-          event.data.type === 'variablesPopupOpened' ||
-          event.data.type === 'variablesPopupClosed') {
-        // Re-apply highlighting when popup/popout state changes
-        setTimeout(() => {
-          if (!editableRef.current) return
-          
-          const currentText = extractText(editableRef.current)
-          const newHtml = buildHighlightedHTML(currentText)
-          
-          if (editableRef.current.innerHTML !== newHtml) {
-            console.log('🔄 Re-applying highlights after popup/popout state change')
-            isInternalUpdateRef.current = true
-            const cursorPos = saveCursorPosition()
-            editableRef.current.innerHTML = newHtml
-            
-            requestAnimationFrame(() => {
-              restoreCursorPosition(cursorPos)
-              setTimeout(() => {
-                isInternalUpdateRef.current = false
-              }, 50)
-            })
-          }
-        }, 150)
-      }
-    }
-
-    channel.addEventListener('message', handleMessage)
-    
-    return () => {
-      channel.removeEventListener('message', handleMessage)
-      channel.close()
-    }
-  }, [variables, templateOriginal])
-  */
 
   // Persist highlights on mouse up (clicking in the editor) - IMPROVED
   const handleMouseUp = () => {
